@@ -16,15 +16,16 @@ class Solution {
       boolean right = choices[i] > 4 ? true : false;
       int number = choices[i];
       if(survey[i].equals("RT") || survey[i].equals("TR")) {
-          if(right) {
-            number -= 4;
-            if(survey[i].charAt(1) == 'R') score[0] += number;
-            else score[1] += number;
+        if(right) {
+          number -= 4;
+          if(survey[i].charAt(1) == 'R') score[0] += number;
+          else score[1] += number;
         }
-          else{
-            if(survey[i].charAt(0) == 'R') score[0] += number;
-            else score[1] += number;
-          }
+        else{
+          number = 4 - number;
+          if(survey[i].charAt(0) == 'R') score[0] += number;
+          else score[1] += number;
+        }
       }
       if(survey[i].equals("CF") || survey[i].equals("FC")) {
         if(right) {
@@ -33,6 +34,7 @@ class Solution {
           else score[3] += number;
         }
         else {
+          number = 4 - number;
           if(survey[i].charAt(0) == 'C') score[2] += number;
           else score[3] += number;
         }
@@ -44,6 +46,7 @@ class Solution {
           else score[5] += number;
         }
         else {
+          number = 4 - number;
           if(survey[i].charAt(0) == 'J') score[4] += number;
           else score[5] += number;
         }
@@ -55,6 +58,7 @@ class Solution {
           else score[7] += number;
         }
         else {
+          number = 4 - number;
           if(survey[i].charAt(0) == 'A') score[6] += number;
           else score[7] += number;
         }

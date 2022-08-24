@@ -262,7 +262,7 @@ class Solution {
   }
 }
 
-// 정확성: 10점
+// 정확성: 10.0
 
 class Solution {
  int[] score = new int[8];
@@ -343,6 +343,225 @@ class Solution {
  }
 }
 
-// 정확성: 35점
+// 정확성: 35.0
 
+class Solution {
+ public String solution(String[] survey, int[] choices) {
+  String answer = "";
+  int[][] personality = new int[4][2];
+  // R T
+  // C F
+  // J M
+  // A N
+  for(int i = 0; i < survey.length; i++) {
+   if(choices[i] == 4) continue;
+   Boolean right = choices[i] > 4 ? true : false;
+   switch (survey[i]) {
+    case "RT":
+    case "TR":
+     if (right) {
+      if (survey[i].charAt(1) == 'R') personality[0][0] += (choices[i] - 4);
+      else personality[0][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'R') personality[0][0] += choices[i];
+      else personality[0][1] += choices[i];
+     }
+     break;
+    case "CF":
+    case "FC":
+     if (right) {
+      if (survey[i].charAt(1) == 'C') personality[1][0] += (choices[i] - 4);
+      else personality[1][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'C') personality[1][0] += choices[i];
+      else personality[1][1] += choices[i];
+     }
+     break;
+    case "JM":
+    case "MJ":
+     if (right) {
+      if (survey[i].charAt(1) == 'J') personality[2][0] += (choices[i] - 4);
+      else personality[2][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'J') personality[2][0] += choices[i];
+      else personality[2][1] += choices[i];
+     }
+     break;
+    case "AN":
+    case "NA":
+     if (right) {
+      if (survey[i].charAt(1) == 'A') personality[3][0] += (choices[i] - 4);
+      else personality[3][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'A') personality[3][0] += choices[i];
+      else personality[3][1] += choices[i];
+     }
+     break;
+   }
+  }
+  answer += personality[0][0] >= personality[0][1] ? "R" : "T";
+  answer += personality[1][0] >= personality[1][1] ? "C" : "F";
+  answer += personality[2][0] >= personality[2][1] ? "J" : "M";
+  answer += personality[3][0] >= personality[3][1] ? "A" : "N";
+
+  return answer;
+ }
+ public static void main(String args[]) {
+  Solution solution = new Solution();
+  String[] survey = {"AN", "CF", "MJ", "RT", "NA"};
+  int[] choices = {5, 3, 2, 7, 5};
+  System.out.println(solution.solution(survey,choices));
+ }
+}
+
+// 정확성 : 45.0
+
+choices 숫자에서 오른쪽만 너무 신경쓰고 왼쪽은 신경 쓰지 않아도 된다는 생각에 왼쪽을 그냥 쓴 것이 문제였다.
+
+디버깅을 함으로써 알아내었고, 왼쪽의 처음 시작이 1이 아니라 중간에서 시작한다는 것을 간과했다.
+
+class Solution {
+ public String solution(String[] survey, int[] choices) {
+  String answer = "";
+  int[][] personality = new int[4][2];
+  // R T
+  // C F
+  // J M
+  // A N
+  for(int i = 0; i < survey.length; i++) {
+   if(choices[i] == 4) continue;
+   Boolean right = choices[i] > 4 ? true : false;
+   switch (survey[i]) {
+    case "RT":
+    case "TR":
+     if (right) {
+      if (survey[i].charAt(1) == 'R') personality[0][0] += (choices[i] - 4);
+      else personality[0][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'R') personality[0][0] += (4- choices[i]);
+      else personality[0][1] += (4- choices[i]);
+     }
+     break;
+    case "CF":
+    case "FC":
+     if (right) {
+      if (survey[i].charAt(1) == 'C') personality[1][0] += (choices[i] - 4);
+      else personality[1][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'C') personality[1][0] += (4- choices[i]);
+      else personality[1][1] += (4- choices[i]);
+     }
+     break;
+    case "JM":
+    case "MJ":
+     if (right) {
+      if (survey[i].charAt(1) == 'J') personality[2][0] += (choices[i] - 4);
+      else personality[2][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'J') personality[2][0] += (4- choices[i]);
+      else personality[2][1] += (4- choices[i]);
+     }
+     break;
+    case "AN":
+    case "NA":
+     if (right) {
+      if (survey[i].charAt(1) == 'A') personality[3][0] += (choices[i] - 4);
+      else personality[3][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'A') personality[3][0] += (4- choices[i]);
+      else personality[3][1] += (4- choices[i]);
+     }
+     break;
+   }
+  }
+  answer += personality[0][0] >= personality[0][1] ? "R" : "T";
+  answer += personality[1][0] >= personality[1][1] ? "C" : "F";
+  answer += personality[2][0] >= personality[2][1] ? "J" : "M";
+  answer += personality[3][0] >= personality[3][1] ? "A" : "N";
+
+  return answer;
+ }
+ public static void main(String args[]) {
+  Solution solution = new Solution();
+  String[] survey = {"CF", "CF", "CF", "CF", "CF"};
+  int[] choices = {5, 3, 2, 7, 5};
+  System.out.println(solution.solution(survey,choices));
+ }
+}
+
+Clear
 ```
+
+## 문제 코드 잡아내기
+
+먼저 맨처음 코드는 문제점이 굉장히 많이 보인다.
+
+1. 사전순으로 처리를 하기 위해선 R과 C, J, A가 +가 되도록 처리해줘야 한다.
+2. 같은 변수로 조건문을 처리할 때는 else if를 써야함에 주의 해야 한다.
+```java
+  int score(String survey,String[] question, int score) {
+        if(score == 4) return 0;
+        if(score > 4) score -= 4;
+        if(score < 4) score = -score;
+        if(survey.equals(question[0])) {
+        return -score;
+        }
+        else if(survey.equals(question[1])){
+        return score;
+        }
+        return 0;
+        };
+```
+
+해당 코드에서 그냥 계속해서 if문으로 처리함으로써 만약 score가 4보다 클 때 
+
+score에서 4를 빼고 그 아래 if문도 만족해짐으로 그 아래 조건문도 실행한다.
+
+다음과 같이 수정해줘야 한다.
+
+```java
+  int score(String survey,String[] question, int score) {
+    if(score == 4) return 0;
+    if(score > 4) score -= 4;
+    if(score < 4) score = -(4 - score);
+    if(survey.equals(question[0])) {
+      return -score;
+    }
+    else if(survey.equals(question[1])){
+      return score;
+    }
+    return 0;
+  };
+```
+
+하지만 이렇게 한다고 근본적인 것이 고쳐지는 것은 아니다. 
+
+해당 코드는 두번째 입력값을 넣었을 때 다른 기댓값이 나온다.
+
+이 코드의 가장 큰 문제는 오른쪽과 왼쪽을 숫자로만 쳐서 처리하고 그 후 조건문에서는 다루지 않았다는 것이 문제다.
+
+마지막 풀이 코드를 보면 choices가 4를 기점으로 넘는지 안넘는부터 처리한 후 조건문을 처리하였다.
+
+즉 4가지 경우 전부 처리해준 것이다. 
+
+문제 풀이 할 때 코드를 축소시키는 것도 중요하지만 조건문을 마음대로 축약해서 쓰지 말자.
+
+두번째 풀이에서는 right 가 아닌 경우 number = 4 - number; 해당 코드만 넣어주면 문제없이 작동한다.
+
+## 풀이 과정
+
+먼저 성격 유형이 지표별로 4가지가 있고, 선택지가 7개가 있는 것을 확인헀다.
+
+그래서 지표별로 미리 객체를 만들어 놔서 equals로 확인하고 점수의 경우 -3 ~ 3점으로 변환해서 사용하면 불필요한 변수나 코드를 생략할 수 있다고 생각했다.
+
+그래서 나온 코드가 1번 코드다. 
+
+실제로 1번째 풀이 코드를 보면 함수도 만들고 class도 만들었지만 본인이 생각하기엔 3번째 코드보다도 가독성이 떨어진다고 생각한다.
+
+2번째 코드는 1번 코드의 문제가 너무 무분별하게 Array와 function을 사용한 것이 문제라고 생각하여, 전부 풀어서 사용하였다.
+
+결과적으로 코드의 양은 굉장히 길어졌지만 만약 left처리만 재대로 했다면 해당 코드는 성공이였다.
+
+Array 혹은 class와 function을 사용하여 알고리즘을 해결해 나갈때는 주의 깊게 사용하자. 평소에도 생각을 많이 해보려고 노력해보자. 
+
+

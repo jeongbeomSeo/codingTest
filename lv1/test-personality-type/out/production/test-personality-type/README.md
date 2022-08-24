@@ -262,5 +262,274 @@ class Solution {
   }
 }
 
+// 정확성: 10.0
 
+class Solution {
+ int[] score = new int[8];
+ // 0 -> R
+ // 1 -> T
+ // 2 -> C
+ // 3 -> F
+ // 4 -> J
+ // 5 -> M
+ // 6 -> A
+ // 7 -> N
+
+ public String solution(String[] survey, int[] choices) {
+  String answer = "";
+
+  for(int i = 0; i < survey.length; i++) {
+   boolean right = choices[i] > 4 ? true : false;
+   int number = choices[i];
+   if(survey[i].equals("RT") || survey[i].equals("TR")) {
+    if(right) {
+     number -= 4;
+     if(survey[i].charAt(1) == 'R') score[0] += number;
+     else score[1] += number;
+    }
+    else{
+     if(survey[i].charAt(0) == 'R') score[0] += number;
+     else score[1] += number;
+    }
+   }
+   if(survey[i].equals("CF") || survey[i].equals("FC")) {
+    if(right) {
+     number -= 4;
+     if(survey[i].charAt(1) == 'C') score[2] += number;
+     else score[3] += number;
+    }
+    else {
+     if(survey[i].charAt(0) == 'C') score[2] += number;
+     else score[3] += number;
+    }
+   }
+   if(survey[i].equals("JM") || survey[i].equals("MJ")) {
+    if(right) {
+     number -= 4;
+     if(survey[i].charAt(1) == 'J') score[4] += number;
+     else score[5] += number;
+    }
+    else {
+     if(survey[i].charAt(0) == 'J') score[4] += number;
+     else score[5] += number;
+    }
+   }
+   if(survey[i].equals("AN") || survey[i].equals("NA")) {
+    if(right) {
+     number -= 4;
+     if(survey[i].charAt(1) == 'A') score[6] += number;
+     else score[7] += number;
+    }
+    else {
+     if(survey[i].charAt(0) == 'A') score[6] += number;
+     else score[7] += number;
+    }
+   }
+  }
+  answer += score[0] >= score[1] ? "R" : "T";
+  answer += score[2] >= score[3] ? "C" : "F";
+  answer += score[4] >= score[5] ? "J" : "M";
+  answer += score[6] >= score[7] ? "A" : "N";
+
+
+  return answer;
+ }
+ public static void main(String args[]) {
+  Solution solution = new Solution();
+  String[] survey = {"AN", "CF", "MJ", "RT", "NA"};
+  int[] choices = {5, 3, 2, 7, 5};
+
+  System.out.println(solution.solution(survey, choices));
+ }
+}
+
+// 정확성: 35.0
+
+class Solution {
+ public String solution(String[] survey, int[] choices) {
+  String answer = "";
+  int[][] personality = new int[4][2];
+  // R T
+  // C F
+  // J M
+  // A N
+  for(int i = 0; i < survey.length; i++) {
+   if(choices[i] == 4) continue;
+   Boolean right = choices[i] > 4 ? true : false;
+   switch (survey[i]) {
+    case "RT":
+    case "TR":
+     if (right) {
+      if (survey[i].charAt(1) == 'R') personality[0][0] += (choices[i] - 4);
+      else personality[0][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'R') personality[0][0] += choices[i];
+      else personality[0][1] += choices[i];
+     }
+     break;
+    case "CF":
+    case "FC":
+     if (right) {
+      if (survey[i].charAt(1) == 'C') personality[1][0] += (choices[i] - 4);
+      else personality[1][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'C') personality[1][0] += choices[i];
+      else personality[1][1] += choices[i];
+     }
+     break;
+    case "JM":
+    case "MJ":
+     if (right) {
+      if (survey[i].charAt(1) == 'J') personality[2][0] += (choices[i] - 4);
+      else personality[2][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'J') personality[2][0] += choices[i];
+      else personality[2][1] += choices[i];
+     }
+     break;
+    case "AN":
+    case "NA":
+     if (right) {
+      if (survey[i].charAt(1) == 'A') personality[3][0] += (choices[i] - 4);
+      else personality[3][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'A') personality[3][0] += choices[i];
+      else personality[3][1] += choices[i];
+     }
+     break;
+   }
+  }
+  answer += personality[0][0] >= personality[0][1] ? "R" : "T";
+  answer += personality[1][0] >= personality[1][1] ? "C" : "F";
+  answer += personality[2][0] >= personality[2][1] ? "J" : "M";
+  answer += personality[3][0] >= personality[3][1] ? "A" : "N";
+
+  return answer;
+ }
+ public static void main(String args[]) {
+  Solution solution = new Solution();
+  String[] survey = {"AN", "CF", "MJ", "RT", "NA"};
+  int[] choices = {5, 3, 2, 7, 5};
+  System.out.println(solution.solution(survey,choices));
+ }
+}
+
+// 정확성 : 45.0
+
+choices 숫자에서 오른쪽만 너무 신경쓰고 왼쪽은 신경 쓰지 않아도 된다는 생각에 왼쪽을 그냥 쓴 것이 문제였다.
+
+디버깅을 함으로써 알아내었고, 왼쪽의 처음 시작이 1이 아니라 중간에서 시작한다는 것을 간과했다.
+
+class Solution {
+ public String solution(String[] survey, int[] choices) {
+  String answer = "";
+  int[][] personality = new int[4][2];
+  // R T
+  // C F
+  // J M
+  // A N
+  for(int i = 0; i < survey.length; i++) {
+   if(choices[i] == 4) continue;
+   Boolean right = choices[i] > 4 ? true : false;
+   switch (survey[i]) {
+    case "RT":
+    case "TR":
+     if (right) {
+      if (survey[i].charAt(1) == 'R') personality[0][0] += (choices[i] - 4);
+      else personality[0][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'R') personality[0][0] += (4- choices[i]);
+      else personality[0][1] += (4- choices[i]);
+     }
+     break;
+    case "CF":
+    case "FC":
+     if (right) {
+      if (survey[i].charAt(1) == 'C') personality[1][0] += (choices[i] - 4);
+      else personality[1][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'C') personality[1][0] += (4- choices[i]);
+      else personality[1][1] += (4- choices[i]);
+     }
+     break;
+    case "JM":
+    case "MJ":
+     if (right) {
+      if (survey[i].charAt(1) == 'J') personality[2][0] += (choices[i] - 4);
+      else personality[2][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'J') personality[2][0] += (4- choices[i]);
+      else personality[2][1] += (4- choices[i]);
+     }
+     break;
+    case "AN":
+    case "NA":
+     if (right) {
+      if (survey[i].charAt(1) == 'A') personality[3][0] += (choices[i] - 4);
+      else personality[3][1] += (choices[i] - 4);
+     } else {
+      if (survey[i].charAt(0) == 'A') personality[3][0] += (4- choices[i]);
+      else personality[3][1] += (4- choices[i]);
+     }
+     break;
+   }
+  }
+  answer += personality[0][0] >= personality[0][1] ? "R" : "T";
+  answer += personality[1][0] >= personality[1][1] ? "C" : "F";
+  answer += personality[2][0] >= personality[2][1] ? "J" : "M";
+  answer += personality[3][0] >= personality[3][1] ? "A" : "N";
+
+  return answer;
+ }
+ public static void main(String args[]) {
+  Solution solution = new Solution();
+  String[] survey = {"CF", "CF", "CF", "CF", "CF"};
+  int[] choices = {5, 3, 2, 7, 5};
+  System.out.println(solution.solution(survey,choices));
+ }
+}
+
+Clear
+```
+
+## 문제 코드 잡아내기
+
+먼저 맨처음 코드는 문제점이 굉장히 많이 보인다.
+
+1. 사전순으로 처리를 하기 위해선 R과 C, J, A가 +가 되도록 처리해줘야 한다.
+2. 같은 변수로 조건문을 처리할 때는 else if를 써야함에 주의 해야 한다.
+```java
+  int score(String survey,String[] question, int score) {
+        if(score == 4) return 0;
+        if(score > 4) score -= 4;
+        if(score < 4) score = -score;
+        if(survey.equals(question[0])) {
+        return -score;
+        }
+        else if(survey.equals(question[1])){
+        return score;
+        }
+        return 0;
+        };
+```
+
+해당 코드에서 그냥 계속해서 if문으로 처리함으로써 만약 score가 4보다 클 때 
+
+score에서 4를 빼고 그 아래 if문도 만족해짐으로 그 아래 조건문도 실행한다.
+
+다음과 같이 수정해줘야 한다.
+
+```java
+  int score(String survey,String[] question, int score) {
+    if(score == 4) return 0;
+    if(score > 4) score -= 4;
+    if(score < 4) score = -(4 - score);
+    if(survey.equals(question[0])) {
+      return -score;
+    }
+    else if(survey.equals(question[1])){
+      return score;
+    }
+    return 0;
+  };
 ```
