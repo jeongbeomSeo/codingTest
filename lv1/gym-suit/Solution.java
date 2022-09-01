@@ -1,8 +1,15 @@
+import java.lang.reflect.Array;
+import java.util.Arrays;
+
 class Solution {
   public int solution(int n, int[] lost, int[] reserve) {
     int answer = 0;
 
     int[] student = new int[n];
+
+    // 정렬부터 시켜주기
+    Arrays.sort(lost);
+    Arrays.sort(reserve);
 
     for(int index : reserve) {
       // 체육복을 여분으로 가지고 사람 -> 1
