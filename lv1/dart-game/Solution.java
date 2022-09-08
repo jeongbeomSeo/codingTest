@@ -1,113 +1,48 @@
+import java.util.Stack;
+
 class Solution {
   public int solution(String dartResult) {
     int answer = 0;
 
-    String[] number = new String[3];
-    int[] intNum = new int[3];
+    Stack<Integer> stack = new Stack<>();
 
-    if(dartResult.indexOf('*') == -1 && dartResult.indexOf('#') == -1) {
-      if(dartResult.length() == 6) {
-        number[0] = dartResult.substring(0, 2);
-        number[1] = dartResult.substring(2, 4);
-        number[2] = dartResult.substring(4, 6);
+    for(int i = 0; i < dartResult.length(); i++) {
+      if(dartResult.charAt(i) >= '0' && dartResult.charAt(i) <= '9') {
+        int num = dartResult.charAt(i) - '0';
+        if(dartResult.charAt(i+1) == '0') {
+          num = 10;
+          i++;
+        }
+        stack.push(num);
+        continue;
+      }
+      else if(dartResult.charAt(i) > 'A') {
+        if(dartResult.charAt(i) == 'D') {
+          stack.push((int)Math.pow(stack.pop(),2));
+        }
+        else if(dartResult.charAt(i) == 'T') stack.push((int)Math.pow(stack.pop(),3));
+        continue;
       }
       else {
-        for(int i = 0; i < number.length; i++) {
-          if(dartResult.charAt(1) > '9') {
-            number[i] = dartResult.substring(0, 2);
-            dartResult = dartResult.substring(2);
-          }
-          else {
-            number[i] = dartResult.substring(0, 3);
-            dartResult = dartResult.substring(3);
-          }
-        }
-      }
-    }
-    else {
-      for (int i = 0; i < number.length; i++) {
-        if(dartResult.indexOf('*') == 2 || dartResult.indexOf('#') == 2
-        ) {
-          number[i] = dartResult.substring(0, 3);
-          if(i != 2) {
-            dartResult = dartResult.substring(3);
-          }
-          continue;
-        }
-        else if(dartResult.indexOf('*') == 3 || dartResult.indexOf('#') == 3) {
-          number[i] = dartResult.substring(0, 4);
-          if(i != 2) {
-            dartResult = dartResult.substring(4);
-          }
-          continue;
-        }
-        else if(dartResult.length() > 2) {
-          if(dartResult.charAt(2) == 'S' || dartResult.charAt(2) == 'D' || dartResult.charAt(2) == 'T') {
-            number[i] = dartResult.substring(0, 3);
-            if(i != 2) {
-              dartResult = dartResult.substring(3);
-            }
-            continue;
-          }
-        }
-        number[i] = dartResult.substring(0, 2);
-        if(i != 2) {
-          dartResult = dartResult.substring(2);
-        }
-      }
-    }
-
-    for(int i = 0; i < number.length; i++){
-      int num = 0;
-      boolean ten = false;
-      if(number[i].length() == 2) num = number[i].charAt(0) - '0';
-      else if(number[i].length() == 3) {
-        if(number[i].charAt(2) == '*' || number[i].charAt(2) == '#') {
-          num = number[i].charAt(0)  - '0';
+        if (dartResult.charAt(i) == '#') {
+          stack.push(stack.pop() * (-1));
         }
         else {
-          num = 10;
-          ten = true;
+          int pop1 = stack.pop() * 2;
+          if(!stack.empty()) stack.push(stack.pop() * 2);
+          stack.push(pop1);
         }
+        continue;
       }
-      else if(number[i].length() == 4) {
-        num = 10;
-        ten = true;
-      }
-
-      if(ten) {
-        if(number[i].charAt(2) == 'D') num *= num;
-        else if(number[i].charAt(2) == 'T') num *= num * num;
-      }
-      else {
-        if(number[i].charAt(1) == 'D') num *= num;
-        else if(number[i].charAt(1) == 'T') num *= num * num;
-      }
-
-      if(!ten && number[i].length() == 3 ) {
-        if(number[i].charAt(2) == '*') num *= 2;
-        else num *= (-1);
-        if(i != 0) {
-          if(number[i].charAt(2) == '*') intNum[i -1] *= 2;
-        }
-      }
-      else if(ten && number[i].length() == 4) {
-        if(number[i].charAt(3) == '*') num *= 2;
-        else num *= (-1);
-        if(i != 0) {
-          if(number[i].charAt(3) == '*') intNum[i -1] *= 2;
-        }
-      }
-      intNum[i] = num;
     }
 
-    answer = intNum[0] + intNum[1] + intNum[2];
+    answer = stack.pop() + stack.pop() + stack.pop();
 
     return answer;
   }
   public static void main(String[] args) {
     Solution solution = new Solution();
-    String dartResult = "0S0D10T";
+    String dartResult = "1S*2T*3S";
     System.out.println(solution.solution(dartResult));
   }
 }
