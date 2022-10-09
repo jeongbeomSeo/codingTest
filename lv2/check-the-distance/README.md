@@ -233,7 +233,8 @@ class Solution {
 
 ## 다른 사람 코드
 
-```class Solution {
+```java
+class Solution {
     static int[] dx = {-1, 0, 1, 0};
     static int[] dy = {0, 1, 0, -1};
     static boolean[][] visit;
@@ -293,3 +294,265 @@ class Solution {
   - https://www.google.com/search?q=JAVA+dfs&oq=JAVA+dfs&aqs=chrome..69i57.2819j0j1&sourceid=chrome&ie=UTF-8
 - DFS와 BFS란? 작동방식과 구현 방법 
   - https://scshim.tistory.com/241
+
+## DFS 공부한 후 코드
+
+```java
+class Solution {
+  static int[] x = {-1, 1, 1, -1};
+  static int[] y = {0, 1, -1, -1};
+  static boolean correct;
+  public int[] solution(String[][] places) {
+    int[] answer = new int[places.length];
+
+    for(int i = 0; i < places.length; i++) {
+      String[] place = places[i];
+      correct = true;
+      for(int j = 0; j < place.length; j++) {
+        boolean[][] visited = new boolean[5][5];
+        for(int z = 0; z < place[j].length(); z++) {
+          char curPos = place[j].charAt(z);
+          if(curPos == 'P') {
+            visited[j][z] = true;
+            dfs(j, z, 0, place, visited);
+          }
+        }
+      }
+      if(correct) answer[i] = 1;
+      else answer[i] = 0;
+    }
+
+    return answer;
+  }
+
+  static void dfs(int j, int z, int distance, String[] place, boolean[][] visited) {
+    if(!correct) return;
+    if(distance > 2) return;
+
+    char curPos = place[j].charAt(z);
+
+    if(distance != 0 && curPos == 'P') {
+      correct = false;
+      return;
+    }
+
+   if(distance == 0 || distance == 1 && curPos == 'O') {
+      for(int i = 0; i< 4; i++) {
+        z += x[i];
+        j += y[i];
+        if(j >=0 && j <= 4 && z >= 0 && z <= 4) {
+          if(!visited[j][z]) {
+            visited[j][z] = true;
+            distance++;
+            dfs(j, z, distance, place, visited);
+            visited[j][z] = false;
+          }
+        }
+      }
+   }
+
+  }
+  public static void main(String[] args) {
+    Solution solution = new Solution();
+    String[][] places = {{"POOPX", "OXPXP", "PXXXO", "OXXXO", "OOOPP"}, {"PXOPX", "OXOXP", "OXPOX", "OXXOP", "PXPOX"}, {"OOOXX", "XOOOX", "OOOXX", "OXOOX", "OOOOO"}, {"PXPXP", "XPXPX", "PXPXP", "XPXPX", "PXPXP"}};
+    int[] result = solution.solution(places);
+    for(int i = 0; i < result.length; i++) {
+      System.out.print(result[i] + " ");
+    }
+  }
+
+}
+```
+
+**채점 결과**
+
+정확성: 61.9
+
+합계: 61.9/100
+
+---
+
+```java
+
+...
+
+    for(int i = 0; i < places.length; i++) {
+      String[] place = places[i];
+      correct = true;
+      for(int j = 0; j < place.length; j++) {
+        boolean[][] visited = new boolean[5][5];
+        for(int z = 0; z < place[j].length(); z++) {
+          char curPos = place[j].charAt(z);
+          if(curPos == 'P') {
+            visited[j][z] = true;
+            dfs(j, z, 0, place, visited);
+            visited[j][z] = false;
+          }
+        }
+      }
+      if(correct) answer[i] = 1;
+      else answer[i] = 0;
+    }
+    
+...
+```
+
+**채점 결과**
+
+정확성: 76.3
+
+합계: 76.3/100
+
+---
+
+**최종 코드**
+
+```java
+class Solution {
+  static int[] x = {-1, 1, 1, -1};
+  static int[] y = {0, 1, -1, -1};
+  static boolean correct;
+  public int[] solution(String[][] places) {
+    int[] answer = new int[places.length];
+
+    for(int i = 0; i < places.length; i++) {
+      String[] place = places[i];
+      correct = true;
+      for(int j = 0; j < place.length; j++) {
+        boolean[][] visited = new boolean[5][5];
+        for(int z = 0; z < place[j].length(); z++) {
+          char curPos = place[j].charAt(z);
+          if(curPos == 'P') {
+            visited[j][z] = true;
+            dfs(j, z, 0, place, visited);
+            visited[j][z] = false;
+          }
+        }
+      }
+      if(correct) answer[i] = 1;
+      else answer[i] = 0;
+    }
+
+    return answer;
+  }
+
+  static void dfs(int j, int z, int distance, String[] place, boolean[][] visited) {
+    if(!correct) return;
+    if(distance > 2) return;
+
+    char curPos = place[j].charAt(z);
+
+    if(distance != 0 && curPos == 'P') {
+      correct = false;
+      return;
+    }
+
+   if(distance == 0 || distance == 1 && curPos == 'O') {
+        for(int i = 0; i< 4; i++) {
+          z += x[i];
+          j += y[i];
+          if(j >=0 && j <= 4 && z >= 0 && z <= 4) {
+            if(!visited[j][z]) {
+              visited[j][z] = true;
+              dfs(j, z, distance + 1, place, visited);
+              visited[j][z] = false;
+            }
+          }
+        }
+   }
+  }
+  public static void main(String[] args) {
+    Solution solution = new Solution();
+    String[][] places = {{"POOOX", "XPOXO", "PXXXP", "OXXXO", "OOOOO"}, {"PXOPX", "OXOXP", "OXPOX", "OXXOP", "PXPOX"}, {"OOOXX", "XOOOX", "OOOXX", "OXOOX", "OOOOO"}, {"PXPXP", "XPXPX", "PXPXP", "XPXPX", "PXPXP"}};
+    int[] result = solution.solution(places);
+    for(int i = 0; i < result.length; i++) {
+      System.out.print(result[i] + " ");
+    }
+  }
+
+}
+```
+
+## 코드 오류 잡기
+
+```java
+  static void dfs(int j, int z, int distance, String[] place, boolean[][] visited) {
+    if(!correct) return;
+    if(distance > 2) return;
+
+    char curPos = place[j].charAt(z);
+
+    if(distance != 0 && curPos == 'P') {
+      correct = false;
+      return;
+    }
+
+   if(distance == 0 || distance == 1 && curPos == 'O') {
+      for(int i = 0; i< 4; i++) {
+        z += x[i];
+        j += y[i];
+        if(j >=0 && j <= 4 && z >= 0 && z <= 4) {
+          if(!visited[j][z]) {
+            distance++;
+            visited[j][z] = true;
+            dfs(j, z, distance, place, visited);
+            visited[j][z] = false;
+          }
+        }
+      }
+   }
+  }
+```
+
+해당 코드의 문제는 재귀함수 에서 빠져 나올때 distance의 값에 문제가 있다.
+
+먼저 Java는 Call by value라서 재귀함수를 빠져나오면 재귀함수 안에서 했던 값의 수정은 이전 상태로 돌아간다.
+
+하지만, distance가 재귀 함수 이전에 있기 때문에 
+
+```java
+        if(j >=0 && j <= 4 && z >= 0 && z <= 4) {
+          if(!visited[j][z]) {
+```
+
+해당 두 조건을 만족하고 distance++를 거치면 이후 for문에선 distance가 ++된 상태로 값이 존재한다.
+
+따라서 for문 안에 해당 코드가 필요하다.
+
+```java
+      for(int i = 0; i< 4; i++) {
+        z += x[i];
+        j += y[i];
+        if(j >=0 && j <= 4 && z >= 0 && z <= 4) {
+          if(!visited[j][z]) {
+            distance++;
+            visited[j][z] = true;
+            dfs(j, z, distance, place, visited);
+            visited[j][z] = false;
+            distance--;
+          }
+        }
+      }
+```
+
+또한 아까 말했던 재귀함수의 특성상 재귀함수를 빠져 나오면 값을 수정했던 내용이 원래 상태로 돌아가고 해당 문제의 경우 처음 4방향은 서로에게 영향을 끼칠 수 없으므로 이렇게 코드를 짜도 된다.
+
+```java
+      for(int i = 0; i< 4; i++) {
+        z += x[i];
+        j += y[i];
+        if(j >=0 && j <= 4 && z >= 0 && z <= 4) {
+          if(!visited[j][z]) {
+            distance++;
+            visited[j][z] = true;
+            dfs(j, z, distance, place, visited);
+            distance--;
+          }
+        }
+      }
+```
+
+## 신경 써야될 개념
+
+- 기존에 y축은 +방향이 위쪽이겠지만 해당 문제는 아래쪽 방향이란 것을 인지
+- 재귀 함수를 사용할 때 기존 값을 변경하지 않고 연산한 값을 넣어주고 싶을 때는 함수 안에 연산기호를 활용

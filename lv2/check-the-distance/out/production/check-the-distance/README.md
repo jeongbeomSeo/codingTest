@@ -142,5 +142,268 @@
 
 한 가지 방법은 상하 좌우로 Index크기를 4씩 더 늘려서 상하좌우 Index를 2씩 증가 시키고 X를 넣어준다음 Index 2 ~ 6 까지만 돌리는 방법이 있다.
 
+위에서 생각한 방식으로 최대한 생각을 했고, 하지만 Index크기를 늘리는 방법은 사용하지 않았다. 너무 번거로워 질 가능성이 크다고 생각을 했다.
+
+대신 P가 나오는 Index를 따로 넣어주는 ArrayList를 생성했고, P가 나오는 Index끼리 거리를 비교해줬다.
+
+이때 거리가 1이 나온다면 무조건 실패이고 거리가 2가 나온다면 3가지 경우의 수로 나눴다.
+
+1. x축 Index가 같은 경우
+2. y축 Index가 같은 경우
+3. x축과 y축 Index가 둘 다 다른 경우
+
+1번과 2번의 경우 사이에 파티션이 놓여있지 않으면 fail
+
+3번의 경우 P가 나온 두 Index들의 x index와 y index를 서로 교환하면 된다는 점을 활용했다.
+
+
 ## 필요 개념
 - 함수를 사용할 때 Array의 value값을 매개변수로 받는 법
+
+## 나의 코드
+
+```java
+import java.util.ArrayList;
+
+class Solution {
+  public int[] solution(String[][] places) {
+    int[] answer = new int[places.length];
+    for(int i = 0; i < places.length; i++) {
+      ArrayList<Integer[]> pIndex = new ArrayList<>();
+      boolean fail = false;
+      for(int j = 0; j < places[i].length; j++) {
+        for(int z = 0; z < 5; z++) {
+          if(places[i][j].charAt(z) == 'P') {
+            pIndex.add(new Integer[]{j,z});
+          }
+        }
+      }
+      for(int j = 0; j < pIndex.size() -1; j++) {
+        for(int z = j; z < pIndex.size(); z++) {
+          int x = pIndex.get(j)[0];
+          int x1 = pIndex.get(z)[0];
+          int y = pIndex.get(j)[1];
+          int y1 = pIndex.get(z)[1];
+          if(checkDistance(x, y, x1, y1) == 1) {
+            answer[i] = 0;
+            fail = true;
+            break;
+          }
+          if(checkDistance(x, y, x1, y1) == 2) {
+            if(x == x1) {
+              if(places[i][x].charAt((y+y1)/2) == 'O') {
+                answer[i] = 0;
+                fail = true;
+                break;
+              }
+            }
+            if(y == y1) {
+              if(places[i][(x + x1) / 2].charAt((y)) == 'O') {
+                answer[i] = 0;
+                fail = true;
+                break;
+              }
+            }
+            if(places[i][x1].charAt(y) == 'O' || places[i][x].charAt(y1) == 'O') {
+              answer[i] = 0;
+              fail = true;
+              break;
+            }
+          }
+        }
+        if(fail) break;
+      }
+      if(!fail) answer[i] = 1;
+    }
+    return answer;
+  }
+  int checkDistance(int x, int y, int x1, int y1) {
+    return Math.abs(x - x1) + Math.abs(y - y1);
+  }
+  public static void main(String[] args) {
+    Solution solution = new Solution();
+    String[][] input = {{"POOOP", "OXXOX", "OPXPX", "OOXOX", "POXXP"}, {"POOPX", "OXPXP", "PXXXO", "OXXXO", "OOOPP"}, {"PXOPX", "OXOXP", "OXPOX", "OXXOP", "PXPOX"}, {"OOOXX", "XOOOX", "OOOXX", "OXOOX", "OOOOO"}, {"PXPXP", "XPXPX", "PXPXP", "XPXPX", "PXPXP"}};
+    int[] array = solution.solution(input);
+    for(int i = 0 ; i < array.length; i++) {
+      System.out.print(array[i] + ", ");
+    }
+  }
+}
+```
+
+## 다른 사람 코드
+
+```class Solution {
+    static int[] dx = {-1, 0, 1, 0};
+    static int[] dy = {0, 1, 0, -1};
+    static boolean[][] visit;
+
+    static int[] answer;
+
+    public void dfs(int num, int x, int y, int count, String[] places){
+        if (count > 2) return;
+        if (count > 0 && count <= 2 && places[x].charAt(y) == 'P'){
+            //2칸 범위내에 다른 응시자가 있을 경우 거리두기 미준수로 0처리
+            answer[num] = 0;
+            return;
+        }
+        for (int i = 0; i < 4; i++) {
+            int nx = x + dx[i];
+            int ny = y + dy[i];
+            //배열 범위 밖으로 초과하는지 여부 검사, 파티션으로 분리되어 있는 경우 상관 없음.
+            if (nx >= 0 && nx < 5 && ny >= 0 && ny < 5 && places[nx].charAt(ny) != 'X') {
+                if (visit[nx][ny]) continue; //이미 방문한 곳일 경우 생략
+                visit[nx][ny] = true;
+                dfs(num, nx, ny, count + 1, places);
+                visit[nx][ny] = false;
+            }
+        }
+    }
+
+    public int[] solution(String[][] places) {
+        answer = new int[places.length];
+        for (int i = 0; i < places.length; i++) {
+            answer[i] = 1;
+        }
+
+        for (int i = 0; i < places.length; i++) {
+            visit = new boolean[5][5];
+            for (int j = 0; j < 5; j++) {
+                for (int k = 0; k < 5; k++) {
+                    if (places[i][j].charAt(k) == 'P'){
+                        visit[j][k] = true;
+                        dfs(i, j, k, 0, places[i]);
+                        visit[j][k] = false;
+                    }
+                }
+            }
+        }
+        return answer;
+    }
+}
+```
+
+다른 사람 코드를 보니 내가 DFS를 활용할 줄 모르는 것 같다.
+
+## 참고한 사이트
+
+- DFS 
+  - https://codingnojam.tistory.com/44
+- DFS, BFS
+  - https://www.google.com/search?q=JAVA+dfs&oq=JAVA+dfs&aqs=chrome..69i57.2819j0j1&sourceid=chrome&ie=UTF-8
+- DFS와 BFS란? 작동방식과 구현 방법 
+  - https://scshim.tistory.com/241
+
+## DFS 공부한 후 코드
+
+```java
+class Solution {
+  static int[] x = {-1, 1, 1, -1};
+  static int[] y = {0, 1, -1, -1};
+  static boolean correct;
+  public int[] solution(String[][] places) {
+    int[] answer = new int[places.length];
+
+    for(int i = 0; i < places.length; i++) {
+      String[] place = places[i];
+      correct = true;
+      for(int j = 0; j < place.length; j++) {
+        boolean[][] visited = new boolean[5][5];
+        for(int z = 0; z < place[j].length(); z++) {
+          char curPos = place[j].charAt(z);
+          if(curPos == 'P') {
+            visited[j][z] = true;
+            dfs(j, z, 0, place, visited);
+          }
+        }
+      }
+      if(correct) answer[i] = 1;
+      else answer[i] = 0;
+    }
+
+    return answer;
+  }
+
+  static void dfs(int j, int z, int distance, String[] place, boolean[][] visited) {
+    if(!correct) return;
+    if(distance > 2) return;
+
+    char curPos = place[j].charAt(z);
+
+    if(distance != 0 && curPos == 'P') {
+      correct = false;
+      return;
+    }
+
+   if(distance == 0 || distance == 1 && curPos == 'O') {
+      for(int i = 0; i< 4; i++) {
+        z += x[i];
+        j += y[i];
+        if(j >=0 && j <= 4 && z >= 0 && z <= 4) {
+          if(!visited[j][z]) {
+            visited[j][z] = true;
+            distance++;
+            dfs(j, z, distance, place, visited);
+            visited[j][z] = false;
+          }
+        }
+      }
+   }
+
+  }
+  public static void main(String[] args) {
+    Solution solution = new Solution();
+    String[][] places = {{"POOPX", "OXPXP", "PXXXO", "OXXXO", "OOOPP"}, {"PXOPX", "OXOXP", "OXPOX", "OXXOP", "PXPOX"}, {"OOOXX", "XOOOX", "OOOXX", "OXOOX", "OOOOO"}, {"PXPXP", "XPXPX", "PXPXP", "XPXPX", "PXPXP"}};
+    int[] result = solution.solution(places);
+    for(int i = 0; i < result.length; i++) {
+      System.out.print(result[i] + " ");
+    }
+  }
+
+}
+```
+
+**채점 결과**
+
+정확성: 61.9
+
+합계: 61.9/100
+
+---
+
+```java
+
+...
+
+    for(int i = 0; i < places.length; i++) {
+      String[] place = places[i];
+      correct = true;
+      for(int j = 0; j < place.length; j++) {
+        boolean[][] visited = new boolean[5][5];
+        for(int z = 0; z < place[j].length(); z++) {
+          char curPos = place[j].charAt(z);
+          if(curPos == 'P') {
+            visited[j][z] = true;
+            dfs(j, z, 0, place, visited);
+            visited[j][z] = false;
+          }
+        }
+      }
+      if(correct) answer[i] = 1;
+      else answer[i] = 0;
+    }
+    
+...
+```
+
+**채점 결과**
+
+정확성: 76.3
+
+합계: 76.3/100
+
+
+## 신경 써야될 개념
+
+- 기존에 y축은 +방향이 위쪽이겠지만 해당 문제는 아래쪽 방향이란 것을 인지
+- 
