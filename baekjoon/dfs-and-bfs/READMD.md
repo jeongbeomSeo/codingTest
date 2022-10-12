@@ -17,50 +17,65 @@
 #### 입력 1
 
 4 5 1
+
 1 2
+
 1 3
+
 1 4
+
 2 4
+
 3 4
 
 #### 출력 1
+
 1 2 4 3
+
 1 2 3 4
 
 #### 입력 2
 
 5 5 3
+
 5 4
+
 5 2
+
 1 2
+
 3 4
+
 3 1
 
-#### 출력 2 
+#### 출력 2
 
 3 1 2 5 4
+
 3 1 4 2 5
 
 #### 입력 3
 
 1000 1 1000
+
 999 1000
 
 #### 출력 3
 
 1000 999
+
 1000 999
 
 ## 문제 정보
 
-|시간 제한| 메모리 제한| 제출| 정답| 맞힌 사람| 정답 비율|
-|---|---|---|---|---|---|
-|2초| 128MB| 201004|	73963	|43897	|35.836%|
+| 시간 제한 | 메모리 제한 | 제출   | 정답  | 맞힌 사람 | 정답 비율 |
+| --------- | ----------- | ------ | ----- | --------- | --------- |
+| 2초       | 128MB       | 201004 | 73963 | 43897     | 35.836%   |
 
 ## 필요 개념
 
 - scanf로 받은 문자를 배열로 만드는 법
-- 백준 사이트에서 입력값 출력값 쓰는 법 
+- 백준 사이트에서 입력값 출력값 쓰는 법
 - 자바로 백준 풀 때의 팁 및 주의점
   - https://nahwasa.com/172
 - Java BufferReader and BufferWriter
@@ -69,7 +84,7 @@
 - Java Scanner
   - https://st-lab.tistory.com/92
 - 크기가 일정하지 않은 배열에 입력받는 값들을 넣어주는 법
-- 이차원 배열을 입력받은 값으로 만들어 주려고 할 때 사용할 수 있는 방법 
+- 이차원 배열을 입력받은 값으로 만들어 주려고 할 때 사용할 수 있는 방법
 - 해당 것들을 만족하기 위해서 배열안에 ArrayList를 넣어주는 방법을 채택
   - https://velog.io/@courage331/%EB%B0%B0%EC%97%B4%EC%95%88%EC%97%90-ArrayList-%EB%84%A3%EA%B8%B0
 - ArrayList Sort
@@ -149,7 +164,7 @@ lines[node1]은 null이라서 함수 add를 사용할 수 없다는 것이다.
 
 해당 페이지를 참고하자.
 
-또한 여기서 만약 ```lines[node1] == null```을 해보면 true 일까? false 일까?
+또한 여기서 만약 `lines[node1] == null`을 해보면 true 일까? false 일까?
 
 정답은 true이다.
 
@@ -277,7 +292,7 @@ public class Main {
 
 그래서 예외 처리를 해준 것인데 사실 처음 node에서 갈 곳이 없으면 아무것도 안출력하는 것이 아닌 해당 node라도 출력을 해줘야한다.
 
-즉 ```visited[num] == false``` 이것을 만족한다는 것은 곧 node에 연결된 간선이 없다는 뜻이므로 해당 node만 출력해주면 되는 것이다.
+즉 `visited[num] == false` 이것을 만족한다는 것은 곧 node에 연결된 간선이 없다는 뜻이므로 해당 node만 출력해주면 되는 것이다.
 
 **최종 코드**
 
@@ -381,6 +396,7 @@ public class Main {
 ```
 
 **두번째 최종 코드**
+
 ```java
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -509,13 +525,13 @@ public class Main {
 
     Queue<Integer> queue = new LinkedList<>();
     queue.add(node);
-    
+
     isVisited[node] = true;
-    
+
     while (!queue.isEmpty()) {
       int v = queue.poll();
       System.out.println(v + " ");
-      
+
       for(int i : lines[v]) {
         if(!isVisited[v]) {
           isVisited[v] = true;
