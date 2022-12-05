@@ -529,7 +529,7 @@ public class Main {
 }
 ```
 
-헤딩과 같이 하였지만 **메모리 초과**가 나왔다.
+**결과: MLE**
 
 해당 코드는 결국에는 Dijkstra를 실행하면서 Distance Table이 바뀔 때 마다의 모든 경로를 저장하는 방식이기 때문에 많은 메모리를 잡아 먹을 수 밖에 없다.
 
@@ -660,4 +660,216 @@ public class Main {
 
 현재 나는 graph에 간선을 넣어줄 떄 ArrayList로 해서 넣어주었고, 이것은 시작점을 Index로 활용한 코드이다. 그래서 시작점을 알 수가 없다.
 
+일단은 급하게 시작 index를 넣어서 해결하였지만 코드가 난잡해 보인다.
+
+```java
+class Node {
+  int s;
+  int idx;
+  int cost;
+
+  Node(int s, int idx, int cost) {
+    this.s = s;
+    this.idx = idx;
+    this.cost = cost;
+  }
+}
+```
+
+아래의 코드를 살펴보자.
+
+```java
+  static void checkVertex(int curNodeIdx, int end, int[] dist, ArrayList<ArrayList<Node>> graph, int distance) {
+    // DFS 사용
+    // 경로 추적할 ArrayList와 삭제할 간선을 저장해둘 Set 둘 다 이용
+
+    if(curNodeIdx == end && dist[curNodeIdx] == distance) {
+      for(int i = 0; i < path.size(); i++) {
+        shortestPath.add(path.get(i));
+      }
+    }
+
+    for(Node nxtNode : graph.get(curNodeIdx)) {
+      path.add(nxtNode);
+      checkVertex(nxtNode.idx, end, dist, graph, distance + nxtNode.cost);
+      path.remove(nxtNode);
+    }
+  }
+```
+
+해당 코드는 예제 첫번째 것을 입력했을 때 출력 5로 정확하게 나왔지만, 
+
+문제는 그래프가 순환한다고 생각했을 때 문제가 발생한다. 즉, 두번째 예제를 보면 알 수 있다.
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.Array;
+import java.util.*;
+
+class Node {
+  int s;
+  int idx;
+  int cost;
+
+  Node(int s, int idx, int cost) {
+    this.s = s;
+    this.idx = idx;
+    this.cost = cost;
+  }
+}
+
+public class Main {
+  static int INF = Integer.MAX_VALUE;
+
+  static ArrayList<Node> path;
+  static Set<Node> shortestPath;
+
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+    while (true) {
+      st = new StringTokenizer(br.readLine());
+
+      // 노드와 간선 입력 받기
+      int N = Integer.parseInt(st.nextToken());
+      int M = Integer.parseInt(st.nextToken());
+
+      if(M == 0 && N == 0) break;
+
+      // 시작점과 도착점 입력 받기
+      st = new StringTokenizer(br.readLine());
+      int start = Integer.parseInt(st.nextToken());
+      int end = Integer.parseInt(st.nextToken());
+
+      // 간선 넣어줄 그래프 생성
+      ArrayList<ArrayList<Node>> graph = new ArrayList<>();
+      for(int i = 0; i < N; i++) {
+        graph.add(new ArrayList<>());
+      }
+
+      // 간선 입력 받기
+      for(int i = 0; i < M; i++) {
+        st = new StringTokenizer(br.readLine());
+        int node1 = Integer.parseInt(st.nextToken());
+        int node2 = Integer.parseInt(st.nextToken());
+        int cost = Integer.parseInt(st.nextToken());
+
+        // 단방향 그래프
+        graph.get(node1).add(new Node(node1, node2, cost));
+      }
+
+      path = new ArrayList<>();
+      shortestPath = new LinkedHashSet<>();
+
+      int[] dist = new int[N];
+
+      Dijkstra(start, end, dist, graph, 0);
+
+      boolean[] isVisited = new boolean[N];
+      isVisited[start] = true;
+
+      checkVertex(start, end, dist, graph, 0, isVisited);
+
+      removeVertex(shortestPath, graph);
+
+      Dijkstra(start, end, dist, graph, 1);
+
+    }
+  }
+  static void Dijkstra(int start, int end, int[] dist, ArrayList<ArrayList<Node>> graph, int version) {
+    Arrays.fill(dist, INF);
+    dist[start] = 0;
+
+    PriorityQueue<Node> q = new PriorityQueue<>((o1, o2) -> Integer.compare(o1.cost, o2.cost));
+
+    q.add(new Node(start, start, 0));
+
+    while (!q.isEmpty()) {
+      Node curNode = q.poll();
+
+      if(curNode.idx == end)  {
+        if(version == 1) {
+          System.out.println(dist[curNode.idx] != INF ? dist[curNode.idx] : -1);
+        }
+        return;
+      }
+
+      if(dist[curNode.idx] < curNode.cost) continue;;
+
+      for(int i = 0; i < graph.get(curNode.idx).size(); i++) {
+        Node adjNode = graph.get(curNode.idx).get(i);
+
+        if(dist[adjNode.idx] > curNode.cost + adjNode.cost) {
+          dist[adjNode.idx] = curNode.cost + adjNode.cost;
+
+          q.add(new Node(curNode.idx, adjNode.idx, dist[adjNode.idx]));
+        }
+      }
+    }
+    if(version == 1 && dist[end] == INF) System.out.println(-1);
+    return;
+  }
+  static void checkVertex(int curNodeIdx, int end, int[] dist, ArrayList<ArrayList<Node>> graph, int distance, boolean[] isVisited) {
+    // DFS 사용
+    // 경로 추적할 ArrayList와 삭제할 간선을 저장해둘 Set 둘 다 이용
+
+
+    if(curNodeIdx == end && dist[curNodeIdx] == distance) {
+      for(int i = 0; i < path.size(); i++) {
+        shortestPath.add(path.get(i));
+      }
+    }
+
+    for(Node nxtNode : graph.get(curNodeIdx)) {
+      if(!isVisited[nxtNode.idx]) {
+        isVisited[nxtNode.idx] = true;
+        path.add(nxtNode);
+        checkVertex(nxtNode.idx, end, dist, graph, distance + nxtNode.cost, isVisited);
+        path.remove(nxtNode);
+        isVisited[nxtNode.idx] = false;
+
+      }
+    }
+  }
+  static void removeVertex(Set<Node> shortestPath, ArrayList<ArrayList<Node>> graph) {
+    Iterator<Node> node = shortestPath.iterator();
+    while (node.hasNext()) {
+      Node removeNode = node.next();
+      // 이중 ArrayList 이지만 되는지 의문
+      graph.get(removeNode.s).remove(removeNode);
+    }
+  }
+}
+```
+
+**결과: TLE**
+
+**풀이 재정리**
+
+> Dijkstra를 돌리면서 간선 graph 외에도 ArrayList<ArrayList<Node>>인 최단 경로 간선 List를 하나 더 만들어서 최단 경로도 넣어준다.
+>
+> Dijkstra의 경우 PriorityQueue를 활용하고 수정되는 경우에 curNode까지의 경로까지의 모든 간선 + curNode에서 nxtNode경로의 간선을 최단 경로 간선 List에 넣어주면 된다.
+>
+> 주의할 점은 최단 경로가 하나가 아니기 때문에, 목표 지점 까지 도달했다고 바로 함수를 종료하면 안된다.
+> 
+> 굳이 필요없는 부분을 실행시키고 싶지 않다면 Dijkstra의 특징 활용
+>
+> dist가 가장 작은 것에서 점차 높은 것을 선택하는 특징! 
+> 
+> 이렇게 할 떄 주의할 점은 최단 경로 간선 List를 넣어주는 과정에 있다.
+> 
+> 두 가지의 경우가 존재한다. 
+> 
+> 1. 아직 해당 Node까지 최단 경로 List 정보가 없어서 새롭게 넣어주는 경우: 이전 까지의 경로 + 현재 경로
+> 2. 더 짧은 경로를 발견하여 이전 경로 List를 지워주고 새로운 경로로 대체: List 초기화 후 이전까지 경로 + 현재 경로 
+>
+> 만약 노드 a -> b 로 가는 작업을 처리할 때 a노드 까지 가는 최단 경로가 여러 개 일 때 List에 넣어주면서 Queue에도 넣어줘야 할까? 또한 추가적인 작업이 필요할까? 
+> 
+> - Queue에 들어가는 것이 무엇인지 다시 생각해보자 -> new Node(idx, dist)
+> - 또한 실행 순서를 다시 생각해보자 -> dist가 낮은 것부터 
+> 
+> **즉, 굳이 Queue에 넣을 필요 없고, dist가 낮은 것들부터 전부 실행되기 때문에 dist가 같은 경우만 path에 해당 경로만 추가적으로 넣어주면 된다.**
+> > 이 때 주의할 점은, 중복 경로 처리이다.
 ## 나의 코드
