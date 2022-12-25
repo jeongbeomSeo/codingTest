@@ -1,77 +1,73 @@
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Arrays;
+import java.util.PriorityQueue;
 
+class Node {
+  int idx;
+  int cost;
+
+  Node(int idx, int cost) {
+    this.idx = idx;
+    this.cost = cost;
+  }
+}
 class Solution {
-
-  static ArrayList<Integer[]>[] nodeAndCost;
-  static boolean[] checkDistance;
+  static int INF = Integer.MAX_VALUE;
   public int solution(int N, int[][] road, int K) {
     int answer = 0;
-    checkDistance = new boolean[N + 1];
-    nodeAndCost = new ArrayList[N + 1];
-    boolean[] visited = new boolean[N + 1];
+
+    ArrayList<Node>[] graph = new ArrayList[N + 1];
+    for(int i = 0; i < N + 1 ; i++) {
+      graph[i] = new ArrayList<>();
+    }
 
     for(int i = 0; i < road.length; i++) {
-      int node1= road[i][0];
-      int node2 = road[i][1];
-      int cost = road[i][2];
-
-      if(nodeAndCost[node1] == null) nodeAndCost[node1] = new ArrayList<>();
-      if(nodeAndCost[node2] == null) nodeAndCost[node2] = new ArrayList<>();
-
-      nodeAndCost[node1].add(new Integer[]{node2, cost});
-      nodeAndCost[node2].add(new Integer[]{node1, cost});
+      int[] roadInfo = road[i];
+      // 양방향 그래프
+      graph[roadInfo[0]].add(new Node(roadInfo[1], roadInfo[2]));
+      graph[roadInfo[1]].add(new Node(roadInfo[0], roadInfo[2]));
     }
 
-    checkDistance[1] = true;
-    for(int i = 2; i < nodeAndCost.length; i++) {
-      visited[1] = true;
-      dfs(-1,1, i, K, 0, visited);
-    }
+    int[] dist = new int[N + 1];
+    Arrays.fill(dist, INF);
+    dist[1] = 0;
 
-    for(int i = 1; i < checkDistance.length; i++) {
-      if(checkDistance[i]) answer++;
-    }
+    answer = DijkStra(K, graph, dist);
 
     // [실행] 버튼을 누르면 출력 값을 볼 수 있습니다.
     System.out.println("Hello Java");
 
     return answer;
   }
-  public static void main(String[] args) {
-    Solution solution = new Solution();
-    int N = 5;
-    int[][] road = 	{{1,2,1},{2,3,3},{5,2,2},{1,4,2},{5,3,1},{5,4,2}};
-    int K = 3;
+  static int DijkStra(int K, ArrayList<Node>[] graph, int[] dist) {
+    PriorityQueue<Node> q = new PriorityQueue<>((o1, o2) -> Integer.compare(o1.cost, o2.cost));
 
-    System.out.println(solution.solution(N, road, K));
-  }
+    q.add(new Node(1, 0));
 
-  static void dfs(int curNode, int targetNode, int K, int cost, boolean[] visited) {
+    while (!q.isEmpty()) {
+      Node curNode = q.poll();
 
-    // 바로 직행 거리에 있는지 체크.
-    if(curNode == 1) {
-      for(int i = 0; i < nodeAndCost[1].size(); i++) {
-        if(targetNode == nodeAndCost[1].get(i)[0]) {
-          if(K >= nodeAndCost[1].get(i)[1]) {
-            checkDistance[targetNode] = true;
-            return;
-          }
+      if(dist[curNode.idx] < curNode.cost) continue;
+
+      for(int i = 0; i < graph[curNode.idx].size(); i++) {
+        Node adjNode = graph[curNode.idx].get(i);
+
+        if(dist[adjNode.idx] > dist[curNode.idx] + adjNode.cost) {
+          dist[adjNode.idx] = dist[curNode.idx] + adjNode.cost;
+          q.add(new Node(adjNode.idx, dist[adjNode.idx]));
         }
       }
     }
+    int canDelivery = 0;
 
-    if(checkDistance[targetNode] || cost > K) {
-      return;
+    for(int i = 1; i < dist.length; i++) {
+      if(dist[i] <= K) canDelivery++;
     }
 
-    if(curNode == targetNode) {
-      if(cost <= K)  {
-        checkDistance[targetNode] = true;
-        return;
-      }
-    }
+    return canDelivery;
+  }
+
+  public static void main(String[] args) {
+
   }
 }
