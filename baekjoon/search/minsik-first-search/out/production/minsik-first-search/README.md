@@ -52,10 +52,11 @@ DFS와 BFS는 아는가? DFS는 깊이우선탐색, BFS는 넓이우선탐색이
 
 > **고려할 점**
 >
-> 1. 그래프 즉, 간선을 삭제하는 것은 큰 의미가 없다.
-> > 그래프의 경우 노드를 저장해두는 데이터가 아닌 간선을 저장해두는 개념에 가까움.
-> 2. 방문하지 않은 노드를 먼저 따로 저장해두고 그것을 이용해서 DFS를 실행하고 되돌아 올 때 삭제하는 것은 의미가 없다.
-> > 되돌아 오는 과정에서 이미 방문한 노드가 덜 삭제되는 경우가 존재함.
+> 1. 방문한 Node와 방문하지 않은 Node의 구별
+> 2. Multiple Edge(두 Node간에)
+> 3. Self-loop Edge
+
+## 틀린 풀이
 
 **풀이 과정**
 
@@ -63,8 +64,6 @@ DFS와 BFS는 아는가? DFS는 깊이우선탐색, BFS는 넓이우선탐색이
 2. for문을 도는 과정에서 방문하지 않은 노드만 체크하는 것이 아니라 ArrayList를 하나 만들어서 매번 방문하지 않은 노드의 개수를 체크하면서 순서대로 넣어준다.
    1. 짝수 개일시에 index 0에 있는 것을 실행
    2. 홀수 개일시에 index 중간에 있는 것을 실행
-
-## 틀린 풀이
 
 ```java
 import java.io.BufferedReader;
@@ -75,6 +74,70 @@ import java.util.Collections;
 import java.util.StringTokenizer;
 
 public class Main {
+   public static void main(String[] args) throws IOException {
+      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+      StringTokenizer st = new StringTokenizer(br.readLine());
+
+      // 정점의 개수, 간선의 개수
+      int N = Integer.parseInt(st.nextToken());
+      int M = Integer.parseInt(st.nextToken());
+
+      if(N == 0) return;
+
+      ArrayList<ArrayList<Integer>> graph = new ArrayList<>();
+      for(int i = 0; i < N + 1; i++) {
+         graph.add(new ArrayList<>());
+      }
+
+      for(int i = 0; i < M; i++) {
+         st = new StringTokenizer(br.readLine());
+         int n1 = Integer.parseInt(st.nextToken());
+         int n2 = Integer.parseInt(st.nextToken());
+
+         graph.get(n1).add(n2);
+         graph.get(n2).add(n1);
+      }
+
+      for(int i = 1; i < N + 1; i++) {
+         Collections.sort(graph.get(i));
+      }
+
+      boolean[] visited = new boolean[N + 1];
+      minsik(1, graph, visited);
+   }
+   static void minsik(int node, ArrayList<ArrayList<Integer>> graph, boolean[] visited) {
+
+      visited[node] = true;
+      System.out.print(node + " ");
+
+      // 방문할 수 있는 노드가 없을 시에 break
+      while(true) {
+         ArrayList<Integer> notVisitied = new ArrayList<>();
+         for(int i = 0; i < graph.get(node).size(); i++) {
+            int adjNode = graph.get(node).get(i);
+            if(!visited[adjNode]) notVisitied.add(adjNode);
+         }
+         int len = notVisitied.size();
+         if(len == 0) break;
+         else if(len % 2 == 0 || len == 1) minsik(notVisitied.get(0), graph, visited);
+         else minsik(notVisitied.get(len / 2), graph, visited);
+      }
+   }
+}
+```
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Stack;
+import java.util.StringTokenizer;
+
+public class Main {
+  static boolean[] visited;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
@@ -93,6 +156,7 @@ public class Main {
       int n1 = Integer.parseInt(st.nextToken());
       int n2 = Integer.parseInt(st.nextToken());
 
+      // 양방향 그래프
       graph.get(n1).add(n2);
       graph.get(n2).add(n1);
     }
@@ -101,27 +165,222 @@ public class Main {
       Collections.sort(graph.get(i));
     }
 
-    boolean[] visited = new boolean[N + 1];
-    minsik(1, graph, visited);
+    visited = new boolean[N + 1];
+    minsik(1, graph);
   }
-  static void minsik(int node, ArrayList<ArrayList<Integer>> graph, boolean[] visited) {
+  static void minsik(int start, ArrayList<ArrayList<Integer>> graph) {
 
-    visited[node] = true;
-    System.out.print(node + " ");
+    Stack<Integer> stack = new Stack<>();
+    ArrayList<Integer> childNodeList = new ArrayList<>();
 
-    // 방문할 수 있는 노드가 없을 시에 break
-    while(true) {
-      ArrayList<Integer> notVisitied = new ArrayList<>();
-      for(int i = 0; i < graph.get(node).size(); i++) {
-        int adjNode = graph.get(node).get(i);
-        if(!visited[adjNode]) notVisitied.add(adjNode);
+    stack.add(start);
+    visited[start] = true;
+    System.out.print(start + " ");
+
+    while (!stack.isEmpty()) {
+      int curNode = stack.peek();
+
+      for(int i = 0; i < graph.get(curNode).size(); i++) {
+        int childNode = graph.get(curNode).get(i);
+        if (!visited[childNode]) {
+          childNodeList.add(childNode);
+        }
       }
-      int len = notVisitied.size();
-      if(len == 0) break;
-      else if(len  % 2 == 0) minsik(notVisitied.get(0), graph, visited);
-      else minsik(notVisitied.get(len / 2), graph, visited);
+      int count = childNodeList.size();
+      if(count == 0) stack.pop();
+      else if(count == 1 || count % 2 == 0)  {
+        int node = childNodeList.get(0);
+        stack.add(node);
+        visited[node] = true;
+        System.out.print(node + " ");
+      }
+      else {
+        int node = childNodeList.get(count/2);
+        stack.add(node);
+        visited[node] = true;
+        System.out.print(node + " ");
+      }
+      childNodeList.clear();
     }
   }
 }
-
 ```
+
+두 풀이 모두 **9%** 에서 틀렸다.
+
+**MLE**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Stack;
+import java.util.StringTokenizer;
+
+public class Main {
+  static boolean[] visited;
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    // 정점의 개수, 간선의 개수
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+
+    ArrayList<ArrayList<Integer>> graph = new ArrayList<>();
+    for(int i = 0; i < N + 1; i++) {
+      graph.add(new ArrayList<>());
+    }
+
+    for(int i = 0; i < M; i++) {
+      st = new StringTokenizer(br.readLine());
+      int n1 = Integer.parseInt(st.nextToken());
+      int n2 = Integer.parseInt(st.nextToken());
+
+      if(n1 == n2) continue;
+      if(graph.get(n1).stream().anyMatch(node -> node == n2)) continue;
+      // 양방향 그래프
+      graph.get(n1).add(n2);
+      graph.get(n2).add(n1);
+    }
+
+    for(int i = 1; i < N + 1; i++) {
+      Collections.sort(graph.get(i));
+    }
+
+    visited = new boolean[N + 1];
+    minsik(1, graph);
+  }
+  static void minsik(int start, ArrayList<ArrayList<Integer>> graph) {
+
+    Stack<Integer> stack = new Stack<>();
+    ArrayList<Integer> childNodeList = new ArrayList<>();
+
+    stack.add(start);
+    visited[start] = true;
+    System.out.print(start + " ");
+
+    while (!stack.isEmpty()) {
+      int curNode = stack.peek();
+
+      for(int i = 0; i < graph.get(curNode).size(); i++) {
+        int childNode = graph.get(curNode).get(i);
+        if (!visited[childNode]) {
+          childNodeList.add(childNode);
+        }
+      }
+      int count = childNodeList.size();
+      if(count == 0) stack.pop();
+      else if(count == 1 || count % 2 == 0)  {
+        int node = childNodeList.get(0);
+        stack.add(node);
+        visited[node] = true;
+        System.out.print(node + " ");
+      }
+      else {
+        int node = childNodeList.get(count/2);
+        stack.add(node);
+        visited[node] = true;
+        System.out.print(node + " ");
+      }
+      childNodeList.clear();
+    }
+  }
+}
+```
+
+**TLE**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.Array;
+import java.util.*;
+
+public class Main {
+  static boolean[] visited;
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    // 정점의 개수, 간선의 개수
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+
+    ArrayList<ArrayList<Integer>> graph = new ArrayList<>();
+    for(int i = 0; i < N + 1; i++) {
+      graph.add(new ArrayList<>());
+    }
+
+    for(int i = 0; i < M; i++) {
+      st = new StringTokenizer(br.readLine());
+      int n1 = Integer.parseInt(st.nextToken());
+      int n2 = Integer.parseInt(st.nextToken());
+
+      // Check self-loop Edge
+      if(n1 == n2) continue;
+      // Check Multiple Edge
+      boolean equal = false;
+      for (int node : graph.get(n1)) if(n2 == node) equal = true;
+      if(equal) continue;
+      // 아래 코드에서 continue의 역할은 if문 바로 밖의 for문인 for(int node: graph.get(n1))의 for문에서 수행한다.
+      // for(int node : graph.get(n1)) if(n2 == node) continue;
+      // 양방향 그래프
+      graph.get(n1).add(n2);
+      graph.get(n2).add(n1);
+    }
+
+    for(int i = 1; i < N + 1; i++) {
+      Collections.sort(graph.get(i));
+    }
+
+    visited = new boolean[N + 1];
+    minsik(1, graph);
+  }
+  static void minsik(int start, ArrayList<ArrayList<Integer>> graph) {
+
+    Stack<Integer> stack = new Stack<>();
+    ArrayList<Integer> childNodeList = new ArrayList<>();
+
+    stack.push(start);
+    visited[start] = true;
+    System.out.print(start + " ");
+
+    while (!stack.isEmpty()) {
+      int curNode = stack.peek();
+
+      for(int i = 0; i < graph.get(curNode).size(); i++) {
+        int childNode = graph.get(curNode).get(i);
+        if (!visited[childNode]) {
+          childNodeList.add(childNode);
+        }
+      }
+      int count = childNodeList.size();
+      // no have notVisited Child Node
+      if(count == 0) stack.pop();
+      // have notVisited Child Node
+      else if(count == 1 || count % 2 == 0)  {
+        int node = childNodeList.get(0);
+        stack.add(node);
+        visited[node] = true;
+        System.out.print(node + " ");
+      }
+      else {
+        int node = childNodeList.get(count/2);
+        stack.add(node);
+        visited[node] = true;
+        System.out.print(node + " ");
+      }
+      childNodeList.clear();
+    }
+  }
+}
+```
+
+## 참고한 사이트
+
+- [Java 정렬방법 Collections.sort()](https://wjheo.tistory.com/entry/Java-%EC%A0%95%EB%A0%AC%EB%B0%A9%EB%B2%95-Collectionssort)
