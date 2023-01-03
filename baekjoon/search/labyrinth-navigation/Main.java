@@ -80,7 +80,7 @@ public class Main {
     return dist[N -1][M - 1];
   }
   static boolean checkIndex(int x, int y, int M, int N, int[][] list) {
-    if(x >= 0 && x < M && y >= 0 && y > N) {
+    if(x >= 0 && x < M && y >= 0 && y < N) {
       if(list[y][x] == 1) return true;
       else return false;
     }
