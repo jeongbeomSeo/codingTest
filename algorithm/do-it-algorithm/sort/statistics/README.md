@@ -107,10 +107,6 @@ N개의 수가 주어졌을 때, 네 가지 기본 통계값을 구하는 프로
 
 **cf) (0 + 0 + (-1)) / 3 = -0.333333... 이고 이를 첫째 자리에서 반올림하면 0이다. -0으로 출력하면 안된다.**
 
-## 참고한 사이트
-
-- [[Java] 자바 소수점 n번째 자리까지 반올림하기](https://coding-factory.tistory.com/250)
-
 ## 오류 코드
 
 **Count Sort**
@@ -362,3 +358,8 @@ public class Main {
 }
 
 ```
+
+## 참고한 사이트
+
+- [[Java] 자바 소수점 n번째 자리까지 반올림하기](https://coding-factory.tistory.com/250)
+- [[Question] 8. 정수 배열에서 두 번째로 큰 값 출력하기](https://bestcoding.tistory.com/22)
