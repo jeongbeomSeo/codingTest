@@ -41,7 +41,7 @@ public class Main {
         // 중앙 값 표시 시작
         if(i == K - 1) {
           Arrays.sort(sortTemp);
-          sum += sortTemp[(K - 1)/ 2];
+          sum += sortTemp[(K -1)/ 2];
         }
       }
 
@@ -62,7 +62,7 @@ public class Main {
 
         else frontSort(temp, sortTemp, idx, K);
         // 새로운 중앙 값 합 처리
-        sum += sortTemp[K / 2];
+        sum += sortTemp[(K - 1)/ 2];
       }
 
     }

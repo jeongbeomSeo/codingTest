@@ -217,7 +217,27 @@ public class Main {
 
 ```
 
+**반례**
 
+```
+4 2
+4
+3
+2
+1
+```
+
+**출력**
+
+```
+8
+```
+
+**정답**
+
+```
+9
+```
 ## 참고한 사이트
 
 - [글자 수 byte제한이 65536인 이유 : 네이버 블로그](https://m.blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=kmh03214&logNo=221481511037)
