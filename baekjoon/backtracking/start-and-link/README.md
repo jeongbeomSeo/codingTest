@@ -179,14 +179,14 @@ public class Main {
     for(int i = 2; i < N + 1; i++) {
       if(!flag[i]) {
         team1[ptr] = i;
-        flag[i] = true;
         if(ptr == (N / 2) - 1) {
           compareStatus();
         }
         else {
-          teamUp(ptr + 1);
+           flag[i] = true;
+           teamUp(ptr + 1);
+           flag[i] = false;
         }
-        flag[i] = false;
       }
     }
   }
