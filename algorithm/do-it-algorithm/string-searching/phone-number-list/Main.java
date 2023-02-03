@@ -3,7 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 class Node {
-  private static Node root;
+  private Node root;
   private Node[] childNode;
   private int childNum;
   private boolean isTerminal;
@@ -47,8 +47,8 @@ public class Main {
 
     /*
       for(int i = 0; i < N; i++) {
-        이와 같이 하면 중간에 return false가 나와서 break가 걸려버리면 백준에서 입력해둔 예제가 문제가 된다.
-        심지어 해당 문제는 Test Case가 있는 문제라서 오류가 나올 가능성이 크다.
+        이와 같이 하면 입력 중간에 break가 걸려버리면 백준에서 입력해둔 예제가 문제가 될 수 있다.
+        심지어 해당 문제는 Test Case가 있는 문제라서 오류가 나올 가능성이 있다. => 실제로 실행 결과 오류 나옴
         if(!node.insertAndCheck(br.readLine())) {
           consistency = false;
           break;
@@ -56,12 +56,12 @@ public class Main {
         numbers[i] = br.readLine();
       }
     */
+
       for(int i = 0; i < N; i++) {
         if(!node.insertAndCheck(br.readLine())) consistency = false;
       }
       if(consistency) System.out.println("YES");
       else System.out.println("NO");
-
     }
   }
 }

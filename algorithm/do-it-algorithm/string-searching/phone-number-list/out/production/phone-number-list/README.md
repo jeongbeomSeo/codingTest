@@ -163,3 +163,158 @@ public class Main {
 
 이것을 해결해도 틀린 코드긴 하다. 
 
+문제는 다음과 같다.
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+class Node {
+  private static Node root;
+  private Node[] childNode;
+  private int childNum;
+  private boolean isTerminal;
+  Node() {
+    if(root == null) root = this;
+    childNode = new Node[10];
+    childNum = 0;
+    isTerminal = false;
+  }
+
+  boolean insertAndCheck(String nums) {
+    Node curNode = this.root;
+
+    for(int i = 0; i < nums.length(); i++) {
+      int num = nums.charAt(i) - '0';
+
+      if(curNode.childNode[num] == null) {
+        curNode.childNode[num] = new Node();
+        curNode.childNum++;
+      }
+
+      curNode = curNode.childNode[num];
+
+      if(curNode.isTerminal || (i == nums.length() - 1 && curNode.childNum != 0)) return false;
+    }
+    curNode.isTerminal = true;
+
+    return true;
+  }
+}
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+    int caseNum = Integer.parseInt(br.readLine());
+
+    for(int tc = 0; tc < caseNum; tc++) {
+      Node node = new Node();
+      int N = Integer.parseInt(br.readLine());
+      boolean consistency = true;
+
+    /*
+      for(int i = 0; i < N; i++) {
+        이와 같이 하면 입력 중간에 break가 걸려버리면 백준에서 입력해둔 예제가 문제가 될 수 있다.
+        심지어 해당 문제는 Test Case가 있는 문제라서 오류가 나올 가능성이 있다.
+        if(!node.insertAndCheck(br.readLine())) {
+          consistency = false;
+          break;
+        }
+        numbers[i] = br.readLine();
+      }
+    */
+
+      for(int i = 0; i < N; i++) {
+        if(!node.insertAndCheck(br.readLine())) consistency = false;
+      }
+      if(consistency) System.out.println("YES");
+      else System.out.println("NO");
+    }
+  }
+}
+
+```
+
+여기서 root 를 static으로 선언해 놓았는데, 이것을 안 썼을 때 이와 같이 했을 때 틀렸다고 나왔다.
+
+> 
+> 여기서 **기억할 점**은
+> 
+> 1. 함부로 static을 사용하지 말자.
+> 2. 여러 인스턴스 사이에서 유일한 생성자를 만들고 싶을 때 위와 같이 인스턴스 변수를 만들어 놓고 생성자를 생성할 때 null인지 아닌지를 체크해서 생성해준다.
+> 3. Test Case를 받는 문제에서 입력 받을 때 ```break```와 같은 것을 사용할 때는 주의하자.  
+> 4. **접두어** 혹은 **접미어**가 나왔을 때는 ``startsWith(), endsWith()`` 함수를 떠올려 주자.
+>   1. 다만 해당 풀이는 시간 초과가 나왔다. 
+
+## 나의 코드 
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+class Node {
+  private Node root;
+  private Node[] childNode;
+  private int childNum;
+  private boolean isTerminal;
+  Node() {
+    if(root == null) root = this;
+    childNode = new Node[10];
+    childNum = 0;
+    isTerminal = false;
+  }
+
+  boolean insertAndCheck(String nums) {
+    Node curNode = this.root;
+
+    for(int i = 0; i < nums.length(); i++) {
+      int num = nums.charAt(i) - '0';
+
+      if(curNode.childNode[num] == null) {
+        curNode.childNode[num] = new Node();
+        curNode.childNum++;
+      }
+
+      curNode = curNode.childNode[num];
+
+      if(curNode.isTerminal || (i == nums.length() - 1 && curNode.childNum != 0)) return false;
+    }
+    curNode.isTerminal = true;
+
+    return true;
+  }
+}
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+    int caseNum = Integer.parseInt(br.readLine());
+
+    for(int tc = 0; tc < caseNum; tc++) {
+      Node node = new Node();
+      int N = Integer.parseInt(br.readLine());
+      boolean consistency = true;
+
+    /*
+      for(int i = 0; i < N; i++) {
+        이와 같이 하면 입력 중간에 break가 걸려버리면 백준에서 입력해둔 예제가 문제가 될 수 있다.
+        심지어 해당 문제는 Test Case가 있는 문제라서 오류가 나올 가능성이 있다. => 실제로 실행 결과 오류 나옴
+        if(!node.insertAndCheck(br.readLine())) {
+          consistency = false;
+          break;
+        }
+        numbers[i] = br.readLine();
+      }
+    */
+
+      for(int i = 0; i < N; i++) {
+        if(!node.insertAndCheck(br.readLine())) consistency = false;
+      }
+      if(consistency) System.out.println("YES");
+      else System.out.println("NO");
+    }
+  }
+}
+```
