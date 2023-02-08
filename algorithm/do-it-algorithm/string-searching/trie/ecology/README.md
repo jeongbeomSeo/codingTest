@@ -81,8 +81,8 @@ Yellow Birch 3.4483
 ```
 
 ## 나의 코드
-```
-ㅈimport java.io.BufferedReader;
+```java
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Map;
