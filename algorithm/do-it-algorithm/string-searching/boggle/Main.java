@@ -31,9 +31,11 @@ public class Main {
 
   static int calcScore(int txtLen) {
     switch (txtLen) {
-      case 1, 2:
+      case 1:
+      case 2:
         return 0;
-      case 3, 4:
+      case 3:
+      case 4:
         return 1;
       case 5:
         return 2;
