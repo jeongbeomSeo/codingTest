@@ -2,55 +2,54 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class Main {
-  static long[] calcHash(ArrayList<Integer> pat, int K) {
-    long fowardHash = 0;
-    long reverseHash = 0;
-    long power = 1;
-
-    for(int i = 0; i < K; i++) {
-      fowardHash += pat.get(i) * power;
-      reverseHash += pat.get(K - 1 - i) * power;
-      if(i != K -1) {
-        power *= 2;
-      }
-    }
-    return new long[]{fowardHash, reverseHash, power};
-  }
-
-  static long[] nextHash(ArrayList<Integer> pat, int pt, long[] txtHash, int K) {
-    long power = txtHash[2];
-    txtHash[0] = (txtHash[0] - pat.get(pt - 1)) / 2 + pat.get(K - 1 + pt) * power;
-    txtHash[1] = 2 * (txtHash[1] - pat.get(pt - 1) * power) + pat.get(K - 1 + pt);
-
-    return txtHash;
-  }
-
-  static boolean rkMatch(ArrayList txt, ArrayList pat, int pt, long[] mainHash, int K) {
-    long[] txtHash = new long[3];
+  static boolean KMP(ArrayList<Integer> txt, int[] pat, int reverse) {
     int txtLen = txt.size();
+    int patLen = pat.length;  // patLen == K
 
-    txtHash = calcHash(txt, K);
-    for(int i = 0; i <= txtLen - K; i++) {
-      if(txtHash[0] == mainHash[0] || txtHash[0] == mainHash[1]) {
-        boolean check = true;
-        for(int j = 0; j < K; j++) {
-          if(pat.get(pt + j) != txt.get(i + j)) {
-            check = false;
-            break;
-          }
-        }
-        if(check) return true;
-      }
-      if(i != txtLen - K) {
-        txtHash = nextHash(txt, i + 1, txtHash, K);
-      }
+    int[] skip = new int[patLen + 1];
+    int pt = 1; int pp = 0;
+    while (pt < patLen) {
+      if(pat[pt] == pat[pp])
+        skip[++pt] = ++pp;
+      else if(pp == 0)
+        skip[++pt] = pp;
+      else
+        pp = skip[pp];
     }
 
+    pt = pp = 0;
+    while (pt < txtLen & pp < patLen) {
+      if(txt.get(pt) == pat[pp]) {
+        ++pt;
+        ++pp;
+      }
+      else if(pp == 0)
+        ++pt;
+      else
+        pp = skip[pp];
+    }
 
+    if (pp == patLen) return true;
+    else if(reverse == 0){
+      int[] reversePat = new int[patLen];
+      for(int i = 0; i < patLen; i++) {
+        reversePat[i] = pat[patLen - 1 - i];
+      }
+      return KMP(txt, reversePat, 1);
+    }
     return false;
+  }
+
+  static int[] listToArray(ArrayList<Integer> program, int start, int K) {
+    int[] pat = new int[K];
+    for(int i = 0; i < K; i++) {
+      pat[i] = program.get(i + start);
+    }
+    return pat;
   }
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -60,33 +59,31 @@ public class Main {
     int K = Integer.parseInt(st.nextToken());
 
     ArrayList<Integer>[] programs = new ArrayList[N];
-    for(int p = 0; p < N; p++) {
-      int M = Integer.parseInt(br.readLine());
 
-      programs[p] = new ArrayList<>();
+    for(int i = 0; i < N; i++) {
+      programs[i] = new ArrayList<>();
+      int size = Integer.parseInt(br.readLine());
       st = new StringTokenizer(br.readLine());
-      for(int i = 0 ; i < M; i++) {
-        int num = Integer.parseInt(st.nextToken());
-        programs[p].add(num);
+      for(int j = 0; j < size; j++) {
+        programs[i].add(Integer.parseInt(st.nextToken()));
       }
     }
 
     boolean success = false;
+    for(int pt = 0; pt <= programs[0].size() - K; pt++) {
+      int[] pat = listToArray(programs[0], pt, K);
 
-    int program1Length = programs[0].size();
-    long[] mainHash = calcHash(programs[0], K);
-    for(int pt = 0; pt <= program1Length - K; pt++) {
-      if(pt != 0) mainHash = nextHash(programs[0], pt, mainHash, K);
       int i;
       for(i = 1; i < N; i++) {
-        if(!rkMatch(programs[i], programs[0], pt, mainHash, K)) break;
+        if(!KMP(programs[i], pat, 0)) break;
       }
+
       if(i == N) {
         success = true;
         break;
       }
     }
-    if(success) System.out.println("YES");
+    if (success) System.out.println("YES");
     else System.out.println("NO");
   }
 }

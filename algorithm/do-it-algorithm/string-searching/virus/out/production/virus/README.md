@@ -45,23 +45,109 @@
 YES
 ```
 
-## 오류 코드 
+## 코드
+
+**WA**
 
 ```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.StringTokenizer;
+
+public class Main {
+  static long[] calcHash(ArrayList<Integer> pat, int K) {
+    long fowardHash = 0;
+    long reverseHash = 0;
+    long power = 1;
+
+    for(int i = 0; i < K; i++) {
+      fowardHash += pat.get(i) * power;
+      reverseHash += pat.get(K - 1 - i) * power;
+      if(i != K -1) {
+        power *= 2;
+      }
+    }
+    return new long[]{fowardHash, reverseHash, power};
+  }
+
   static long[] nextHash(ArrayList<Integer> pat, int pt, long[] txtHash, int K) {
     long power = txtHash[2];
-    // 정방향으로 자리 값이 커지는 형태 
     txtHash[0] = (txtHash[0] - pat.get(pt - 1)) / 2 + pat.get(K - 1 + pt) * power;
-    // 역방향으로 자리 값이 커지는 형태
     txtHash[1] = 2 * (txtHash[1] - pat.get(pt - 1) * power) + pat.get(K - 1 + pt);
 
     return txtHash;
   }
+
+  static boolean rkMatch(ArrayList txt, ArrayList pat, int pt, long[] mainHash, int K) {
+    long[] txtHash = new long[3];
+    int txtLen = txt.size();
+
+    txtHash = calcHash(txt, K);
+    for(int i = 0; i <= txtLen - K; i++) {
+      if(txtHash[0] == mainHash[0] || txtHash[0] == mainHash[1]) {
+        boolean check = true;
+        for(int j = 0; j < K; j++) {
+          if(pat.get(pt + j) != txt.get(i + j) && pat.get(pt + j) != txt.get(i + K - 1 - j)) {
+            check = false;
+            break;
+          }
+        }
+        if(check) return true;
+      }
+      if(i != txtLen - K) {
+        txtHash = nextHash(txt, i + 1, txtHash, K);
+      }
+    }
+
+
+    return false;
+  }
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    int N = Integer.parseInt(st.nextToken());
+    int K = Integer.parseInt(st.nextToken());
+
+    ArrayList<Integer>[] programs = new ArrayList[N];
+    for(int p = 0; p < N; p++) {
+      int M = Integer.parseInt(br.readLine());
+
+      programs[p] = new ArrayList<>();
+      st = new StringTokenizer(br.readLine());
+      for(int i = 0 ; i < M; i++) {
+        int num = Integer.parseInt(st.nextToken());
+        programs[p].add(num);
+      }
+    }
+
+    boolean success = false;
+
+    int program1Length = programs[0].size();
+    long[] mainHash = calcHash(programs[0], K);
+    for(int pt = 0; pt <= program1Length - K; pt++) {
+      if(pt != 0) mainHash = nextHash(programs[0], pt, mainHash, K);
+      int i;
+      for(i = 1; i < N; i++) {
+        if(!rkMatch(programs[i], programs[0], pt, mainHash, K)) break;
+      }
+      if(i == N) {
+        success = true;
+        break;
+      }
+    }
+    if(success) System.out.println("YES");
+    else System.out.println("NO");
+  }
+}
 ```
 
-Rabin Karp에서 정방향으로 Hash값을 구할 때 나누기 2를 해주면서 다음 index로 넘어가는데 기본적으로 txtHash는 정수형 타입이라서 나누기 2를 하면 **소수점은 버려지기 때문에 값이 달라진다.**
+사실 해당 풀이 자체의 로직은 맞다고 판단하지만, 그것이 문제가 아니다. 
 
-**현재 애매한 부분**
+라빈 카프를 사용할 때 가장 주의할 점은 범위를 벗어나는 경우이다.
 
-1. 바이러스가 반대로 기입 되었을 때 처리
-2. 
+해당 코드의 경우 K가 1,000까지 가능하기 때문에 2<sup>1000</sup>이 곱해지는 경우도 생길 수 있다는 것이다.
+
+해당 문제를 Rabin-Karp로 굳이 사용하고 싶다면 특정 범위를 설정해 두고 범위가 넘은 숫자의 경우 설쟁 해둔 숫자로 나눠 주는 형태(MOD)로 해싱 처리를 해야할 것이다.
