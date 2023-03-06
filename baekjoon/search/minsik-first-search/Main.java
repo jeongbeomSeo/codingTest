@@ -1,87 +1,66 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.Array;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.StringTokenizer;
 
 public class Main {
-  static boolean[] visited;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
 
-    // 정점의 수, 간선의 수
     int N = Integer.parseInt(st.nextToken());
     int M = Integer.parseInt(st.nextToken());
 
-    // Check Multiple Edge Using Set Collections
-    ArrayList<Set<Integer>> graph = new ArrayList<>();
-    for(int i = 0; i < N + 1; i++) {
-      graph.add(new LinkedHashSet<>());
+    ArrayList<ArrayList<Integer>> graph = new ArrayList<>();
+    for (int i = 0 ; i < N + 1; i++) {
+      graph.add(new ArrayList<>());
     }
 
-    for(int i = 0 ; i < M; i++) {
+    for(int i = 0; i < M; i++) {
       st = new StringTokenizer(br.readLine());
       int n1 = Integer.parseInt(st.nextToken());
       int n2 = Integer.parseInt(st.nextToken());
 
-      // Check Self-loop Edge
-      if(n1 == n2) continue;
-
+      if (n1 == n2) continue;
+      if (graph.get(n1).contains(n2)) continue;
       graph.get(n1).add(n2);
       graph.get(n2).add(n1);
     }
 
-    visited = new boolean[N + 1];
-    minsik(1, graph);
+    for (int i = 1; i < N + 1; i++) {
+      Collections.sort(graph.get(i));
+    }
+
+    boolean[] isVisited = new boolean[N + 1];
+
+    MinsikDfs(isVisited, graph, 1);
+
   }
-  static void minsik(int start, ArrayList<Set<Integer>> graph) {
-
-    Stack<Integer> stack = new Stack<>();
+  static void MinsikDfs(boolean[] isVisited,  ArrayList<ArrayList<Integer>> graph, int node) {
     ArrayList<Integer> notVisitedNode = new ArrayList<>();
+    isVisited[node] = true;
+    System.out.print(node + " ");
 
-    stack.add(start);
-    System.out.print(start + " ");
-    visited[start] = true;
-
-    while (!stack.isEmpty()) {
-      int curNode = stack.peek();
-
-      Iterator<Integer> itrAdjNode = graph.get(curNode).iterator();
-      while (itrAdjNode.hasNext()) {
-        int adjNode = itrAdjNode.next();
-        if(!visited[adjNode]) {
-          notVisitedNode.add(adjNode);
+    while (true) {
+      for (int i = 0; i < graph.get(node).size(); i++) {
+        int curNode = graph.get(node).get(i);
+        if (!isVisited[curNode]) {
+          notVisitedNode.add(curNode);
         }
       }
+      int size = notVisitedNode.size();
+      if (size == 0) break;
 
-      // have notVisited Child Node
-      if(!notVisitedNode.isEmpty()) {
-        int cnt = notVisitedNode.size();
-        if(cnt == 1) {
-          stack.add(notVisitedNode.get(0));
-          visited[notVisitedNode.get(0)] = true;
-          System.out.print(notVisitedNode.get(0) + " ");
-        }
-        else {
-          Collections.sort(notVisitedNode);
-          // If child Node Num is Even
-          if(cnt % 2 == 0) {
-            stack.add(notVisitedNode.get(0));
-            visited[notVisitedNode.get(0)] = true;
-            System.out.print(notVisitedNode.get(0) + " ");
-          }
-          else {
-            stack.add(notVisitedNode.get(cnt/2));
-            visited[notVisitedNode.get(cnt/2)] = true;
-            System.out.print(notVisitedNode.get(cnt/2) + " ");
-          }
-        }
+      if (size == 1) MinsikDfs(isVisited, graph, notVisitedNode.get(0));
+      else if (size % 2 == 1) {
+        int idx = size / 2;
+        MinsikDfs(isVisited, graph, notVisitedNode.get(idx));
       }
-      // no have notVisited Child Node
-      else stack.pop();
-
-      // clear notVisitedNode List
+      else {
+        MinsikDfs(isVisited, graph, notVisitedNode.get(0));
+      }
       notVisitedNode.clear();
     }
   }
