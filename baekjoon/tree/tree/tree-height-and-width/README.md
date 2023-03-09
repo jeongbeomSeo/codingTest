@@ -84,3 +84,271 @@ Node에는 노드의 번호를 넣어주는 val, 몇번째 열에 있는지 넣�
 2. 이후 순환하면서 이와 같은 방식을 전부 하면 순환이 마무리가 된다.
 
 그 이후 부턴 각 행에서의 가장 넓은 너비를 찾으면 되는데 이것은 각 레벨의 처음 인덱스 요소와 마지막 인덱스 요소 이 두개의 너비일 것이다.
+
+## 코드 
+
+**WA**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.StringTokenizer;
+
+public class Main {
+  static int col = 1;
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+    int[][] graph = new int[N + 1][2];
+    for (int i = 1 ; i <= N; i++) {
+      st = new StringTokenizer(br.readLine());
+
+      int parNode = Integer.parseInt(st.nextToken());
+      int leftNode = Integer.parseInt(st.nextToken());
+      int rightNode = Integer.parseInt(st.nextToken());
+
+      graph[parNode][0] = leftNode;
+      graph[parNode][1] = rightNode;
+    }
+
+    ArrayList<Node>[] level = new ArrayList[N + 1];
+    for (int i = 0 ; i < N + 1; i++) {
+      level[i] = new ArrayList<>();
+    }
+
+    inOrder(graph, 1, 1, level);
+
+    int i = 1;
+    int maxLevel = 0;
+    int maxWidth = 0;
+    while (!level[i].isEmpty()) {
+      int size = level[i].size();
+      if (size >= 2) {
+        int width = level[i].get(size - 1).col - level[i].get(0).col + 1;
+        if (maxWidth < width) {
+          maxLevel = i;
+          maxWidth = width;
+        }
+      }
+      i++;
+    }
+    System.out.print(maxLevel + " " + maxWidth);
+  }
+  static void inOrder(int[][] graph, int node, int row, ArrayList<Node>[] level) {
+    if(node != -1) {
+      inOrder(graph, graph[node][0], row + 1, level);
+      level[row].add(new Node(node, col++));
+      inOrder(graph, graph[node][1], row + 1, level);
+    }
+  }
+}
+
+class Node {
+  int val;
+  int col;
+
+  Node(int val, int col) {
+    this.val = val;
+    this.col = col;
+  }
+}
+
+```
+
+문제에서는 루트 노드가 1번 노드라는 것에 대한 언급이 나와 있지 않다. 따라서, **루트 노드를 구해야 합니다.**
+
+**RE(ArrayIndexOutOfBounds)**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.StringTokenizer;
+
+public class Main {
+  static int col = 1;
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+    int[] isRootNode = new int[N + 1];
+    int[][] graph = new int[N + 1][2];
+    for (int i = 1 ; i <= N; i++) {
+      st = new StringTokenizer(br.readLine());
+
+      int parNode = Integer.parseInt(st.nextToken());
+      int leftNode = Integer.parseInt(st.nextToken());
+      int rightNode = Integer.parseInt(st.nextToken());
+
+      if (leftNode != -1) isRootNode[leftNode]++;
+      if (rightNode != -1) isRootNode[rightNode]++;
+
+      graph[parNode][0] = leftNode;
+      graph[parNode][1] = rightNode;
+    }
+
+    int rootNode = 0;
+    for (int i = 1; i <= N; i++) {
+      if (isRootNode[i] == 0) {
+        rootNode = i;
+        break;
+      }
+    }
+
+    ArrayList<Node>[] level = new ArrayList[N + 1];
+    for (int i = 0 ; i < N + 1; i++) {
+      level[i] = new ArrayList<>();
+    }
+
+    inOrder(graph, rootNode, 1, level);
+
+    int i = 1;
+    int maxLevel = 0;
+    int maxWidth = 0;
+    while (!level[i].isEmpty()) {
+      int size = level[i].size();
+      if (size >= 2) {
+        int width = level[i].get(size - 1).col - level[i].get(0).col + 1;
+        if (maxWidth < width) {
+          maxLevel = i;
+          maxWidth = width;
+        }
+      }
+      i++;
+    }
+
+    System.out.print(maxLevel + " " + maxWidth);
+  }
+  static void inOrder(int[][] graph, int node, int row, ArrayList<Node>[] level) {
+    if(node != -1) {
+      inOrder(graph, graph[node][0], row + 1, level);
+      level[row].add(new Node(node, col++));
+      inOrder(graph, graph[node][1], row + 1, level);
+    }
+  }
+
+}
+
+class Node {
+  int val;
+  int col;
+
+  Node(int val, int col) {
+    this.val = val;
+    this.col = col;
+  }
+}
+
+```
+
+```java
+    while (!level[i].isEmpty()) {
+      int size = level[i].size();
+      if (size >= 2) {
+        int width = level[i].get(size - 1).col - level[i].get(0).col + 1;
+        if (maxWidth < width) {
+          maxLevel = i;
+          maxWidth = width;
+        }
+      }
+      i++;
+    }
+```
+
+해당 부분에서 오류가 나왔다. 생각해보면 while문을 사용할 때 가장 기본적으로 주의 해야하는 것이 index범위이다.
+
+또한 잘 찾아 보면 문제에서 주어진 트리의 각 레벨에 노드가 하나씩 밖에 없을 경우에 어떻게 처리해야 되는지 문제의 설명안에 적혀 있다.
+
+**AC**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.StringTokenizer;
+
+public class Main {
+  static int col = 1;
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+    int[] isRootNode = new int[N + 1];
+    int[][] graph = new int[N + 1][2];
+    for (int i = 1 ; i <= N; i++) {
+      st = new StringTokenizer(br.readLine());
+
+      int parNode = Integer.parseInt(st.nextToken());
+      int leftNode = Integer.parseInt(st.nextToken());
+      int rightNode = Integer.parseInt(st.nextToken());
+
+      if (leftNode != -1) isRootNode[leftNode]++;
+      if (rightNode != -1) isRootNode[rightNode]++;
+
+      graph[parNode][0] = leftNode;
+      graph[parNode][1] = rightNode;
+    }
+
+    int rootNode = 0;
+    for (int i = 1; i <= N; i++) {
+      if (isRootNode[i] == 0) {
+        rootNode = i;
+        break;
+      }
+    }
+
+    ArrayList<Node>[] level = new ArrayList[N + 1];
+    for (int i = 0 ; i < N + 1; i++) {
+      level[i] = new ArrayList<>();
+    }
+
+    inOrder(graph, rootNode, 1, level);
+
+    int i = 1;
+    int maxLevel = 1;
+    int maxWidth = 1;
+    while (i <= N && !level[i].isEmpty()) {
+      int size = level[i].size();
+      if (size >= 2) {
+        int width = level[i].get(size - 1).col - level[i].get(0).col + 1;
+        if (maxWidth < width) {
+          maxLevel = i;
+          maxWidth = width;
+        }
+      }
+      i++;
+    }
+
+    System.out.print(maxLevel + " " + maxWidth);
+  }
+  static void inOrder(int[][] graph, int node, int row, ArrayList<Node>[] level) {
+    if(node != -1) {
+      inOrder(graph, graph[node][0], row + 1, level);
+      level[row].add(new Node(node, col++));
+      inOrder(graph, graph[node][1], row + 1, level);
+    }
+  }
+
+}
+
+class Node {
+  int val;
+  int col;
+
+  Node(int val, int col) {
+    this.val = val;
+    this.col = col;
+  }
+}
+
+```

@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class Main {
@@ -11,6 +12,7 @@ public class Main {
     StringTokenizer st;
 
     int N = Integer.parseInt(br.readLine());
+    int[] isRootNode = new int[N + 1];
     int[][] graph = new int[N + 1][2];
     for (int i = 1 ; i <= N; i++) {
       st = new StringTokenizer(br.readLine());
@@ -19,8 +21,19 @@ public class Main {
       int leftNode = Integer.parseInt(st.nextToken());
       int rightNode = Integer.parseInt(st.nextToken());
 
+      if (leftNode != -1) isRootNode[leftNode]++;
+      if (rightNode != -1) isRootNode[rightNode]++;
+
       graph[parNode][0] = leftNode;
       graph[parNode][1] = rightNode;
+    }
+
+    int rootNode = 0;
+    for (int i = 1; i <= N; i++) {
+      if (isRootNode[i] == 0) {
+        rootNode = i;
+        break;
+      }
     }
 
     ArrayList<Node>[] level = new ArrayList[N + 1];
@@ -28,19 +41,18 @@ public class Main {
       level[i] = new ArrayList<>();
     }
 
-    inOrder(graph, 1, 1, level);
+    inOrder(graph, rootNode, 1, level);
 
     int i = 1;
-    int maxLevel = 0;
-    int maxWidth = 0;
-    while (!level[i].isEmpty()) {
+    int maxLevel = 1;
+    int maxWidth = 1;
+    while (i <= N && !level[i].isEmpty()) {
       int size = level[i].size();
       if (size >= 2) {
-        int leftCol = level[i].get(0).col;
-        int rightCol = level[i].get(size - 1).col;
-        if (maxWidth < rightCol - leftCol + 1) {
+        int width = level[i].get(size - 1).col - level[i].get(0).col + 1;
+        if (maxWidth < width) {
           maxLevel = i;
-          maxWidth = rightCol - leftCol + 1;
+          maxWidth = width;
         }
       }
       i++;
