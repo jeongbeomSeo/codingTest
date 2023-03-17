@@ -302,6 +302,132 @@ import java.io.*;
 import java.util.StringTokenizer;
 
 public class Main {
+   static int INF = Integer.MAX_VALUE;
+   static int MIN = Integer.MIN_VALUE;
+
+   public static void main(String[] args) throws IOException {
+      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+      BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
+      StringTokenizer st;
+
+      int T = Integer.parseInt(br.readLine());
+
+      while (T-- > 0) {
+         st = new StringTokenizer(br.readLine());
+
+         int N = Integer.parseInt(st.nextToken());
+         int K = Integer.parseInt(st.nextToken());
+
+         int h = (int) Math.ceil(Math.log(N) / Math.log(2));
+         int tree_size = 1 << (h + 1);
+
+         // Max, Min
+         int[][] tree = new int[tree_size][2];
+
+         initST(tree, 1, 0, N - 1);
+
+         for (int i = 0; i < K; i++) {
+            st = new StringTokenizer(br.readLine());
+
+            int Q = Integer.parseInt(st.nextToken());
+            int n1 = Integer.parseInt(st.nextToken());
+            int n2 = Integer.parseInt(st.nextToken());
+
+            if (n1 > n2) {
+               int temp = n1;
+               n1 = n2;
+               n2 = temp;
+            }
+
+            switch (Q) {
+               case 0:
+                  int val = peek(tree, 1, 0, N - 1, n1);
+                  val = update(tree, 1, 0, N - 1, n2, val);
+                  update(tree, 1, 0, N - 1, n1, val);
+                  break;
+               case 1:
+                  int[] result = query(tree, 1, 0, N - 1, n1, n2);
+                  if (result[0] == n2 && result[1] == n1) bw.write("YES\n");
+                  else bw.write("NO\n");
+                  break;
+               default:
+                  break;
+            }
+         }
+      }
+      bw.flush();
+      bw.close();
+   }
+
+   static void initST(int[][] tree, int node, int start, int end) {
+      if (start == end) {
+         tree[node][0] = tree[node][1] = start;
+      } else {
+         initST(tree, node * 2, start, (start + end) / 2);
+         initST(tree, node * 2 + 1, (start + end) / 2 + 1, end);
+
+         tree[node][0] = Math.max(tree[node * 2][0], tree[node * 2 + 1][0]);
+         tree[node][1] = Math.min(tree[node * 2][1], tree[node * 2 + 1][1]);
+      }
+   }
+
+   static int peek(int[][] tree, int node, int start, int end, int idx) {
+      if (idx < start || end < idx) {
+         return -1;
+      }
+      if (start == end) {
+         return tree[node][0];
+      }
+      int val = peek(tree, node * 2, start, (start + end) / 2, idx);
+      if (val != -1) return val;
+      val = peek(tree, node * 2 + 1, (start + end) / 2 + 1, end, idx);
+
+      return val;
+   }
+
+   static int update(int[][] tree, int node, int start, int end, int idx, int val) {
+      if (idx < start || end < idx) {
+         return -1;
+      }
+      if (start == end) {
+         int temp = tree[node][0];
+         tree[node][0] = val;
+         tree[node][1] = val;
+         return temp;
+      }
+      int lVal = update(tree, node * 2, start, (start + end) / 2, idx, val);
+      int rVal = update(tree, node * 2 + 1, (start + end) / 2 + 1, end, idx, val);
+
+      tree[node][0] = Math.max(tree[node * 2][0], tree[node * 2 + 1][0]);
+      tree[node][1] = Math.min(tree[node * 2][0], tree[node * 2 + 1][1]);
+
+      if (lVal != -1) return lVal;
+      return rVal;
+   }
+
+   static int[] query(int[][] tree, int node, int start, int end, int left, int right) {
+      if (right < start || end < left) {
+         return new int[]{MIN, INF};
+      }
+      if (left <= start && end <= right) {
+         return tree[node];
+      }
+      int[] lQuery = query(tree, node * 2, start, (start + end) / 2, left, right);
+      int[] rQuery = query(tree, node * 2 + 1, (start + end) / 2 + 1, end, left, right);
+
+      int max = Math.max(lQuery[0], rQuery[0]);
+      int min = Math.min(lQuery[1], rQuery[1]);
+
+      return new int[]{max, min};
+   }
+}
+```
+
+```java
+import java.io.*;
+import java.util.StringTokenizer;
+
+public class Main {
   static int INF = Integer.MAX_VALUE;
   static int MIN = Integer.MIN_VALUE;
 
@@ -321,6 +447,11 @@ public class Main {
       int h = (int) Math.ceil(Math.log(N) / Math.log(2));
       int tree_size = 1 << (h + 1);
 
+      int[] shelves = new int[N];
+      for (int i = 0 ; i < N; i++) {
+        shelves[i] = i;
+      }
+
       // Max, Min
       int[][] tree = new int[tree_size][2];
 
@@ -333,28 +464,23 @@ public class Main {
         int n1 = Integer.parseInt(st.nextToken());
         int n2 = Integer.parseInt(st.nextToken());
 
-        if (n1 > n2) {
-          int temp = n1;
-          n1 = n2;
-          n2 = temp;
-        }
         switch (Q) {
           case 0:
-            int val = peek(tree, 1, 0, N - 1, n1);
-            val = update(tree, 1, 0, N - 1, n2, val);
-            update(tree, 1, 0, N - 1, n1, val);
+            update(tree, 1, 0, N - 1, n2, shelves[n1]);
+            update(tree, 1, 0, N - 1, n1, shelves[n2]);
+            int temp = shelves[n1];
+            shelves[n1] = shelves[n2];
+            shelves[n2] = temp;
             break;
           case 1:
-            int[] result = query(tree, 1, 0, N - 1, n1, n2);
-            if (result[0] == n2 && result[1] == n1) bw.write("YES\n");
+           boolean result = query(tree, 1, 0, N - 1, n1, n2);
+            if (result) bw.write("YES\n");
             else bw.write("NO\n");
-            break;
-          default:
             break;
         }
       }
-      bw.flush();
     }
+    bw.flush();
     bw.close();
   }
 
@@ -370,6 +496,7 @@ public class Main {
     }
   }
 
+  /*
   static int peek(int[][] tree, int node, int start, int end, int idx) {
     if (idx < start || end < idx) {
       return -1;
@@ -383,41 +510,182 @@ public class Main {
 
     return val;
   }
+  */
 
-  static int update(int[][] tree, int node, int start, int end, int idx, int val) {
+  static void update(int[][] tree, int node, int start, int end, int idx, int val) {
     if (idx < start || end < idx) {
-      return -1;
+      return;
     }
     if (start == end) {
-      int temp = tree[node][0];
       tree[node][0] = val;
       tree[node][1] = val;
-      return temp;
+      return;
     }
-    int lVal = update(tree, node * 2, start, (start + end) / 2, idx, val);
-    int rVal = update(tree, node * 2 + 1, (start + end) / 2 + 1, end, idx, val);
+
+    update(tree, node * 2, start, (start + end) / 2, idx, val);
+    update(tree, node * 2 + 1, (start + end) / 2 + 1, end, idx, val);
 
     tree[node][0] = Math.max(tree[node * 2][0], tree[node * 2 + 1][0]);
     tree[node][1] = Math.min(tree[node * 2][0], tree[node * 2 + 1][1]);
-
-    if (lVal != -1) return lVal;
-    return rVal;
   }
 
-  static int[] query(int[][] tree, int node, int start, int end, int left, int right) {
+  static boolean query(int[][] tree, int node, int start, int end, int left, int right) {
     if (right < start || end < left) {
-      return new int[]{MIN, INF};
+      return true;
     }
     if (left <= start && end <= right) {
-      return tree[node];
+      return left <= tree[node][1] && tree[node][0] <= right;
     }
-    int[] lQuery = query(tree, node * 2, start, (start + end) / 2, left, right);
-    int[] rQuery = query(tree, node * 2 + 1, (start + end) / 2 + 1, end, left, right);
 
-    int max = Math.max(lQuery[0], rQuery[0]);
-    int min = Math.min(lQuery[1], rQuery[1]);
+    int mid = (start + end) / 2;
+    return query(tree, node * 2, start, mid, left, right) && query(tree, node * 2 + 1, mid + 1, end, left, right);
+  }
+}
+```
 
-    return new int[]{max, min};
+코드 실수한 것을 못봤다. 
+
+```java
+  static void update(int[][] tree, int node, int start, int end, int idx, int val) {
+    if (idx < start || end < idx) {
+      return;
+    }
+    if (start == end) {
+      tree[node][0] = val;
+      tree[node][1] = val;
+      return;
+    }
+
+    update(tree, node * 2, start, (start + end) / 2, idx, val);
+    update(tree, node * 2 + 1, (start + end) / 2 + 1, end, idx, val);
+
+    tree[node][0] = Math.max(tree[node * 2][0], tree[node * 2 + 1][0]);
+    tree[node][1] = Math.min(tree[node * 2][0], tree[node * 2 + 1][1]);
+  }
+```
+
+바로 이 부분이였다. tree[node][1]을 처리해주는 과정에서 tree[node * 2][1]이 아닌 tree[node  * 2][0]이 들어가 있다.
+
+따라서 이것때문에 틀린 것이였다.
+
+되도록이면 차라리 **Class 를 생성해서 Min, Max변수를 만들어 놓고 int[] 배열이 아닌 Class[] 로 해서 사용하는 것이 좋아보일 것 같다.**
+
+속도도 아래와 같은 방식이 더 빠르게 처리되었다. 
+
+이차원 배열 사용 -> Class 사용
+
+1612ms -> 1244ms
+
+**AC**
+
+```java
+import java.io.*;
+import java.util.StringTokenizer;
+
+public class Main {
+  static int INF = Integer.MAX_VALUE;
+  static int MIN = Integer.MIN_VALUE;
+
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
+    StringTokenizer st;
+
+    int T = Integer.parseInt(br.readLine());
+
+    while (T-- > 0) {
+      st = new StringTokenizer(br.readLine());
+
+      int N = Integer.parseInt(st.nextToken());
+      int K = Integer.parseInt(st.nextToken());
+
+      int h = (int)Math.ceil(Math.log(N) / Math.log(2));
+      int tree_size = 1 << (h + 1);
+
+      int[] shelves = new int[N];
+      for (int i = 0 ; i < N; i++) {
+        shelves[i] = i;
+      }
+
+      Node[] tree = new Node[tree_size];
+
+      initST(tree, 1, 0, N - 1);
+
+      for (int i = 0; i < K; i++) {
+        st = new StringTokenizer(br.readLine());
+
+        int Q = Integer.parseInt(st.nextToken());
+        int n1 = Integer.parseInt(st.nextToken());
+        int n2 = Integer.parseInt(st.nextToken());
+
+        switch (Q) {
+          case 0:
+            update(tree, 1, 0, N - 1, n2, shelves[n1]);
+            update(tree, 1, 0, N - 1, n1, shelves[n2]);
+            int temp = shelves[n1];
+            shelves[n1] = shelves[n2];
+            shelves[n2] = temp;
+            break;
+          case 1:
+            boolean result = query(tree, 1, 0, N - 1, n1, n2);
+            if (result) bw.write("YES\n");
+            else bw.write("NO\n");
+            break;
+        }
+      }
+    }
+    bw.flush();
+    bw.close();
+  }
+
+  static void initST(Node[] tree, int node, int start, int end) {
+    if (start == end) {
+      tree[node] = new Node(start, end);
+    } else {
+      initST(tree, node * 2, start, (start + end) / 2);
+      initST(tree, node * 2 + 1, (start + end) / 2 + 1, end);
+
+      tree[node] = new Node(Math.min(tree[node * 2].min, tree[node * 2 + 1].min),
+              Math.max(tree[node * 2].max, tree[node * 2 + 1].max));
+    }
+  }
+
+  static void update(Node[] tree, int node, int start, int end, int idx, int val) {
+    if (idx < start || end < idx) {
+      return;
+    }
+    if (start == end) {
+      tree[node].min = tree[node].max = val;
+      return;
+    }
+
+    update(tree, node * 2, start, (start + end) / 2, idx, val);
+    update(tree, node * 2 + 1, (start + end) / 2 + 1, end, idx, val);
+
+    tree[node].min = Math.min(tree[node * 2].min, tree[node * 2 + 1].min);
+    tree[node].max = Math.max(tree[node * 2].max, tree[node * 2 + 1].max);
+  }
+
+  static boolean query(Node[] tree, int node, int start, int end, int left, int right) {
+    if (right < start || end < left) {
+      return true;
+    }
+    if (left <= start && end <= right) {
+      return left <= tree[node].min && tree[node].max <= right;
+    }
+
+    int mid = (start + end) / 2;
+    return query(tree, node * 2, start, mid, left, right) && query(tree, node * 2 + 1, mid + 1, end, left, right);
+  }
+}
+
+class Node {
+  int max;
+  int min;
+
+  Node(int max, int min) {
+    this.max = max;
+    this.min = min;
   }
 }
 ```
