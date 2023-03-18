@@ -1,6 +1,4 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
@@ -8,6 +6,7 @@ public class Main {
   static int INF = Integer.MAX_VALUE;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
     StringTokenizer st;
 
     int N = Integer.parseInt(br.readLine());
@@ -39,7 +38,6 @@ public class Main {
     int size = leafNode.size();
     int h = (int)Math.ceil(Math.log(size) / Math.log(2));
     int tree_size = 1 << (h + 1);
-
     // Initialize Segment Tree
     Integer[][] tree = new Integer[tree_size][2];
 
@@ -65,7 +63,7 @@ public class Main {
       int n2 = Integer.parseInt(st.nextToken());
 
       if (n1 == n2)  {
-        System.out.println(n1);
+        bw.write(n1+"\n");
         continue;
       }
 
@@ -78,8 +76,10 @@ public class Main {
         orderN2 = temp;
       }
       Integer[] lcaNode = query(tree, 1, 0 , size - 1, orderN1, orderN2);
-      System.out.println(lcaNode[1]);
+      bw.write(lcaNode[1]+"\n");
     }
+    bw.flush();
+    bw.close();
   }
 
   static void DFS(ArrayList<ArrayList<Integer>> graph, boolean[] isVisited, int[] level, int node, int curLevel, ArrayList<Integer[]> leafNode) {
