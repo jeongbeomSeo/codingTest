@@ -53,3 +53,71 @@
 4
 16
 ```
+
+## 풀이 
+
+결국, 해당 풀이도 다른 분의 풀이를 보고 참고해버리고 말았다.
+
+그래서 정리라도 해보자.
+
+일단 현재 1, 10, 25, 100 그 이후 부턴 100<sup>k</sup>씩 곱해지는 형태로 이루어진다.
+
+- 1에서 100을 곱하면 100
+- 10에서 100을 곱하면 1000
+- 25에서 100을 곱하면 2500
+- 100에서 100을 곱하면 10000
+
+그 다음 숫자도 똑같다.
+
+즉, 100단위 구간 별로 동전 세는 것이 같은 것이다. 
+
+- 1 ~ 100
+- 100 ~ 10000
+- 10000 ~ 1000000
+- ...
+
+그래서 화폐가 주어졌을 경우 단위 별로 다음과 같은 방식으로 처리가 되는 것이다.
+
+1. 1 원부터 100원 처리
+2. 100원부터 10000원 처리
+3. 10000원부터 1000000원 처리
+4. ...
+
+
+## 코드
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+    int T = Integer.parseInt(br.readLine());
+
+    int[] dp = new int[101];
+    dp[0] = 0;
+    coins_dp(dp);
+
+    for (int tc = 0; tc < T; tc++) {
+      long N = Long.parseLong(br.readLine());
+
+      int count = 0;
+      while (N != 0) {
+        count += dp[(int)(N % 100)];
+        N /= 100;
+      }
+      System.out.println(count);
+    }
+  }
+  static void coins_dp(int[] dp) {
+    for (int i = 1; i <= 100; i++) {
+      dp[i] = dp[i - 1] + 1;
+      if (i >= 10) dp[i] = Math.min(dp[i], dp[i - 10] + 1);
+      if (i >= 25) dp[i] = Math.min(dp[i], dp[i - 25] + 1);
+    }
+  }
+}
+```
