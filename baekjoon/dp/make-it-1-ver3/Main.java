@@ -1,50 +1,55 @@
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
 
 public class Main {
-  static int INF = Integer.MAX_VALUE;
+  static final long INF = Long.MAX_VALUE;
 
-  public static void main(String[] args) {
-    Scanner sc = new Scanner(System.in);
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    long N = Long.parseLong(br.readLine());
 
-    long N = sc.nextLong();
+    Map<Long, Long> map = new HashMap<>();
+    Queue<Long> queue = new ArrayDeque<>();
 
-    Map<Long, Integer> map = new HashMap<>();
+    map.put(N, 0L);
+    queue.offer(N);
 
-    bfs(map, N);
+    while (!queue.isEmpty()) {
+      long curNum = queue.poll();
+      long curCnt = map.get(curNum);
 
-    System.out.println(map.get((long)1));
-  }
+      if (curNum == 1) {
+        System.out.println(curCnt);
+        return;
+      }
 
-  static void bfs(Map<Long, Integer> map, long N) {
-    Queue<Long> q = new LinkedList<>();
-
-    q.add(N);
-
-    map.put(N, 0);
-
-    while (!q.isEmpty()) {
-      long curNum = q.poll();
-
-      if (curNum % 3 == 0) {
+      if (curNum % 3 == 0 && curNum / 3 >= 1) {
         long nextNum = curNum / 3;
         if (!map.containsKey(nextNum)) {
-          map.put(nextNum, map.get(curNum) + 1);
-          q.add(nextNum);
+          map.put(nextNum, curCnt + 1);
+          queue.offer(nextNum);
         }
       }
 
-      if (curNum % 2 == 0) {
+      if (curNum % 2 == 0 && curNum / 2 >= 1) {
         long nextNum = curNum / 2;
         if (!map.containsKey(nextNum)) {
-          map.put(nextNum, map.get(curNum) + 1);
-          q.add(nextNum);
+          map.put(nextNum, curCnt + 1);
+          queue.offer(nextNum);
         }
       }
 
-      long nextNum = curNum - 1;
-      if (!map.containsKey(nextNum)) {
-        map.put(nextNum, map.get(curNum) + 1);
-        q.add(nextNum);
+      if (curNum - 1 >= 1) {
+        long nextNum = curNum - 1;
+        if (!map.containsKey(nextNum)) {
+          map.put(nextNum, curCnt + 1);
+          queue.offer(nextNum);
+        }
       }
     }
   }

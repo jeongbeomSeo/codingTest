@@ -284,3 +284,74 @@ public class Main {
   }
 }
 ```
+
+다음은 GPT가 풀어줘서 통과한 코드다... 열심히하자..
+
+**AC**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
+
+public class Main {
+  static final long INF = Long.MAX_VALUE;
+
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    long N = Long.parseLong(br.readLine());
+
+    Map<Long, Long> map = new HashMap<>();
+    Queue<Long> queue = new ArrayDeque<>();
+
+    map.put(N, 0L);
+    queue.offer(N);
+
+    while (!queue.isEmpty()) {
+      long curNum = queue.poll();
+      long curCnt = map.get(curNum);
+
+      if (curNum == 1) {
+        System.out.println(curCnt);
+        return;
+      }
+
+      if (curNum % 3 == 0 && curNum / 3 >= 1) {
+        long nextNum = curNum / 3;
+        if (!map.containsKey(nextNum)) {
+          map.put(nextNum, curCnt + 1);
+          queue.offer(nextNum);
+        }
+      }
+
+      if (curNum % 2 == 0 && curNum / 2 >= 1) {
+        long nextNum = curNum / 2;
+        if (!map.containsKey(nextNum)) {
+          map.put(nextNum, curCnt + 1);
+          queue.offer(nextNum);
+        }
+      }
+
+      if (curNum - 1 >= 1) {
+        long nextNum = curNum - 1;
+        if (!map.containsKey(nextNum)) {
+          map.put(nextNum, curCnt + 1);
+          queue.offer(nextNum);
+        }
+      }
+    }
+  }
+}
+```
+
+이 풀이가 통과한 이유는 1을 빼는 시점을 아래에 넣어주면서 코드를 최적화 해준 것이다.
+
+예를 들어서, 100이라는 숫자가 있을 때 2로 나누어 지기 때문에 Map에 key가 50인 요소에 1이 들어갈 것이다.
+
+근데 1을 뺴는 것을 3과 2로 나누어 주는 것보다 위에 놓을 경우 1씩 빼면서 결국 50을 또 확인할 것이다. 
+
+그래서 1을 빼는 것을 아래에 배치하면서 코드를 최적화 시켜준 것이다.
