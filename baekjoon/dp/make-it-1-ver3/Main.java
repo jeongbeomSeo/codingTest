@@ -1,54 +1,48 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 
 public class Main {
-  static final long INF = Long.MAX_VALUE;
-
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
     long N = Long.parseLong(br.readLine());
 
     Map<Long, Long> map = new HashMap<>();
-    Queue<Long> queue = new ArrayDeque<>();
+    Queue<Long> q = new ArrayDeque<>();
 
+    q.offer(N);
     map.put(N, 0L);
-    queue.offer(N);
 
-    while (!queue.isEmpty()) {
-      long curNum = queue.poll();
-      long curCnt = map.get(curNum);
+    while (!q.isEmpty()) {
+      long n = q.poll();
+      long curCnt = map.get(n);
 
-      if (curNum == 1) {
+      if (n == 1) {
         System.out.println(curCnt);
-        return;
+        break;
       }
 
-      if (curNum % 3 == 0 && curNum / 3 >= 1) {
-        long nextNum = curNum / 3;
+      if (n % 3 == 0 && n / 3 >= 1) {
+        long nextNum = n / 3;
         if (!map.containsKey(nextNum)) {
           map.put(nextNum, curCnt + 1);
-          queue.offer(nextNum);
+          q.offer(nextNum);
         }
       }
-
-      if (curNum % 2 == 0 && curNum / 2 >= 1) {
-        long nextNum = curNum / 2;
+      if (n % 2 == 0 && n / 2 >= 1) {
+        long nextNum = n / 2;
         if (!map.containsKey(nextNum)) {
           map.put(nextNum, curCnt + 1);
-          queue.offer(nextNum);
+          q.offer(nextNum);
         }
       }
-
-      if (curNum - 1 >= 1) {
-        long nextNum = curNum - 1;
-        if (!map.containsKey(nextNum)) {
+      if (n - 1 >= 1) {
+        long nextNum = n - 1;
+        if (!map.containsKey(n - 1)) {
           map.put(nextNum, curCnt + 1);
-          queue.offer(nextNum);
+          q.offer(nextNum);
         }
       }
     }
