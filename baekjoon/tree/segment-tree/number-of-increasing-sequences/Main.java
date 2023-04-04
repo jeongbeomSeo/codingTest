@@ -4,6 +4,8 @@ import java.io.InputStreamReader;
 import java.util.StringTokenizer;
 
 public class Main {
+  static int MAX_SIZE = 100000;
+
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
@@ -11,24 +13,15 @@ public class Main {
     int N = Integer.parseInt(st.nextToken());
     int K = Integer.parseInt(st.nextToken());
 
-    int[] coins = new int[N];
-    for (int i = 0; i < N; i++) {
-      coins[i] = Integer.parseInt(br.readLine());
+    int[] arr = new int[N + 1];
+
+    st = new StringTokenizer(br.readLine());
+    for (int i = 1; i < N + 1; i++) {
+      arr[i] = Integer.parseInt(st.nextToken());
     }
 
-    int[] dp = new int[K + 1];
-    dp[0] = 1;
+    int h = (int)Math.ceil(Math.log(MAX_SIZE) / Math.log(2));
+    int tree_size = 1 << (h + 1);
 
-    coin_dp(dp, coins, N, K);
-
-    System.out.println(dp[K]);
-
-  }
-  static void coin_dp(int[] dp, int[] coins, int N, int K) {
-    for (int i = 0; i < N; i++) {
-      for (int j = coins[i]; j < K + 1; j++) {
-        dp[j] += dp[j - coins[i]];
-      }
-    }
   }
 }

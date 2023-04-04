@@ -11,30 +11,28 @@ public class Main {
     int T = Integer.parseInt(br.readLine());
 
     while (T-- > 0) {
-      int N = Integer.parseInt(br.readLine());
+       int N = Integer.parseInt(br.readLine());
 
-      int[] coins = new int[N];
+       st = new StringTokenizer(br.readLine());
 
-      st = new StringTokenizer(br.readLine());
-      for (int i = 0; i < N; i++) {
-        coins[i] = Integer.parseInt(st.nextToken());
-      }
-      int M = Integer.parseInt(br.readLine());
+       int[] coins = new int[N];
+       for (int i = 0; i < N; i++) {
+         coins[i] = Integer.parseInt(st.nextToken());
+       }
 
-      int[] dp = new int[M + 1];
+       int M = Integer.parseInt(br.readLine());
+       int[] memo = new int[M + 1];
+       memo[0] = 1;
 
-      dp[0] = 1;
+       dp(memo, coins, N, M);
 
-      coins_dp(dp, coins, N, M);
-
-      System.out.println(dp[M]);
-
+      System.out.println(memo[M]);
     }
   }
-  static void coins_dp(int[] dp, int[] coins, int N, int M) {
+  static void dp (int[] memo, int[] coins, int N, in`t M) {
     for (int i = 0; i < N; i++) {
       for (int j = coins[i]; j < M + 1; j++) {
-        dp[j] += dp[j- coins[i]];
+        memo[j] += memo[j - coins[i]];
       }
     }
   }
