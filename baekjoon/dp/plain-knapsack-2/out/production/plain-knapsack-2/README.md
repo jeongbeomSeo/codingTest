@@ -56,3 +56,158 @@ V는 물건의 무게, C는 물건을 가방에 넣었을 때 올라가는 민�
 ```
 7
 ```
+
+## 코드
+
+**WA**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.StringTokenizer;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+
+    // row: 물건, col: 최대 허용치 무게, value: 만족도
+    int[][] dp = new int[N + 1][M + 1];
+
+    // row: 물건, col(value): {물건의 무게, 민호의 만족도, 물건의 개수}
+    int[][] knapsack = new int[N + 1][3];
+
+    for (int i = 1 ; i < N + 1; i++) {
+      st = new StringTokenizer(br.readLine());
+      knapsack[i][0] = Integer.parseInt(st.nextToken());
+      knapsack[i][1] = Integer.parseInt(st.nextToken());
+      knapsack[i][2] = Integer.parseInt(st.nextToken());
+    }
+
+    knapsack_dp(dp, knapsack, N, M);
+
+    System.out.println(dp[N][M]);
+  }
+
+  static void knapsack_dp(int[][] dp, int[][] knapsack, int N, int M) {
+    for (int i = 1; i < N + 1; i++) {
+      int curThingWeight = knapsack[i][0];
+      int curThingHappyNum = knapsack[i][1];
+      for (int w = 1; w < M + 1; w++) {
+        if (curThingWeight > w) {
+          dp[i][w] = dp[i - 1][w];
+        }
+        else {
+          int maxUsingThingNum = w / curThingWeight;
+          if (knapsack[i][2] >= maxUsingThingNum) {
+            dp[i][w] = Math.max(Math.max(dp[i][w - curThingWeight] + curThingHappyNum, dp[i][w - 1]), dp[i - 1][w - curThingWeight] + curThingHappyNum);
+          }
+          else {
+            dp[i][w] = Math.max(dp[i][w - 1], dp[i - 1][w - curThingWeight] + curThingHappyNum);
+          }
+          dp[i][w] = Math.max(dp[i - 1][w], dp[i][w]);
+        }
+      }
+    }
+  }
+}
+```
+
+**중간에 멈춘 풀이**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.StringTokenizer;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+
+    int[][] knapsack = new int[N + 1][3];
+    int[][] dp = new int[N + 1][M + 1];
+
+    for (int i = 1; i < N + 1 ; i++) {
+      st = new StringTokenizer(br.readLine());
+
+      knapsack[i][0] = Integer.parseInt(st.nextToken());
+      knapsack[i][1] = Integer.parseInt(st.nextToken());
+      knapsack[i][2] = Integer.parseInt(st.nextToken());
+    }
+
+    knapsack_dp(knapsack, dp, N, M);
+
+    System.out.println(dp[N][M]);
+  }
+  static void knapsack_dp(int[][] knapsack, int[][] dp, int N, int M) {
+    for (int i = 1; i < N + 1; i++) {
+      int itemWeight = knapsack[i][0];
+      int itemSatisfy = knapsack[i][1];
+      int itemCount = knapsack[i][2];
+
+      for (int w = 1; w < M + 1; w++) {
+        if (itemWeight > w) {
+          dp[i][w] = dp[i - 1][w];
+        }
+        else {
+          // dp[i][w] = Math.max(dp[i - 1][w - itemWeight] + itemSatisfy * canUseItemCount, dp[i - 1][w]);
+          // dp[i][w]를 채울 떄 knapsack[i]의 물건을 사용하면(이전에도 사용했는데 갯수가 남은 상황)에는 dp[i - 1][w - itemWeight]를 더하면 안된다.)
+          // w % itemWeight를 이용해서 나머지 값을 이용
+
+          int canUseItemCount = w / itemWeight > itemCount ? itemCount : w / itemWeight;
+          int itemsTotalWeight = itemWeight * canUseItemCount;
+          int remainderWeight = w - itemsTotalWeight > 0 ? w - itemsTotalWeight : w % itemWeight; // 주의: itemWeight 대신 itemTotalWeight 사용 X
+
+          dp[i][w] = Math.max(dp[i - 1][w], dp[i - 1][remainderWeight] + itemSatisfy * canUseItemCount);
+        }
+      }
+    }
+  }
+}
+```
+
+해당 방식으로 풀다가 접근 방법이 보이기 시작한거 같다.
+
+현재 생각하는 방법은 다음과 같다.
+
+먼저 생각해야 할 것은 갯수가 하나가 아니기 때문에 이전에 대각선과 직선으로 처리하던 방식은 불가능 합니다.
+
+여기서 이 문제를 풀기 위해선 대각선과 직선의 정확한 의미를 이해하셔야 합니다.
+
+> **대각선**: i번쨰 Item을 **하나 사용**하고 **남은 나머지 하중에서의 최댓값을 더한 것**
+> **직선**: i번쨰 Item을 사용하지 않고 **오로지 i - 1에서 처리한 현재 하중에서의 최댓값을 가져온 것**
+
+핵심은 **나머지 하중**입니다. 
+
+결국 이 문제는 이 방식의 확장판이라고 보면 됩니다. 
+
+Item의 갯수가 하나가 아니기 때문에 대각선을 이용하기 위해서 Item의 갯수만큼 더 하중을 사용하기 때문에 왼쪽으로 더 갈 것이다.
+
+여기서 남은 하중을 dp[i - 1][remainder]를 구하면 dp[i][w]를 구할 수 있을 것이다.
+
+- **대각선**: dp[i - 1][remainer] + ItemSatisfy * UsingItemCount
+
+사실 이 부분은 위에서 풀이 한 것과 거의 같은 접근입니다.
+
+문제는 직선인데, 직선은 i번째 Item 사용하지 않고 그대로 i - 1번째로부터 value를 내린것이라고 말했습니다.
+
+하지만, 이것은 이전과 상황이 달라졌습니다. Item을 여러 개 사용할 수 있게 되었기에, 대각선에서도 봤다싶히 남은 하중의 할용으로 dp를 처리했습니다.
+
+직선의 경우도 동일합니다. 위에서 내려받은 값의 남은 하중을 받아서 그것을 i번째 행에서 가져와야 합니다. 
+
+- **직선**: dp[i - 1][j] + dp[i][remainder]
+
+사실, 대각선에서의 나머지 값은 구하는 과정에서 도출해 낼 수 있는데, i - 1번째에서 받은 칸에서의 나머지 값은 알 수 있을리가 없다.
+
+즉, 따로 값을 저장해둘 필요가 있다. (다행히도, 앞에서도 remainder를 구하는 작업을 요구하기 때문에 시간 복잡도는 늘어나지 않고, 공간 복잡도만 늘어남)
+
+
