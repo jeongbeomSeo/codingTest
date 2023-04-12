@@ -83,3 +83,60 @@ public class Main {
   }
 }
 ```
+
+**최적의 코드**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.StringTokenizer;
+
+public class Main {
+  static int N, S;
+  static int[] arr;
+
+  static int ans = 0;
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    N = Integer.parseInt(st.nextToken());
+    S = Integer.parseInt(st.nextToken());
+
+    arr = new int[N];
+
+    st = new StringTokenizer(br.readLine());
+    for (int i = 0; i < N; i++) {
+      arr[i] = Integer.parseInt(st.nextToken());
+    }
+
+    query(0, 0, 0);
+
+    if (S == 0) ans--;
+
+    System.out.println(ans);
+
+
+  }
+  static void query(int ptr, int sum, int size) {
+
+    if (ptr == N) {
+      if (sum == S) {
+        ans++;
+        return;
+      }
+    }
+    else  {
+      query(ptr + 1, sum + arr[ptr], size + 1);
+      query(ptr + 1, sum, size);
+    }
+  }
+}
+```
+
+재귀함수 방식의 특징에 주목하자
+
+보면 알겠지만, 어차피 **모든 경우의 수는 최종 지점인 ptr == N까지 도달 할 수 있다.**
+
+뽑고, 안뽑고를 진행해 나가면서 모든 경우의 수는 마지막 원소까지 체크를 하기 때문에 이와 같은 방식이 가능한 것이다. 
