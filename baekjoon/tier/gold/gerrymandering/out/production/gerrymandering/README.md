@@ -120,3 +120,175 @@
 ## 노트
 
 게리맨더링은 특정 후보자나 정당에 유리하게 선거구를 획정하는 것을 의미한다.
+
+## 주의 사항 
+
+입력값으로 반복문의 사이즈를 받을 때 이와 같이 사용 금지
+
+```java
+    for (int i = 1; i < N + 1; i++) {
+      st = new StringTokenizer(br.readLine());
+
+      for (int j = 0; j < Integer.parseInt(st.nextToken()); j++) {
+        int n = Integer.parseInt(st.nextToken());
+        graph.get(i).add(n);
+      }
+    }
+```
+
+이러면 2번째 반복문에서 돌아 갈 때 문제가 발생 
+
+j = 0일때 정상적으로 작동하지만 증감식을 갔다가 조건식으로 가면 조건식의 st.nextToken()이 다시 실행된다.
+
+## 코드
+
+**WA(1%)**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Queue;
+import java.util.StringTokenizer;
+
+public class Main {
+
+  static int INF = Integer.MAX_VALUE;
+  static int[] person;
+  static int min = INF;
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+
+    person = new int[N + 1];
+    int[] areaA = new int[N + 1];
+    int[] areaB = new int[N + 1];
+
+    st = new StringTokenizer(br.readLine());
+    for (int i = 1; i < N + 1; i++) {
+      person[i] = Integer.parseInt(st.nextToken());
+    }
+
+    ArrayList<ArrayList<Integer>> graph = new ArrayList<>();
+    for (int i = 0; i < N + 1; i++) {
+      graph.add(new ArrayList<>());
+    }
+
+    for (int i = 1; i < N + 1; i++) {
+      st = new StringTokenizer(br.readLine());
+
+      int size = Integer.parseInt(st.nextToken());
+      for (int j = 0; j < size; j++) {
+        graph.get(i).add(Integer.parseInt(st.nextToken()));
+      }
+    }
+
+    combination(graph, 1, N, areaA, areaB, 0, 0);
+
+    if (min == INF) System.out.println(-1);
+    else System.out.println(min);
+  }
+  static void combination(ArrayList<ArrayList<Integer>> graph, int ptr, int N, int[] areaA, int[] areaB, int sizeA, int sizeB) {
+
+    if (ptr == N + 1) {
+      if (sizeA != 0 && sizeB != 0) {
+        if (bfs(graph, areaA, sizeA, N) && bfs(graph, areaB, sizeB, N)) {
+          int sumA = 0;
+          int sumB = 0;
+          for (int i = 0; i < sizeA; i++) {
+            sumA += person[areaA[i]];
+          }
+          for (int i = 0; i < sizeB; i++) {
+            sumB += person[areaB[i]];
+          }
+          min = Math.min(min, Math.abs(sumA - sumB));
+        }
+      }
+    }
+    else {
+      areaA[sizeA] = ptr;
+      combination(graph, ptr + 1, N, areaA, areaB, sizeA + 1, sizeB);
+
+      areaB[sizeB] = ptr;
+      combination(graph, ptr + 1, N, areaA, areaB, sizeA, sizeB + 1);
+    }
+  }
+
+  static boolean bfs(ArrayList<ArrayList<Integer>> graph, int[] area, int size, int N) {
+    Queue<Integer> q = new ArrayDeque<>();
+    boolean[] isVisited = new boolean[N + 1];
+    int check = 0;
+
+    q.add(area[0]);
+    isVisited[area[0]] = true;
+    check++;
+
+    while (!q.isEmpty()) {
+      int curNode = q.poll();
+
+      for (int i = 0; i < graph.get(curNode).size(); i++) {
+        int adjNode = graph.get(curNode).get(i);
+
+        for (int j = 0; j < area.length; j++) {
+          // 방문 X + 구역에 맞는 도시인지 체크
+          if (!isVisited[adjNode] && area[j] == adjNode) {
+            q.add(adjNode);
+            isVisited[adjNode] = true;
+            check++;
+            break;
+          }
+        }
+      }
+    }
+    if (check == size) return true;
+    return false;
+  }
+}
+```
+
+**해당 풀이에서 고려하지 않은 부분**
+
+1. areaA와 areaB는 팀나누기와 마찬가지로 겹치면 중복
+
+**TIP**
+
+디버깅할거면 다음과 같이 하자.
+
+```java
+static void combination(ArrayList<ArrayList<Integer>> graph, int ptr, int N, int[] areaA, int[] areaB, int sizeA, int sizeB) {
+
+  if (ptr == N + 1) {
+    if (sizeB != 0) {
+      if (bfs(graph, areaA, sizeA, N) && bfs(graph, areaB, sizeB, N)) {
+        System.out.println("탐색 성공 case");
+        int sumA = 0;
+        int sumB = 0;
+        System.out.print("area A : ");
+        for (int i = 0; i < sizeA; i++) {
+          System.out.print(areaA[i] + " ");
+          sumA += person[areaA[i]];
+        }
+        System.out.println();
+        System.out.print("area B : ");
+        for (int i = 0; i < sizeB; i++) {
+          System.out.print(areaB[i] + " ");
+          sumB += person[areaB[i]];
+        }
+        System.out.println();
+        min = Math.min(min, Math.abs(sumA - sumB));
+      }
+    }
+  }
+  else {
+    areaA[sizeA] = ptr;
+    combination(graph, ptr + 1, N, areaA, areaB, sizeA + 1, sizeB);
+
+    areaB[sizeB] = ptr;
+    combination(graph, ptr + 1, N, areaA, areaB, sizeA, sizeB + 1);
+  }
+}
+```
