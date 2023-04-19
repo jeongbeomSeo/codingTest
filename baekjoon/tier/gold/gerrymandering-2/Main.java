@@ -6,43 +6,32 @@ import java.util.StringTokenizer;
 public class Main {
   static int[] ax = {0, -1, 0, 1};
   static int[] ay = {-1, 0, 1, 0};
-
-  static int INF = 400000;
-  static int MIN = 0;
-
+  static int INF = 40001;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st;
 
     int N = Integer.parseInt(br.readLine());
-
     int[][] A = new int[N + 1][N + 1];
-    for (int i = 1; i < N + 1; i++) {
+
+    for (int i = 1; i <= N; i++) {
       st = new StringTokenizer(br.readLine());
-      for (int j = 1; j < N + 1; j++) {
+      for (int j = 1; j <= N; j++) {
         A[i][j] = Integer.parseInt(st.nextToken());
       }
     }
 
-    System.out.println(Simulation(A, N));
+    System.out.println(simulation(A, N));
+
   }
-
-  // 시물레이션
-  /*
-   * 1. x, y, d1, d2 결정 (x가 행이고 y가 열)
-   * 2. 경계선위의 좌표들 5로 채워주고 DFS를 이용해서 경계선 밖의 구역 채워주기
-   * 3. 경계선 안의 구역 5로 채워주고 구역간의 인구수 차이 계산
-   * 4. 반복
-   */
-
-  static int Simulation(int[][] A, int N) {
-    int min_diff_population = INF;
-
+  static int simulation(int[][] A, int N) {
+    int min_diff = INF;
     for (int d1 = 1; d1 <= N; d1++) {
       for (int d2 = 1; d2 <= N; d2++) {
         for (int x = 1; x + d1 + d2 <= N; x++) {
           for (int y = d1 + 1; y + d2 <= N; y++) {
-            // 구역 초기화
+
+            // 격자 생성
             int[][] grid = new int[N + 1][N + 1];
 
             // 경계선 채우기
@@ -55,64 +44,69 @@ public class Main {
               grid[x + d1 + i][y - d1 + i] = 5;
             }
 
-            // 경계선 밖 채워주기
-            for (int i = x - 1; i >= 0; i--) grid[i][y] = 1;
-            for (int i = y + d2 + 1; i <= N; i++) grid[x + d2][i] = 2;
-            for (int i = y - d1 - 1; i >= 0; i--) grid[x + d1][i] = 3;
-            for (int i = x + d1 + d2 + 1; i <= N; i++) grid[i][y - d1 + d2] = 4;
+            // 격자 꼭지점 늘려주기
+            // 1구역, 2구역, 3구역, 4구역
+            for (int i = x - 1; i >= 1; i--)
+              grid[i][y] = 1;
+            for (int j = y + d2 + 1; j <= N; j++)
+              grid[x + d2][j] = 2;
+            for (int j = y - d1 - 1; j >= 1; j--)
+              grid[x + d1][j] = 3;
+            for (int i = x + d1 + d2 + 1; i <= N; i++)
+              grid[i][y - d1 + d2] = 4;
 
+
+            // 5를 제외한 나머지 구역 채우기
             boolean[][] isVisited = new boolean[N + 1][N + 1];
-
             // 1구역
             dfs(grid, isVisited, N, x, y - 1, 1);
             // 2구역
-            dfs(grid,isVisited, N, x, y + 1, 2);
+            dfs(grid, isVisited, N, x, y + 1, 2);
             // 3구역
-            dfs(grid, isVisited, N, x + d1 + d2, y - d1 + d2 - 1, 3);
+            dfs(grid, isVisited, N, x + d1 + d2, y - d1 + d2  - 1, 3);
             // 4구역
             dfs(grid, isVisited, N, x + d1 + d2, y - d1 + d2 + 1, 4);
 
-            // 경계 선안의 5구역 채워주기
             for (int i = 1; i <= N; i++) {
               for (int j = 1; j <= N; j++) {
                 if (grid[i][j] == 0) grid[i][j] = 5;
               }
             }
 
-            // 크기가 N + 1이 아니다. 무작정 크기를 설정하지 말자.
             int[] areaSum = new int[6];
 
-            for (int i = 1; i <= N; i++) {
+            for (int i = 1; i <= N ; i++) {
               for (int j = 1; j <= N; j++) {
-                areaSum[grid[i][j]] += A[i][j];
+                int areaNum = grid[i][j];
+                areaSum[areaNum] += A[i][j];
               }
             }
 
-            int max = MIN;
+            int max = 0;
             int min = INF;
 
-            // 영역이 몇 개인지 주의!
             for (int i = 1; i <= 5; i++) {
               max = Math.max(areaSum[i], max);
               min = Math.min(areaSum[i], min);
             }
 
-            min_diff_population = Math.min(min_diff_population, Math.abs(max - min));
+            min_diff = Math.min(max - min, min_diff);
           }
         }
       }
     }
-    return min_diff_population;
+    return min_diff;
   }
 
   static void dfs(int[][] grid, boolean[][] isVisited, int N, int x, int y, int num) {
 
-    grid[x][y] = num;
     isVisited[x][y] = true;
+    grid[x][y] = num;
 
     for (int i = 0; i < 4; i++) {
       int nextX = x + ax[i];
       int nextY = y + ay[i];
+
       if (isValidIdx(nextX, nextY, N) && grid[nextX][nextY] == 0 && !isVisited[nextX][nextY]) {
         dfs(grid, isVisited, N, nextX, nextY, num);
       }
