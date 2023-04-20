@@ -189,3 +189,165 @@ public class Main {
   }
 }
 ```
+
+해당 코드도 52가 나온다.
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.StringTokenizer;
+
+public class Main {
+  static int[] ar = {0, -1, 0, 1};
+  static int[] ac = {-1, 0, 1, 0};
+
+  static int count = 0;
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+
+    st = new StringTokenizer(br.readLine());
+    int row = Integer.parseInt(st.nextToken());
+    int col = Integer.parseInt(st.nextToken());
+    int direction = Integer.parseInt(st.nextToken());
+
+    int[][] grid = new int[N][M];
+    for (int i = 0; i < N; i++) {
+      st = new StringTokenizer(br.readLine());
+      for (int j = 0; j < M; j++) {
+        grid[i][j] = Integer.parseInt(st.nextToken());
+      }
+    }
+
+    dfs(grid, row, col, direction);
+    System.out.println(count);
+  }
+  static void dfs(int[][] grid, int row, int col, int direction) {
+
+    if (grid[row][col] == 0) {
+      grid[row][col] = -1;
+      count++;
+    }
+
+    // 방향 기준으로 청소가 안되어 있는 방은 1, 되어 있거나 벽이면 0
+    int[] check = new int[4];
+    check[0] = grid[row - 1][col] == 0 ? 1 : 0;
+    check[1] = grid[row][col + 1] == 0 ? 1 : 0;
+    check[2] = grid[row + 1][col] == 0 ? 1 : 0;
+    check[3] = grid[row][col - 1] == 0 ? 1 : 0;
+
+    int find = findNeedCleaningRoom(direction, check);
+    if (find != -1) {
+      switch (find) {
+        case 0 -> dfs(grid, row - 1, col,find);
+        case 1 -> dfs(grid, row, col + 1, find);
+        case 2 -> dfs(grid, row + 1, col, find);
+        case 3 -> dfs(grid, row, col - 1, find);
+      }
+    }
+    else {
+      int back = (direction + 2) % 4;
+      if (check[back] == 0) return;
+      else {
+        switch (back) {
+          case 0 -> dfs(grid, row - 1, col, direction);
+          case 1 -> dfs(grid, row, col + 1, direction);
+          case 2 -> dfs(grid, row + 1, col, direction);
+          case 3 -> dfs(grid, row, col - 1, direction);
+        }
+      }
+    }
+  }
+
+  // 만약 방이 없다면 -1 출력
+  // 방이 있다면 현재 방향 기준으로 반시계 방향으로 가까운 방이 있는 방향 출력
+  static int findNeedCleaningRoom(int direction, int[] check) {
+
+    for (int i = 0; i < 4; i++) {
+      if(check[direction] == 1) return direction;
+
+      if (direction != 0) direction--;
+      else direction = 3;
+    }
+    return -1;
+  }
+```
+
+일단 해당 로직에서 문제점을 찾았습니다. 문제에서 주어진 것은 주변 4칸 중에서 청소 되지 않는 방이 없다면, 바라보는 방향은 그대로 후진합니다.
+
+만약 주변 4칸 중에 빈 칸이 있다면 현재 바라보고 있는 방향부터 탐색을 하는 것이 아니라, 반시계 방향 90도로 돌고 나서부터 탐색을 시작합니다.
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.StringTokenizer;
+
+public class Main {
+
+  // 북, 동, 남, 서
+  static int[] dr = {-1, 0, 1, 0};
+  static int[] dc = {0, 1, 0, -1};
+  static int[] reverse = {2, 3, 0, 1};
+  static int count = 0 ;
+
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+    int[][] grid = new int[N][M];
+
+    st = new StringTokenizer(br.readLine());
+    int row = Integer.parseInt(st.nextToken());
+    int col = Integer.parseInt(st.nextToken());
+    int direction = Integer.parseInt(st.nextToken());
+
+    for (int i = 0; i < N; i++) {
+      st = new StringTokenizer(br.readLine());
+      for (int j = 0; j < M ; j++) {
+        grid[i][j] = Integer.parseInt(st.nextToken());
+      }
+    }
+    dfs(grid, row, col, direction);
+
+    System.out.println(count);
+  }
+  static void dfs(int[][] grid, int row, int col, int direction) {
+
+    if (grid[row][col] == 0) {
+      grid[row][col] = -1;
+      count++;
+    }
+
+    boolean flag = false;
+
+    for (int i = 0 ; i < 4; i++) {
+      int nd = (direction + 3 - i) % 4;
+      int nr = row + dr[nd];
+      int nc = col + dc[nd];
+
+      if (grid[nr][nc] == 0) {
+        flag = true;
+        dfs(grid, nr, nc, nd);
+        break;
+      }
+    }
+    if (!flag) {
+      int back = reverse[direction];
+      int nr = row + dr[back];
+      int nc = col + dc[back];
+
+      if (grid[nr][nc] != 1) {
+        dfs(grid, nr, nc, direction);
+      }
+      else return;
+    }
+
+  }
+}
+```

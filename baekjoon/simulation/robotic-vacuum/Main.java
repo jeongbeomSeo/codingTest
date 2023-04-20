@@ -4,16 +4,19 @@ import java.io.InputStreamReader;
 import java.util.StringTokenizer;
 
 public class Main {
-  static int N;
-  static int M;
-  static int count;
+
+  // 북, 동, 남, 서
+  static int[] dr = {-1, 0, 1, 0};
+  static int[] dc = {0, 1, 0, -1};
+  static int[] reverse = {2, 3, 0, 1};
+  static int count = 0 ;
+
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
 
-    N = Integer.parseInt(st.nextToken());
-    M = Integer.parseInt(st.nextToken());
-
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
     int[][] grid = new int[N][M];
 
     st = new StringTokenizer(br.readLine());
@@ -23,76 +26,44 @@ public class Main {
 
     for (int i = 0; i < N; i++) {
       st = new StringTokenizer(br.readLine());
-      for (int j = 0; j < M; j++) {
+      for (int j = 0; j < M ; j++) {
         grid[i][j] = Integer.parseInt(st.nextToken());
       }
     }
-
-    cleaner(grid, row, col, direction);
+    dfs(grid, row, col, direction);
 
     System.out.println(count);
   }
-  static void cleaner(int[][] grid, int row, int col, int direction) {
+  static void dfs(int[][] grid, int row, int col, int direction) {
 
     if (grid[row][col] == 0) {
       grid[row][col] = -1;
       count++;
     }
 
-    while (true) {
-      boolean moveForward = false;
-      for (int i = 0; i < 4; i++) {
-        int nextRow = row;
-        int nextCol = col;
-        switch (direction) {
-          case 0:
-            nextRow = row - 1;
-            break;
-          case 1:
-            nextCol = col + 1;
-            break;
-          case 2:
-            nextRow = row + 1;
-            break;
-          case 3:
-            nextCol = col - 1;
-            break;
-        }
-        if (grid[nextRow][nextCol] == 0) {
-          grid[nextRow][nextCol] = -1;
-          count++;
-          row = nextRow;
-          col = nextCol;
-          moveForward = true;
-          break;
-        }
-        if (direction != 0) direction--;
-        else direction = 3;
-      }
+    boolean flag = false;
 
-      if (!moveForward)  {
-        int nextRow = row;
-        int nextCol = col;
-        switch (direction) {
-          case 0:
-            nextRow = row + 1;
-            break;
-          case 1:
-            nextCol = col - 1;
-            break;
-          case 2:
-            nextRow = row - 1;
-            break;
-          case 3:
-            nextCol = col + 1;
-            break;
-        }
-        if (grid[nextRow][nextCol] != 1) {
-            row = nextRow;
-            col = nextCol;
-        }
-        else break;
+    for (int i = 0 ; i < 4; i++) {
+      int nd = (direction + 3 - i) % 4;
+      int nr = row + dr[nd];
+      int nc = col + dc[nd];
+
+      if (grid[nr][nc] == 0) {
+        flag = true;
+        dfs(grid, nr, nc, nd);
+        break;
       }
     }
+    if (!flag) {
+      int back = reverse[direction];
+      int nr = row + dr[back];
+      int nc = col + dc[back];
+
+      if (grid[nr][nc] != 1) {
+        dfs(grid, nr, nc, direction);
+      }
+      else return;
+    }
+
   }
 }
