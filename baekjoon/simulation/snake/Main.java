@@ -6,114 +6,114 @@ import java.util.Deque;
 import java.util.StringTokenizer;
 
 public class Main {
-  // 동, 남, 서, 북;
-  static int[] dr = {0, 1, 0, -1};
-  static int[] dc = {1, 0, -1, 0};
+  // 북, 동, 남, 서
+  static int[] dr = {-1, 0, 1, 0};
+  static int[] dc = {0, 1, 0, -1};
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st;
 
     int N = Integer.parseInt(br.readLine());
+
     int K = Integer.parseInt(br.readLine());
 
-    // [K 개의 사과][row, col]
     int[][] apple = new int[K][2];
-
     for (int i = 0; i < K; i++) {
       st = new StringTokenizer(br.readLine());
-      apple[i][0] = Integer.parseInt(st.nextToken());
-      apple[i][1] = Integer.parseInt(st.nextToken());
+      int r = Integer.parseInt(st.nextToken()) - 1;
+      int c = Integer.parseInt(st.nextToken()) - 1;
+      apple[i] = new int[]{r, c};
     }
 
     int L = Integer.parseInt(br.readLine());
 
-    String[] changeDirection = new String[100];
-
+    String[] rotate = new String[100001];
     for (int i = 0; i < L; i++) {
       st = new StringTokenizer(br.readLine());
-      int idx = Integer.parseInt(st.nextToken());
+      int idx  = Integer.parseInt(st.nextToken());
       String d = st.nextToken();
-      changeDirection[idx] = d;
+      rotate[idx] = d;
     }
 
-    int result = simulation(apple, changeDirection, N, K);
-
-    System.out.println(result);
-
+    System.out.println(simulation(apple, rotate, N, K));
   }
-  static int simulation(int[][] apple, String[] changeDirection, int N, int K) {
+  static int simulation(int[][] apple, String[] rotate, int N, int K) {
 
-    // {row, col}
-    Deque<Integer[]> deque = new ArrayDeque<>();
     boolean[][] flag = new boolean[N][N];
-
-    deque.add(new Integer[]{0, 0});
+    Deque<Node> deque = new ArrayDeque<>();
+    deque.add(new Node(0, 0));
     flag[0][0] = true;
+    int direction = 1;
 
-    int size = 1;
-    int curDirection = 0;
-    for (int time = 1; time < N * N; time++) {
-      int nextRow = -1;
-      int nextCol = -1;
+    int t;
+    for (t = 1; t < N * N; t++) {
+      int size = deque.size();
       boolean head = true;
+      int nextIdxRow = deque.peekFirst().row;
+      int nextIdxCol = deque.peekFirst().col;
 
       for (int i = 0; i < size; i++) {
-        Integer[] curState = deque.getFirst();
-        int curRow = curState[0];
-        int curCol = curState[1];
-
-        // 움직일 것이니깐 해당 부분 마킹 지워놓기
-        flag[curRow][curCol] = false;
-
-        // 머리일 경우 해당 과정 수행
         if (head) {
-          nextRow = curRow;
-          nextCol = curCol;
+          Node curNode = deque.pollFirst();
+          flag[curNode.row][curNode.col] = false;
 
-          curRow = curRow + dr[curDirection];
-          curCol = curCol + dc[curDirection];
+          curNode.row += dr[direction];
+          curNode.col += dc[direction];
 
-          // 움직인 부분에 벽이나 몸통이 있는 경우 종료
-          if (flag[curRow][curCol] && !validIdx(curRow, curCol, N)) return time;
+          if (!isValidIdx(curNode.row, curNode.col, N) || flag[curNode.row][curNode.col]) return t;
 
-          // 사과 있는 위치로 이동한 것인지 확인
-          for (int appIdx = 0; appIdx < K; appIdx++) {
-            // 먹지 않은 것 중에 확인
-            if (apple[appIdx][0] != -1) {
-              if (nextRow == apple[appIdx][0] && nextCol == apple[appIdx][1]) {
-                apple[appIdx][0] = -1;
+          for (int appleIdx = 0; appleIdx < K; appleIdx++) {
+            if (apple[appleIdx][0] != -1) {
+              if (apple[appleIdx][0] == curNode.row && apple[appleIdx][1] == curNode.col) {
+                Node addLastNode = deque.peekLast();
+                if (size == 1) deque.addLast(new Node(nextIdxRow, nextIdxCol));
+                else deque.addLast(new Node(addLastNode.row, addLastNode.col));
                 size++;
+                apple[appleIdx][0] = -1;
+                break;
               }
             }
           }
 
-          // 처리 끝난 후 머리일 경우 방향 전환
-          if (changeDirection[time] != "") {
-            if (changeDirection[time] == "L") {
-              curDirection = curDirection != 0 ? curDirection - 1 : 3;
+          if (rotate[t] != null) {
+            if (rotate[t].equals("L")) {
+              if (direction != 0) direction--;
+              else direction = 3;
             }
             else
-              curDirection = curDirection != 3 ? curDirection + 1 : 0;
+              if (direction != 3) direction++;
+              else direction = 0;
           }
-          // 모든 처리 끝난 후 해당 부분 위치 마킹
-          deque.addLast(new Integer[]{curRow, curCol});
-          flag[curRow][curCol] = true;
+
+          deque.addLast(new Node(curNode.row, curNode.col));
+          flag[curNode.row][curNode.col] = true;
           head = false;
         }
-        // 머리가 아닌 경우
         else {
-          deque.addLast(new Integer[]{nextRow, nextCol});
-          flag[nextRow][nextCol] = true;
-          nextRow = curRow;
-          nextCol = curCol;
-        }
+          Node curNode = deque.pollFirst();
+          flag[curNode.row][curNode.col] = false;
+          deque.addLast(new Node(nextIdxRow, nextIdxCol));
+          flag[nextIdxRow][nextIdxCol] = true;
+          nextIdxRow = curNode.row;
+          nextIdxCol = curNode.col;
 
+        }
       }
     }
-    return N * N;
+    return t;
   }
-  static boolean validIdx(int row, int col, int N) {
+  static boolean isValidIdx(int row, int col, int N) {
     if (row < 0 || col < 0 || row > N - 1 || col > N - 1) return false;
     return true;
+  }
+}
+
+class Node {
+  int row;
+  int col;
+
+  Node(int row, int col) {
+    this.row = row;
+    this.col = col;
   }
 }

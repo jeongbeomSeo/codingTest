@@ -98,3 +98,268 @@
 ```
 13
 ```
+
+## 문제 코드 
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.StringTokenizer;
+
+public class Main {
+  // 동, 남, 서, 북;
+  static int[] dr = {0, 1, 0, -1};
+  static int[] dc = {1, 0, -1, 0};
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+    int K = Integer.parseInt(br.readLine());
+
+    // [K 개의 사과][row, col]
+    int[][] apple = new int[K][2];
+
+    for (int i = 0; i < K; i++) {
+      st = new StringTokenizer(br.readLine());
+      apple[i][0] = Integer.parseInt(st.nextToken());
+      apple[i][1] = Integer.parseInt(st.nextToken());
+    }
+
+    int L = Integer.parseInt(br.readLine());
+
+    String[] changeDirection = new String[100];
+
+    for (int i = 0; i < L; i++) {
+      st = new StringTokenizer(br.readLine());
+      int idx = Integer.parseInt(st.nextToken());
+      String d = st.nextToken();
+      changeDirection[idx] = d;
+    }
+
+    int result = simulation(apple, changeDirection, N, K);
+
+    System.out.println(result);
+
+  }
+  static int simulation(int[][] apple, String[] changeDirection, int N, int K) {
+
+    // {row, col}
+    Deque<Integer[]> deque = new ArrayDeque<>();
+    boolean[][] flag = new boolean[N][N];
+
+    deque.add(new Integer[]{0, 0});
+    flag[0][0] = true;
+
+    int size = 1;
+    int curDirection = 0;
+    for (int time = 1; time < N * N; time++) {
+      int nextRow = -1;
+      int nextCol = -1;
+      boolean head = true;
+
+      for (int i = 0; i < size; i++) {
+        Integer[] curState = deque.getFirst();
+        int curRow = curState[0];
+        int curCol = curState[1];
+
+        // 움직일 것이니깐 해당 부분 마킹 지워놓기
+        flag[curRow][curCol] = false;
+
+        // 머리일 경우 해당 과정 수행
+        if (head) {
+          nextRow = curRow;
+          nextCol = curCol;
+
+          curRow = curRow + dr[curDirection];
+          curCol = curCol + dc[curDirection];
+
+          // 움직인 부분에 벽이나 몸통이 있는 경우 종료
+          if (flag[curRow][curCol] && !validIdx(curRow, curCol, N)) return time;
+
+          // 사과 있는 위치로 이동한 것인지 확인
+          for (int appIdx = 0; appIdx < K; appIdx++) {
+            // 먹지 않은 것 중에 확인
+            if (apple[appIdx][0] != -1) {
+              if (nextRow == apple[appIdx][0] && nextCol == apple[appIdx][1]) {
+                apple[appIdx][0] = -1;
+                size++;
+              }
+            }
+          }
+
+          // 처리 끝난 후 머리일 경우 방향 전환
+          if (changeDirection[time] != "") {
+            if (changeDirection[time] == "L") {
+              curDirection = curDirection != 0 ? curDirection - 1 : 3;
+            }
+            else
+              curDirection = curDirection != 3 ? curDirection + 1 : 0;
+          }
+          // 모든 처리 끝난 후 해당 부분 위치 마킹
+          deque.addLast(new Integer[]{curRow, curCol});
+          flag[curRow][curCol] = true;
+          head = false;
+        }
+        // 머리가 아닌 경우
+        else {
+          deque.addLast(new Integer[]{nextRow, nextCol});
+          flag[nextRow][nextCol] = true;
+          nextRow = curRow;
+          nextCol = curCol;
+        }
+
+      }
+    }
+    return N * N;
+  }
+  static boolean validIdx(int row, int col, int N) {
+    if (row < 0 || col < 0 || row > N - 1 || col > N - 1) return false;
+    return true;
+  }
+}
+```
+
+이와 같이 로직을 구현했을 경우 생기는 문제가 보인다.
+
+1. 사과를 먹고나서 처리하는 부분이 허술하다.
+   1. 사과를 먹고나서 size++가 되는데 이것은 쓸데 없이 반복문을 한 번 더 돌게한다.
+   2. 그 과정에서 생기는 Deque의 poll과정이 문제가 발생한다.
+2. 사과를 먹고나서 처리하는 부분도 별로다. 
+
+## 코드 
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.StringTokenizer;
+
+public class Main {
+  // 북, 동, 남, 서
+  static int[] dr = {-1, 0, 1, 0};
+  static int[] dc = {0, 1, 0, -1};
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+
+    int K = Integer.parseInt(br.readLine());
+
+    int[][] apple = new int[K][2];
+    for (int i = 0; i < K; i++) {
+      st = new StringTokenizer(br.readLine());
+      int r = Integer.parseInt(st.nextToken());
+      int c = Integer.parseInt(st.nextToken());
+      apple[i] = new int[]{r, c};
+    }
+
+    int L = Integer.parseInt(br.readLine());
+
+    String[] rotate = new String[101];
+    for (int i = 0; i < L; i++) {
+      st = new StringTokenizer(br.readLine());
+      int idx  = Integer.parseInt(st.nextToken());
+      String d = st.nextToken();
+      rotate[idx] = d;
+    }
+
+    System.out.println(simulation(apple, rotate, N, K));
+  }
+  static int simulation(int[][] apple, String[] rotate, int N, int K) {
+
+    boolean[][] flag = new boolean[N][N];
+    Deque<Node> deque = new ArrayDeque<>();
+    deque.add(new Node(0, 0));
+    flag[0][0] = true;
+    int direction = 1;
+
+    int t;
+    for (t = 1; t < N * N; t++) {
+      int size = deque.size();
+      boolean head = true;
+      int nextIdxRow = deque.peekFirst().row;
+      int nextIdxCol = deque.peekFirst().col;
+
+      for (int i = 0; i < size; i++) {
+        if (head) {
+          Node curNode = deque.pollFirst();
+          flag[curNode.row][curNode.col] = false;
+
+          curNode.row += dr[direction];
+          curNode.col += dc[direction];
+
+          if (!isValidIdx(curNode.row, curNode.col, N) || flag[curNode.row][curNode.col]) return t;
+
+          for (int appleIdx = 0; appleIdx < K; appleIdx++) {
+            if (apple[appleIdx][0] != -1) {
+              if (apple[appleIdx][0] == curNode.row && apple[appleIdx][1] == curNode.col) {
+                Node addLastNode = deque.peekLast();
+                if (size == 1) deque.addLast(new Node(nextIdxRow, nextIdxCol));
+                else deque.addLast(new Node(addLastNode.row, addLastNode.col));
+                size++;
+                apple[appleIdx][0] = -1;
+                break;
+              }
+            }
+          }
+
+          if (rotate[t] != null) {
+            if (rotate[t] == "L") {
+              if (direction != 0) direction--;
+              else direction = 3;
+            }
+            else
+              if (direction != 3) direction++;
+              else direction = 0;
+          }
+
+          deque.addLast(new Node(curNode.row, curNode.col));
+          flag[curNode.row][curNode.col] = true;
+          head = false;
+        }
+        else {
+          Node curNode = deque.pollFirst();
+          flag[curNode.row][curNode.col] = false;
+          deque.addLast(new Node(nextIdxRow, nextIdxCol));
+          flag[nextIdxRow][nextIdxCol] = true;
+          nextIdxRow = curNode.row;
+          nextIdxCol = curNode.col;
+
+        }
+      }
+    }
+    return t;
+  }
+  static boolean isValidIdx(int row, int col, int N) {
+    if (row < 0 || col < 0 || row > N - 1 || col > N - 1) return false;
+    return true;
+  }
+}
+
+class Node {
+  int row;
+  int col;
+
+  Node(int row, int col) {
+    this.row = row;
+    this.col = col;
+  }
+}
+```
+
+해당 코드에서 예제 입력 2의 경우 16이 출력되고, 예제 입력 3의 경우 16이 출력됩니다.
+
+일단 해당 코드에서 문제는 본인의 경우 처음 맨 왼쪽 맨 위 Idx를 (0,0)으로 잡고 갔는데, 문제에선 (1,1)로 잡아 놨다.
+
+이부분을 수정하니깐 예제 입력 3의 경우에는 올바르게 출력되었습니다.
+
+하지만, 예제 입력 2의 경우 16이 나왔습니다.
+
+문자열 비교에서 == 쓰지말고 equals()를 사용하자.
