@@ -279,3 +279,77 @@ public class Main {
 일단 해당 로직에서 문제점을 찾았습니다. 문제에서 주어진 것은 주변 4칸 중에서 청소 되지 않는 방이 없다면, 바라보는 방향은 그대로 후진합니다.
 
 만약 주변 4칸 중에 빈 칸이 있다면 현재 바라보고 있는 방향부터 탐색을 하는 것이 아니라, 반시계 방향 90도로 돌고 나서부터 탐색을 시작합니다.
+
+**AC**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.StringTokenizer;
+
+public class Main {
+
+  // 북, 동, 남, 서
+  static int[] dr = {-1, 0, 1, 0};
+  static int[] dc = {0, 1, 0, -1};
+  static int[] reverse = {2, 3, 0, 1};
+  static int count = 0 ;
+
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+    int[][] grid = new int[N][M];
+
+    st = new StringTokenizer(br.readLine());
+    int row = Integer.parseInt(st.nextToken());
+    int col = Integer.parseInt(st.nextToken());
+    int direction = Integer.parseInt(st.nextToken());
+
+    for (int i = 0; i < N; i++) {
+      st = new StringTokenizer(br.readLine());
+      for (int j = 0; j < M ; j++) {
+        grid[i][j] = Integer.parseInt(st.nextToken());
+      }
+    }
+    dfs(grid, row, col, direction);
+
+    System.out.println(count);
+  }
+  static void dfs(int[][] grid, int row, int col, int direction) {
+
+    if (grid[row][col] == 0) {
+      grid[row][col] = -1;
+      count++;
+    }
+
+    boolean flag = false;
+
+    for (int i = 0 ; i < 4; i++) {
+      int nd = (direction + 3 - i) % 4;
+      int nr = row + dr[nd];
+      int nc = col + dc[nd];
+
+      if (grid[nr][nc] == 0) {
+        flag = true;
+        dfs(grid, nr, nc, nd);
+        break;
+      }
+    }
+    if (!flag) {
+      int back = reverse[direction];
+      int nr = row + dr[back];
+      int nc = col + dc[back];
+
+      if (grid[nr][nc] != 1) {
+        dfs(grid, nr, nc, direction);
+      }
+      else return;
+    }
+
+  }
+}
+```
