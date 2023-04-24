@@ -298,3 +298,167 @@ class State {
 
 추가적으로 처음에 상어 위치를 입력받을 때 9로 입력 받은 부분을 0으로 수정해줘야 합니다.
 
+그리고 일반적인 BFS 탐색 방식으로는 맨 위의 요소부터 처리하는 것에 문제가 발생합니다.
+
+다음을 봐보자.
+
+```
+5 4 ■ . 3 4 
+4 3 . 3 4 5 
+3 2 . 5 6 6 
+2 . . 3 4 5 
+3 2 . 6 5 4 
+6 6 6 6 6 6 
+```
+
+여기서 네모가 현재 위치인데 맨 위 오른쪽에 거리가 2이고 크기가 3인 물고기가 위치하고 있어서 저것을 먹어야 합니다.
+
+하지만, 현재 코드로는 불가능합니다.
+
+현재 위치 기준으로 Queue에 상, 좌, 우, 남으로 넣는데 이렇게 처리를 할 경우 맨 위의 물고기를 먼저 먹을 수 없습니다.
+
+좌측 노드를 먼저 넣고 이것이 먼저 꺼내지면서 아래쪽 요소를 먼저 실행하기 때문입니다. 
+
+time 별로 나눠야 될 수도 있을 것 같네요..
+
+일단 현재까지 코드입니다.
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayDeque;
+import java.util.Queue;
+import java.util.StringTokenizer;
+
+public class Main {
+  // 북, 좌, 남, 우
+  static int[] dr = {-1, 0, 1, 0};
+  static int[] dc = {0, -1, 0, 1};
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+
+    int[][] grid = new int[N][N];
+    int row = 0;
+    int col = 0;
+    for (int i = 0; i < N; i++) {
+      st = new StringTokenizer(br.readLine());
+      for (int j = 0; j < N; j++) {
+        grid[i][j] = Integer.parseInt(st.nextToken());
+        if (grid[i][j] == 9) {
+          grid[i][j] = 0;
+          row = i;
+          col = j;
+        }
+      }
+    }
+
+    System.out.println(simulation(grid, N, row, col));
+  }
+  static int simulation(int[][] grid, int N, int row, int col) {
+    Shark shark = new Shark(row, col, 2);
+
+    int time = 0;
+    while (true) {
+      int count = 0;
+      boolean end = true;
+      for (int i = 0; i < N; i++)
+        for (int j = 0; j < N; j++) {
+          if (grid[i][j] != 0 && grid[i][j] < shark.size)  {
+            count++;
+            end = false;
+          }
+        }
+
+      if (end) break;
+
+      if (count >= 1) {
+        State state = bfs(grid, N, shark.row, shark.col, shark.size);
+        if (state.success) {
+          shark.row = state.row;
+          shark.col = state.col;
+          shark.exp++;
+          if (shark.size == shark.exp) {
+            shark.size++;
+            shark.exp = 0;
+          }
+          time += state.time;
+        }
+        else break;
+      }
+
+    }
+
+    return time;
+  }
+  static State bfs(int[][] grid, int N, int row, int col, int sharkSize) {
+
+    Queue<State> q = new ArrayDeque<>();
+    q.add(new State(row, col, 0));
+    boolean[][] isVisited = new boolean[N][N];
+    isVisited[row][col] = true;
+
+    while (!q.isEmpty()) {
+      State curState = q.poll();
+
+      for (int i = 0; i < 4; i++) {
+        int nextRow = curState.row + dr[i];
+        int nextCol = curState.col + dc[i];
+
+        if (isValidIdx(nextRow, nextCol, N) && !isVisited[nextRow][nextCol]) {
+          if (grid[nextRow][nextCol] != 0 && grid[nextRow][nextCol] < sharkSize) {
+            grid[nextRow][nextCol] = 0;
+            return new State(nextRow, nextCol, curState.time + 1, true);
+          }
+          else if (grid[nextRow][nextCol] == 0 || grid[nextRow][nextCol] == sharkSize) {
+            q.add(new State(nextRow, nextCol, curState.time + 1));
+            isVisited[nextRow][nextCol] = true;
+          }
+        }
+      }
+    }
+    return new State(row, col, 0, false);
+  }
+  static boolean isValidIdx(int row, int col, int N) {
+    if (row < 0 || col < 0 || row > N - 1 || col > N - 1) return false;
+    else return true;
+  }
+}
+
+class Shark {
+  int row;
+  int col;
+  int size;
+  int exp;
+
+  Shark(int row, int col, int size) {
+    this.row = row;
+    this.col = col;
+    this.size = size;
+    this.exp = 0;
+  }
+}
+
+class State {
+  int row;
+  int col;
+  int time;
+  boolean success;
+
+  State(int row, int col, int time) {
+    this.row = row;
+    this.col = col;
+    this.time = time;
+    success = false;
+  }
+
+  State(int row, int col, int time, boolean success) {
+    this(row, col, time);
+    this.success = success;
+  }
+}
+
+```
