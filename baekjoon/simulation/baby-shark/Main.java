@@ -6,27 +6,21 @@ import java.util.Queue;
 import java.util.StringTokenizer;
 
 public class Main {
-  // 북, 좌, 우, 하
-  static int[] dr = {-1, 0, 0, 1};
-  static int[] dc = {0, -1, 1, 0};
-
-  // 좌, 우
-  static int[] topDc = {-1, 1, 0};
   static int N;
-
+  // 북, 서, 남, 동
+  public static int [] dc = {0, 0, 1, -1}, dr = {-1, 1, 0, 0};
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st;
 
     N = Integer.parseInt(br.readLine());
-
     int[][] grid = new int[N][N];
 
     int row = 0;
     int col = 0;
-    for (int i = 0; i < N; i++) {
+    for (int i = 0 ; i < N; i++) {
       st = new StringTokenizer(br.readLine());
-      for (int j = 0; j < N; j++) {
+      for (int j = 0; j < N;j ++) {
         grid[i][j] = Integer.parseInt(st.nextToken());
         if (grid[i][j] == 9) {
           row = i;
@@ -36,27 +30,23 @@ public class Main {
       }
     }
 
-    int time = simulation(grid, row, col);
-
-    System.out.println(time);
+    System.out.println(simulation(grid, row , col));
   }
   static int simulation(int[][] grid, int row, int col) {
 
+    int time = 0;
     Shark shark = new Shark(row, col);
+    while (true) {
+      int howManyCanEatFish = 0;
 
-    int t;
-    for (t = 0; t <= N * N;) {
-
-      int count = 0;
-      for (int i = 0 ; i < N; i++) {
+      for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
-          if (grid[i][j] != 0 && grid[i][j] < shark.size) count++;
+          if (grid[i][j] != 0 && grid[i][j] < shark.size) howManyCanEatFish++;
         }
       }
 
-      // 먹을 수 있는 경우
-      if (count >= 1) {
-        State state = Bfs(grid, shark.row, shark.col, shark.size);
+      if (howManyCanEatFish >= 1) {
+        State state = bfs(grid, shark.row, shark.col, shark.size);
         if (state != null) {
           shark.row = state.row;
           shark.col = state.col;
@@ -65,84 +55,65 @@ public class Main {
             shark.size++;
             shark.exp = 0;
           }
-          t += state.time;
+          time += state.time;
+          grid[state.row][state.col] = 0;
         }
-        // 상황 종료
         else break;
       }
-      // 상황 종료
       else break;
     }
-
-    return t;
+    return time;
   }
-  static State Bfs(int[][] grid, int row, int col, int size) {
+  static State bfs(int[][] grid, int row, int col, int size) {
+
     Queue<State> q = new ArrayDeque<>();
+    q.add(new State(row, col, grid[row][col], 0));
     boolean[][] isVisited = new boolean[N][N];
+    isVisited[row][col] = true;
 
-    if (row == 0) {
-      if (isValidIdx(row, col - 1)) {
-        q.add(new State(row, col - 1, 1));
-        isVisited[row][col - 1] = true;
-      }
-      if (isValidIdx(row, col + 1))  {
-        q.add(new State(row, col + 1, 1));
-        isVisited[row][col + 1] = true;
-      }
-      if (isValidIdx(row + 1, col)) {
-        q.add(new State(row + 1, col, 1));
-        isVisited[row + 1][col] = true;
-      }
-    }
-    else  {
-      q.add(new State(row, col, 0));
-      isVisited[row][col] = true;
-    }
-
-
+    int time = 0;
+    State priorityState = null;
     while (!q.isEmpty()) {
       State curState = q.poll();
 
-      if (grid[curState.row][curState.col] != 0 && grid[curState.row][curState.col] < size) {
-        grid[curState.row][curState.col] = 0;
-        return curState;
+      // 한 타임이 끝난 경우
+      if (time != curState.time) {
+        // 한 타임 동안 발견 못했을 경우
+        if (priorityState == null) time = curState.time;
+        // 발견한 경우
+        else return priorityState;
       }
 
-      // 맨 위인 경우
-      if (curState.top) {
-        for (int i = 0; i < 2; i++) {
-          int curRow = curState.row;
-          int curCol = curState.col + topDc[i];
+      for (int i = 0; i < 4; i++) {
+        int nextRow = curState.row + dr[i];
+        int nextCol = curState.col + dc[i];
 
-          if (isValidIdx(curRow, curCol) &&
-                  !isVisited[curRow][curCol] && grid[curRow][curCol] <= size) {
-            q.add(new State(curRow, curCol, curState.time + 1));
-            isVisited[curRow][curCol] = true;
-          }
-        }
-      }
-      // 아닌 경우
-      else {
-        for (int i = 0; i < 4; i++) {
-          int curRow = curState.row + dr[i];
-          int curCol = curState.col + dc[i];
+        if (isValidIdx(nextRow, nextCol) && !isVisited[nextRow][nextCol]) {
+          if (grid[nextRow][nextCol] <= size) {
+            State nextState = new State(nextRow, nextCol, grid[nextRow][nextCol], time + 1);
 
-          if (isValidIdx(curRow, curCol) &&
-                  !isVisited[curRow][curCol] && grid[curRow][curCol] <= size) {
-            q.add(new State(curRow, curCol, curState.time + 1));
-            isVisited[curRow][curCol] = true;
+            // 물고기 사이즈 < 아기 상어 사이즈 (0이 아닌 경우)
+            if (nextState.fishSize != 0 && nextState.fishSize < size){
+              // 이전에 발견한 State가 있는 경우
+              if (priorityState != null)  {
+                if (!priorityState.checkPriority(nextState)) priorityState = nextState;
+              }
+              // 이전에 발견한 State가 없는 경우
+              else priorityState = nextState;
+            }
+            q.add(nextState);
+            isVisited[nextRow][nextCol] = true;
           }
         }
       }
     }
-   return null;
+    return null;
   }
   static boolean isValidIdx(int row, int col) {
     if (row < 0 || col < 0 || row > N - 1 || col > N - 1) return false;
     else return true;
   }
 }
-
 class Shark {
   int row;
   int col;
@@ -160,15 +131,22 @@ class Shark {
 class State {
   int row;
   int col;
+  int fishSize;
   int time;
-  boolean top;
 
-
-  State(int row, int col, int time) {
+  State(int row, int col, int fishSize, int time) {
     this.row = row;
     this.col = col;
+    this.fishSize = fishSize;
     this.time = time;
-    top = row == 0;
   }
 
+  boolean checkPriority(State other) {
+    if (this.row < other.row) return true;
+    else if (this.row > other.row) return false;
+    else {
+      if (this.col < other.col) return true;
+      else return false;
+    }
+  }
 }
