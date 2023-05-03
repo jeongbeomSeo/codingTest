@@ -45,12 +45,15 @@ public class Main {
   static int simulation(String[][] grid, int rRow, int rCol, int bRow, int bCol) {
 
     Queue<Case> q = new LinkedList();
+    boolean[][][][] isVistied = new boolean[N][M][N][M];
     q.add(new Case(rRow, rCol, bRow, bCol, 0));
+    isVistied[rRow][rCol][bRow][bCol] = true;
+
 
     while (!q.isEmpty()) {
       Case currentCase = q.poll();
 
-      if (currentCase.time == 10) continue;
+      if (currentCase.time >= 10) break;
 
       Marble redMarble = currentCase.redMarble;
       Marble blueMarble = currentCase.blueMarble;
@@ -80,7 +83,9 @@ public class Main {
             grid[redMarble.row + dr[i] * rNum][redMarble.col + dc[i] * rNum] = ".";
             boolean conCurrencyCheck = false;
             while (grid[blueMarble.row + dr[i] * (bNum + 1)][blueMarble.col + dc[i] * (bNum + 1)].equals(".")) {
+              grid[blueMarble.row + dr[i] * bNum][blueMarble.col + dc[i] * bNum] = ".";
               bNum++;
+              grid[blueMarble.row + dr[i] * bNum][blueMarble.col + dc[i] * bNum] = "B";
             }
             if (grid[blueMarble.row + dr[i] * (bNum + 1)][blueMarble.col + dc[i] * (bNum + 1)].equals("O")) conCurrencyCheck = true;
             if (!conCurrencyCheck) return currentCase.time + 1;
@@ -113,9 +118,10 @@ public class Main {
         int next_BlueMarbleRow = blueMarble.row + dr[i] * bNum;
         int next_BlueMarbleCol = blueMarble.col + dc[i] * bNum;
 
-        if (rNum != 0 || bNum != 0) {
+        if (!isVistied[next_RedMarbleRow][next_RedMarbleCol][next_BlueMarbleRow][next_BlueMarbleCol]) {
           q.add(new Case(next_RedMarbleRow, next_RedMarbleCol,
                   next_BlueMarbleRow, next_BlueMarbleCol, currentCase.time + 1));
+          isVistied[next_RedMarbleRow][next_RedMarbleCol][next_BlueMarbleRow][next_BlueMarbleCol] = true;
         }
         grid[next_RedMarbleRow][next_RedMarbleCol] = ".";
         grid[next_BlueMarbleRow][next_BlueMarbleCol] = ".";

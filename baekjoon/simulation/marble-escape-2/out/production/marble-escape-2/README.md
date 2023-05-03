@@ -261,7 +261,7 @@ class Marble {
 }
 ```
 
-**WA(57%)**
+**WA(58%)**
 
 ```java
 import java.io.BufferedReader;
