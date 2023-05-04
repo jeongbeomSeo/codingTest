@@ -21,6 +21,7 @@ public class Main {
       st = new StringTokenizer(br.readLine());
       for (int j = 0; j < N; j++) {
         grid[i][j] = Integer.parseInt(st.nextToken());
+        maxValue = Math.max(maxValue, grid[i][j]);
       }
     }
 
@@ -33,20 +34,28 @@ public class Main {
 
     while (!q.isEmpty()) {
       Case curCase = q.poll();
-      int[][] grid = curCase.grid;
 
       if (curCase.time == 5) {
         int maxNum = 0;
         for (int i = 0; i < N; i++) {
           for (int j = 0; j < N; j++) {
-            maxNum = Math.max(grid[i][j], maxNum);
+            maxNum = Math.max(curCase.grid[i][j], maxNum);
           }
         }
         maxValue = Math.max(maxValue, maxNum);
         continue;
       }
 
+      boolean change = false;
       for (int i = 0; i < 4; i++) {
+        int[][] grid = new int[N][N];
+
+        for (int row = 0; row < N; row++) {
+          for (int col = 0; col < N; col++) {
+            grid[row][col] = curCase.grid[row][col];
+          }
+        }
+
         // 북
         if (i == 0) {
           for (int col = 0; col < N; col++) {
@@ -57,27 +66,17 @@ public class Main {
                 if (row + ptr < N && grid[row][col] == grid[row + ptr][col]) {
                   grid[row][col] *= 2;
                   grid[row + ptr][col] = 0;
+                  change = true;
                 }
                 ptr = 1;
                 while (row - ptr >= 0 && grid[row - ptr][col] == 0) ptr++;
                 if (ptr != 1) {
                   grid[row - (ptr - 1)][col] = grid[row][col];
                   grid[row][col] = 0;
+                  change = true;
                 }
               }
             }
-            /*
-            for (int row = 0; row < N - 1; row++) {
-              if (grid[row][col] == 0) {
-                int notZeroRow = row + 1;
-                while (notZeroRow < N && grid[notZeroRow][col] != 0) notZeroRow++;
-                if (notZeroRow < N) {
-                  grid[row][col] = grid[notZeroRow][col];
-                  grid[notZeroRow][col] = 0;
-                }
-              }
-            }
-            */
           }
         }
         // 동
@@ -90,12 +89,14 @@ public class Main {
                 if (col - ptr >= 0 && grid[row][col] == grid[row][col - ptr]) {
                   grid[row][col] *= 2;
                   grid[row][col - ptr] = 0;
+                  change = true;
                 }
                 ptr = 1;
                 while (col + ptr < N && grid[row][col + ptr] == 0) ptr++;
                 if (ptr != 1) {
                   grid[row][col + (ptr - 1)] = grid[row][col];
                   grid[row][col] = 0;
+                  change = true;
                 }
               }
             }
@@ -111,12 +112,14 @@ public class Main {
                 if (row - ptr >= 0 && grid[row - ptr][col] == grid[row][col]) {
                   grid[row][col] *= 2;
                   grid[row - ptr][col] = 0;
+                  change = true;
                 }
                 ptr = 1;
                 while (row + ptr < N && grid[row + ptr][col] == 0) ptr++;
                 if (ptr != 1) {
                   grid[row + (ptr - 1)][col] = grid[row][col];
                   grid[row][col] = 0;
+                  change = true;
                 }
               }
             }
@@ -132,19 +135,20 @@ public class Main {
                 if (col + ptr < N && grid[row][col] == grid[row][col + ptr]) {
                   grid[row][col] *= 2;
                   grid[row][col + ptr] = 0;
+                  change = true;
                 }
                 ptr = 1;
                 while (col - ptr >= 0 && grid[row][col - ptr] == 0) ptr++;
                 if (ptr != 1) {
                   grid[row][col - (ptr - 1)] = grid[row][col];
                   grid[row][col] = 0;
+                  change = true;
                 }
               }
             }
           }
         }
-
-        q.add(new Case(grid, curCase.time + 1));
+        if (change) q.add(new Case(grid, curCase.time + 1));
       }
     }
   }
@@ -154,15 +158,7 @@ class Case {
   int time;
 
   Case(int[][] grid, int time) {
-    int size = grid.length;
-    this.grid = new int[size][size];
-    for (int i = 0; i < size; i++) {
-      for (int j = 0; j < size; j++) {
-        this.grid[i][j] = grid[i][j];
-      }
-    }
+    this.grid = grid;
     this.time = time;
   }
-
-
 }
