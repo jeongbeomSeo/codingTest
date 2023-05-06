@@ -1,64 +1,59 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class Main {
-  static int N;
-  static int max = 0;
+  static int maxSize = 0;
+
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st;
 
-    N = Integer.parseInt(br.readLine());
-    int[][] allTimeTable = new int[N][2];
-    int[][] timeTable = new int[N][2];
+    int N = Integer.parseInt(br.readLine());
 
-    for (int i = 0 ; i < N; i++) {
+    Scheduler[] schedulers = new Scheduler[N];
+    for (int i = 0; i < N; i++) {
       st = new StringTokenizer(br.readLine());
-      allTimeTable[i][0] = Integer.parseInt(st.nextToken());
-      allTimeTable[i][1] = Integer.parseInt(st.nextToken());
+      int start = Integer.parseInt(st.nextToken());
+      int end = Integer.parseInt(st.nextToken());
+      schedulers[i] = new Scheduler(start, end);
     }
+    Arrays.sort(schedulers);
 
-    greedy(timeTable, allTimeTable, 0, 0);
+    Scheduler[] timeTable = new Scheduler[N];
 
-    System.out.println(max);
-
+    System.out.println(greedy(schedulers, timeTable, N));
   }
+  static int greedy(Scheduler[] schedulers, Scheduler[] timeTable, int N) {
 
-  static void greedy(int[][] timeTable, int[][] allTimeTable, int size,  int ptr) {
-
-    if (ptr == N) {
-      max = Math.max(max, size);
-    }
-
-    else {
-      int idx = binarySearch(timeTable, 0, size - 1, allTimeTable[ptr]);
-
-      if (idx != -1) {
-        timeTable[idx] = allTimeTable[ptr];
-        greedy(timeTable, allTimeTable, size + 1, ptr + 1);
-        timeTable[idx] = null;
+    int size = 0;
+    timeTable[size++] = schedulers[0];
+    for (int i = 1; i < N; i++) {
+      if (timeTable[size - 1].end <= schedulers[i].start) {
+        timeTable[size++] = schedulers[i];
       }
-      greedy(timeTable, allTimeTable, size, ptr + 1);
+      else {
+        if (timeTable[size - 1].end > schedulers[i].end) {
+          timeTable[size - 1] = schedulers[i];
+        }
+      }
     }
+    return size;
+  }
+}
+class Scheduler implements Comparable<Scheduler>{
+  int start;
+  int end;
 
+  Scheduler(int start, int end) {
+    this.start = start;
+    this.end = end;
   }
 
-  static int binarySearch(int[][] time, int start, int end, int[] target) {
-
-    if (end < 0) return 0;
-
-    if (start < end) {
-      int mid = (start + end) / 2;
-      if (time[mid][0] < target[0]) return binarySearch(time, mid + 1, end, target);
-      else return binarySearch(time, start, mid, target);
-    }
-    else {
-      if (start == 0 && target[1] <= time[start][1]) return start;
-      if (start != 0 && target[1] <= time[start][1] && time[start - 1][1] < target[1] ) return start;
-
-      return -1;
-    }
+  @Override
+  public int compareTo(Scheduler o) {
+    return this.start - o.start;
   }
 }

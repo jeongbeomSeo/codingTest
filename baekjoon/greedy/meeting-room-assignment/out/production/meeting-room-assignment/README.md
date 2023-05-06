@@ -44,3 +44,98 @@
 ## 힌트 
 
 (1,4), (5,7), (8,11), (12,14) 를 이용할 수 있다.
+
+## 코드
+
+**TLE**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.StringTokenizer;
+
+public class Main {
+  static int maxSize = 0;
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+
+    Scheduler[] schedulers = new Scheduler[N];
+    for (int i = 0; i < N; i++) {
+      st = new StringTokenizer(br.readLine());
+      int start = Integer.parseInt(st.nextToken());
+      int end = Integer.parseInt(st.nextToken());
+      schedulers[i] = new Scheduler(start, end);
+    }
+    Arrays.sort(schedulers);
+
+    Scheduler[] timeTable = new Scheduler[N];
+
+    backtracking(schedulers,timeTable, N, 0, 0);
+
+    System.out.println(maxSize);
+  }
+  static void backtracking(Scheduler[] schedulers, Scheduler[] timeTable, int N, int ptr, int size) {
+
+    if (ptr == N) {
+      maxSize = Math.max(maxSize, size);
+    }
+    else {
+      if (size != 0) {
+        Scheduler beforeSchedule = timeTable[size - 1];
+
+        if (schedulers[ptr].start >= beforeSchedule.end) {
+          timeTable[size] = schedulers[ptr];
+          backtracking(schedulers, timeTable, N, ptr + 1, size + 1);
+          timeTable[size] = null;
+        }
+
+        backtracking(schedulers, timeTable, N, ptr + 1, size);
+      }
+      else {
+        timeTable[size] = schedulers[ptr];
+        backtracking(schedulers, timeTable, N, ptr + 1, size + 1);
+        timeTable[size] = null;
+
+        backtracking(schedulers, timeTable, N, ptr + 1, size);
+      }
+    }
+  }
+
+}
+
+class Scheduler implements Comparable<Scheduler>{
+  int start;
+  int end;
+
+  Scheduler(int start, int end) {
+    this.start = start;
+    this.end = end;
+  }
+
+  @Override
+  public int compareTo(Scheduler o) {
+    return this.start - o.start;
+  }
+}
+```
+
+올바른 문제 풀이를 위해서 **Case**를 나눠서 생각했습니다.
+
+먼저 시작 시간순으로 정렬하는 과정까지는 동일합니다.
+
+그 이후 다음과 같은 순서로 비교합니다.
+
+1. 첫번째 요소는 그냥 넣어준다.
+2. 이전에 넣어놨던 요소의 end 값과 현재 선택한 요소의 strat 값을 비교합니다.
+   1. before.end <= cur.start: 그냥 넣어준다.
+   2. before.end > cut.start: 2가지 경우의 수로 나눕니다.
+      1. before.end <= cur.end: 그냥 넘어갑니다.(넣어 주지 않는다.)
+      2. before.end > cur.end: 앞에 요소를 대체해 줍니다.
+
+이와 같은 과정이 가능한 이유는 이미 시작 시작순으로 정렬을 해놓았고, 
+그 시점 부턴 끝나는 시간이 땅겨질 수록 넣을 수 있는 요소가 많아지기 때문입니다.
