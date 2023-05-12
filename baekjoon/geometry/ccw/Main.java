@@ -14,16 +14,15 @@ public class Main {
       points[i][0] = Integer.parseInt(st.nextToken());
       points[i][1] = Integer.parseInt(st.nextToken());
     }
-
-    System.out.println(CCW(points));
-
+    int result = ccw(points);
+    if (result > 0) System.out.println(1);
+    else if (result < 0) System.out.println(-1);
+    else System.out.println(0);
   }
-  static int CCW(int[][] points) {
-    double gradient = (double)(points[1][1] - points[0][1]) / (points[1][0] - points[0][0]);
+  static int ccw(int[][] points) {
 
-    double result = gradient * (points[2][0] - points[0][0]) + points[0][1];
-    if (points[2][1] > result) return 1;
-    else if (points[2][1] < result) return -1;
-    else return 0;
+    int a = points[0][0] * points[1][1] + points[1][0] * points[2][1] + points[2][0] * points[0][1];
+    int b = points[1][0] * points[0][1] + points[2][0] * points[1][1] + points[0][0] * points[2][1];
+    return a - b;
   }
 }
