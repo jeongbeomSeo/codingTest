@@ -1,117 +1,108 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.StringTokenizer;
+import java.util.*;
 
 public class Main {
-  // 공백, 북, 남, 동, 서
-  static int[] dr = {0, -1, 1, 0, 0};
-  static int[] dc = {0, 0, 0, 1, -1};
-
-  static int R, C;
+  static int R, C, M;
+  static int[] dr = {-1, 1, 0, 0};
+  static int[] dc = {0, 0, 1, -1};
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
 
     R = Integer.parseInt(st.nextToken());
     C = Integer.parseInt(st.nextToken());
-    int M = Integer.parseInt(st.nextToken());
+    M = Integer.parseInt(st.nextToken());
 
-    ArrayList<Shark> sharks = new ArrayList<>();
+    List<Shark> sharks = new ArrayList<>();
     for (int i = 0; i < M; i++) {
       st = new StringTokenizer(br.readLine());
-      int row = Integer.parseInt(st.nextToken());
-      int col = Integer.parseInt(st.nextToken());
+      int row = Integer.parseInt(st.nextToken()) - 1;
+      int col = Integer.parseInt(st.nextToken()) - 1;
       int speed = Integer.parseInt(st.nextToken());
-      int direction = Integer.parseInt(st.nextToken());
+      int direction = Integer.parseInt(st.nextToken()) - 1;
       int size = Integer.parseInt(st.nextToken());
 
-      sharks.add(new Shark(row, col, speed, direction, size));
+      sharks.add(new Shark(row, col, speed, direction, size, R, C));
     }
 
-    System.out.println(simulation(sharks, M));
+    System.out.println(simulation(sharks));
   }
-  static int simulation(ArrayList<Shark> sharks, int M) {
+  static int simulation(List<Shark> sharks) {
 
-    int count_size = 0;
-    int col = 1;
-    for (; col <= C; col++) {
-
-      // 상어 잡이
-      int idx = fishing(sharks, col);
-
-      if (idx != -1) {
-        count_size += sharks.get(idx).size;
-        sharks.remove(idx);
-      }
-
-      // 상어 이동
-      active_move(sharks);
+    int col = 0;
+    int sum = 0;
+    while (col < C) {
+      sum += fishing(sharks, col++);
+      active(sharks);
     }
-    return count_size;
+    return sum;
   }
-  static int fishing(ArrayList<Shark> sharks, int col) {
-    // 상어 잡이
-    int idx = -1;
-    for (int i = 0; i < sharks.size(); i++) {
-      if (sharks.get(i).col == col) {
-        if (idx == -1) idx = i;
-        else {
-          if (sharks.get(idx).row > sharks.get(i).row) idx = i;
-        }
-      }
-    }
-    return idx;
-  }
-  static void active_move(ArrayList<Shark> sharks) {
+  static void active(List<Shark> sharks) {
 
-    int[][] buffer = new int[R + 1][C + 1];
-    ArrayList<Integer> removeList = new ArrayList<>();
+    int[][] buffer = new int[R][C];
+    ArrayList<Integer> removeIdx = new ArrayList<>();
 
     for (int i = 0; i < sharks.size(); i++) {
       Shark shark = sharks.get(i);
 
-      int count = 1;
-      while (count++ <= shark.speed) {
-        int row = shark.row + dr[shark.direction];
-        int col = shark.col + dc[shark.direction];
-        if (!isValidIdx(row, col)) {
-          shark.direction = reverse(shark.direction);
-          row = shark.row + dr[shark.direction];
-          col = shark.col + dc[shark.direction];
-        }
-
-        shark.row = row;
-        shark.col = col;
-      }
+      active_move(shark);
       if (buffer[shark.row][shark.col] == 0) buffer[shark.row][shark.col] = i + 1;
       else {
-        int prevSharkIdx = buffer[shark.row][shark.col] - 1;
-        if (sharks.get(prevSharkIdx).size < shark.size) {
+        int buffer_idx = buffer[shark.row][shark.col] - 1;
+        if (sharks.get(buffer_idx).size < shark.size) {
           buffer[shark.row][shark.col] = i + 1;
-          removeList.add(prevSharkIdx);
+          removeIdx.add(buffer_idx);
         }
-        else removeList.add(i);
+        else removeIdx.add(i);
       }
     }
-    removeList.sort(Collections.reverseOrder());
-    for (Integer integer : removeList) {
-      sharks.remove((int) integer);
+
+    removeIdx.sort(Collections.reverseOrder());
+    for (int idx : removeIdx) {
+      sharks.remove(idx);
     }
   }
-  static boolean isValidIdx(int row, int col) {
-    return row >= 1 && col >= 1 && row <= R && col <= C;
+  static void active_move(Shark shark) {
+
+    int speed = shark.speed;
+
+    while (speed-- > 0) {
+      if (!isValidIdx(shark.row + dr[shark.direction], shark.col + dc[shark.direction])) {
+        shark.direction = change_direction(shark.direction);
+      }
+      shark.row += dr[shark.direction];
+      shark.col += dc[shark.direction];
+    }
+
   }
-  static int reverse(int direction) {
-    if (direction == 1) return 2;
-    else if (direction == 2) return 1;
-    else if (direction == 3) return 4;
-    else return 3;
+  static boolean isValidIdx(int row, int col) {
+    return row >= 0 && col >= 0 && row < R && col < C;
+  }
+  static int change_direction(int direction) {
+    if (direction == 0) return 1;
+    else if (direction == 1) return 0;
+    else if (direction == 2) return 3;
+    else return 2;
+  }
+  static int fishing(List<Shark> sharks, int col) {
+
+    int minIdx = -1;
+    for (int i = 0; i < sharks.size(); i++) {
+      if (sharks.get(i).col == col) {
+        if (minIdx == -1) minIdx = i;
+        else if (sharks.get(i).row < sharks.get(minIdx).row) minIdx = i;
+      }
+    }
+
+    if (minIdx == -1) return 0;
+
+    int size = sharks.get(minIdx).size;
+    sharks.remove(minIdx);
+    return size;
   }
 }
-
 class Shark {
   int row;
   int col;
@@ -119,11 +110,14 @@ class Shark {
   int direction;
   int size;
 
-  Shark(int row, int col, int speed, int direction, int size) {
+  Shark(int row, int col, int speed, int direction, int size, int R, int C) {
     this.row = row;
     this.col = col;
-    this.speed = speed;
     this.direction = direction;
     this.size = size;
+    if (direction == 0 || direction == 1)
+      this.speed = speed % ((R - 1) * 2);
+    else
+      this.speed = speed % ((C - 1) * 2);
   }
 }

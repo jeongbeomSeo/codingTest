@@ -669,3 +669,266 @@ class Shark {
 
 }
 ```
+
+grid 배열 탐색을 사용하지 않고, Shark의 정보를 저장하고 있는 배열을 탐색하는 방식으로 진행했으며, 이동 과정에서 배열의 인덱스 값을 int[][] 표에 저장해 두었다가 같은 위치로 이동하는 상어가 나오면 크기를 비교해서 삭제해주는 방식을 선택했다.
+
+**AC**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.StringTokenizer;
+
+public class Main {
+  // 공백, 북, 남, 동, 서
+  static int[] dr = {0, -1, 1, 0, 0};
+  static int[] dc = {0, 0, 0, 1, -1};
+
+  static int R, C;
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    R = Integer.parseInt(st.nextToken());
+    C = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+
+    ArrayList<Shark> sharks = new ArrayList<>();
+    for (int i = 0; i < M; i++) {
+      st = new StringTokenizer(br.readLine());
+      int row = Integer.parseInt(st.nextToken());
+      int col = Integer.parseInt(st.nextToken());
+      int speed = Integer.parseInt(st.nextToken());
+      int direction = Integer.parseInt(st.nextToken());
+      int size = Integer.parseInt(st.nextToken());
+
+      sharks.add(new Shark(row, col, speed, direction, size));
+    }
+
+    System.out.println(simulation(sharks, M));
+  }
+  static int simulation(ArrayList<Shark> sharks, int M) {
+
+    int count_size = 0;
+    int col = 1;
+    for (; col <= C; col++) {
+
+      // 상어 잡이
+      int idx = fishing(sharks, col);
+
+      if (idx != -1) {
+        count_size += sharks.get(idx).size;
+        sharks.remove(idx);
+      }
+
+      // 상어 이동
+      active_move(sharks);
+    }
+    return count_size;
+  }
+  static int fishing(ArrayList<Shark> sharks, int col) {
+    // 상어 잡이
+    int idx = -1;
+    for (int i = 0; i < sharks.size(); i++) {
+      if (sharks.get(i).col == col) {
+        if (idx == -1) idx = i;
+        else {
+          if (sharks.get(idx).row > sharks.get(i).row) idx = i;
+        }
+      }
+    }
+    return idx;
+  }
+  static void active_move(ArrayList<Shark> sharks) {
+
+    int[][] buffer = new int[R + 1][C + 1];
+    ArrayList<Integer> removeList = new ArrayList<>();
+
+    for (int i = 0; i < sharks.size(); i++) {
+      Shark shark = sharks.get(i);
+
+      int count = 1;
+      while (count++ <= shark.speed) {
+        int row = shark.row + dr[shark.direction];
+        int col = shark.col + dc[shark.direction];
+        if (!isValidIdx(row, col)) {
+          shark.direction = reverse(shark.direction);
+          row = shark.row + dr[shark.direction];
+          col = shark.col + dc[shark.direction];
+        }
+
+        shark.row = row;
+        shark.col = col;
+      }
+      if (buffer[shark.row][shark.col] == 0) buffer[shark.row][shark.col] = i + 1;
+      else {
+        int prevSharkIdx = buffer[shark.row][shark.col] - 1;
+        if (sharks.get(prevSharkIdx).size < shark.size) {
+          buffer[shark.row][shark.col] = i + 1;
+          removeList.add(prevSharkIdx);
+        }
+        else removeList.add(i);
+      }
+    }
+    removeList.sort(Collections.reverseOrder());
+    for (Integer integer : removeList) {
+      sharks.remove((int) integer);
+    }
+  }
+  static boolean isValidIdx(int row, int col) {
+    return row >= 1 && col >= 1 && row <= R && col <= C;
+  }
+  static int reverse(int direction) {
+    if (direction == 1) return 2;
+    else if (direction == 2) return 1;
+    else if (direction == 3) return 4;
+    else return 3;
+  }
+}
+
+class Shark {
+  int row;
+  int col;
+  int speed;
+  int direction;
+  int size;
+
+  Shark(int row, int col, int speed, int direction, int size) {
+    this.row = row;
+    this.col = col;
+    this.speed = speed;
+    this.direction = direction;
+    this.size = size;
+  }
+}
+```
+
+**TLE**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.StringTokenizer;
+
+public class Main {
+  static int R, C;
+  static int[] dr = {-1, 1, 0, 0};
+  static int[] dc = {0, 0, 1, -1};
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    R = Integer.parseInt(st.nextToken());
+    C = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+
+    List<Shark> sharks = new LinkedList<>();
+    for (int i = 0; i < M; i++) {
+      st = new StringTokenizer(br.readLine());
+      int row = Integer.parseInt(st.nextToken()) - 1;
+      int col = Integer.parseInt(st.nextToken()) - 1;
+      int speed = Integer.parseInt(st.nextToken());
+      int direction = Integer.parseInt(st.nextToken()) - 1;
+      int size = Integer.parseInt(st.nextToken());
+
+      sharks.add(new Shark(row, col, speed, direction, size));
+    }
+
+    System.out.println(simulation(sharks));
+  }
+  static int simulation (List<Shark> sharks) {
+
+    int col = 0;
+    int sum = 0;
+    while (col < C) {
+       sum += fishing(sharks, col++);
+
+       active(sharks);
+    }
+    return sum;
+  }
+  static void active(List<Shark> sharks) {
+    Shark[][] shark_Grid = new Shark[R][C];
+
+    for (int i = sharks.size() - 1; i >= 0; i--) {
+      Shark shark = sharks.get(i);
+
+      active_move(shark);
+
+      active_competition(sharks, shark, shark_Grid);
+    }
+  }
+  static void active_competition (List<Shark> sharks, Shark shark, Shark[][] shark_Grid){
+    if (shark_Grid[shark.row][shark.col] == null)
+      shark_Grid[shark.row][shark.col] = shark;
+    else {
+      if (shark.size > shark_Grid[shark.row][shark.col].size) {
+        sharks.remove(shark_Grid[shark.row][shark.col]);
+        shark_Grid[shark.row][shark.col] = shark;
+      }
+      else {
+        sharks.remove(shark);
+      }
+    }
+  }
+  static void active_move(Shark shark) {
+    int speed = shark.speed;
+
+    while (speed-- > 0) {
+      if (!isValidIdx(shark.row + dr[shark.direction], shark.col + dc[shark.direction])) {
+        shark.direction = changeDirection(shark.direction);
+      }
+
+      shark.row += dr[shark.direction];
+      shark.col += dc[shark.direction];
+    }
+  }
+  static int fishing(List<Shark> sharks, int col) {
+
+    int minIdx = -1;
+    for (int i = 0; i < sharks.size(); i++) {
+      if (sharks.get(i).col == col) {
+        if (minIdx == -1) minIdx = i;
+        else if (sharks.get(minIdx).row > sharks.get(i).row)
+          minIdx = i;
+      }
+    }
+    if (minIdx != -1) {
+      int size = sharks.get(minIdx).size;
+      sharks.remove(minIdx);
+      return size;
+    }
+    else return 0;
+  }
+  static int changeDirection(int direction) {
+    if (direction == 0) return 1;
+    else if (direction == 1) return 0;
+    else if (direction == 2) return 3;
+    else return 2;
+  }
+  static boolean isValidIdx(int row, int col) {
+    return row >= 0 && col >= 0 && row < R && col < C;
+  }
+}
+class Shark {
+  int row;
+  int col;
+  int speed;
+  int direction;
+  int size;
+
+  Shark (int row, int col, int speed, int direction, int size) {
+    this.row = row;
+    this.col = col;
+    this.direction = direction;
+    this.speed = speed;
+    this.size = size;
+  }
+}
+```

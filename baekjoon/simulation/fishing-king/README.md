@@ -805,3 +805,132 @@ class Shark {
   }
 }
 ```
+
+**TLE**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.StringTokenizer;
+
+public class Main {
+  static int R, C;
+  static int[] dr = {-1, 1, 0, 0};
+  static int[] dc = {0, 0, 1, -1};
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    R = Integer.parseInt(st.nextToken());
+    C = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+
+    List<Shark> sharks = new LinkedList<>();
+    for (int i = 0; i < M; i++) {
+      st = new StringTokenizer(br.readLine());
+      int row = Integer.parseInt(st.nextToken()) - 1;
+      int col = Integer.parseInt(st.nextToken()) - 1;
+      int speed = Integer.parseInt(st.nextToken());
+      int direction = Integer.parseInt(st.nextToken()) - 1;
+      int size = Integer.parseInt(st.nextToken());
+
+      sharks.add(new Shark(row, col, speed, direction, size));
+    }
+
+    System.out.println(simulation(sharks));
+  }
+  static int simulation (List<Shark> sharks) {
+
+    int col = 0;
+    int sum = 0;
+    while (col < C) {
+       sum += fishing(sharks, col++);
+
+       active(sharks);
+    }
+    return sum;
+  }
+  static void active(List<Shark> sharks) {
+    Shark[][] shark_Grid = new Shark[R][C];
+
+    for (int i = sharks.size() - 1; i >= 0; i--) {
+      Shark shark = sharks.get(i);
+
+      active_move(shark);
+
+      active_competition(sharks, shark, shark_Grid);
+    }
+  }
+  static void active_competition (List<Shark> sharks, Shark shark, Shark[][] shark_Grid){
+    if (shark_Grid[shark.row][shark.col] == null)
+      shark_Grid[shark.row][shark.col] = shark;
+    else {
+      if (shark.size > shark_Grid[shark.row][shark.col].size) {
+        sharks.remove(shark_Grid[shark.row][shark.col]);
+        shark_Grid[shark.row][shark.col] = shark;
+      }
+      else {
+        sharks.remove(shark);
+      }
+    }
+  }
+  static void active_move(Shark shark) {
+    int speed = shark.speed;
+
+    while (speed-- > 0) {
+      if (!isValidIdx(shark.row + dr[shark.direction], shark.col + dc[shark.direction])) {
+        shark.direction = changeDirection(shark.direction);
+      }
+
+      shark.row += dr[shark.direction];
+      shark.col += dc[shark.direction];
+    }
+  }
+  static int fishing(List<Shark> sharks, int col) {
+
+    int minIdx = -1;
+    for (int i = 0; i < sharks.size(); i++) {
+      if (sharks.get(i).col == col) {
+        if (minIdx == -1) minIdx = i;
+        else if (sharks.get(minIdx).row > sharks.get(i).row)
+          minIdx = i;
+      }
+    }
+    if (minIdx != -1) {
+      int size = sharks.get(minIdx).size;
+      sharks.remove(minIdx);
+      return size;
+    }
+    else return 0;
+  }
+  static int changeDirection(int direction) {
+    if (direction == 0) return 1;
+    else if (direction == 1) return 0;
+    else if (direction == 2) return 3;
+    else return 2;
+  }
+  static boolean isValidIdx(int row, int col) {
+    return row >= 0 && col >= 0 && row < R && col < C;
+  }
+}
+class Shark {
+  int row;
+  int col;
+  int speed;
+  int direction;
+  int size;
+
+  Shark (int row, int col, int speed, int direction, int size) {
+    this.row = row;
+    this.col = col;
+    this.direction = direction;
+    this.speed = speed;
+    this.size = size;
+  }
+}
+```
+
+그냥 **Speed**를 최적화 시켜주면 되었다.. 비슷한 문제에서 이동 문제가 나올 때 한 턴에 몇번 이동하는지 잘 확인하자.
