@@ -122,6 +122,303 @@
 
 ## 힌트
 
-|예제 1|예제 2|
-|---|---|
-|![](https://onlinejudgeimages.s3-ap-northeast-1.amazonaws.com/problem/15685/ex1.png)|![](https://onlinejudgeimages.s3-ap-northeast-1.amazonaws.com/problem/15685/ex2.png)|
+|예제 1| 예제 2                                                                                 |
+|---|--------------------------------------------------------------------------------------|
+|![](https://onlinejudgeimages.s3-ap-northeast-1.amazonaws.com/problem/15685/ex1.png)| ![](https://onlinejudgeimages.s3-ap-northeast-1.amazonaws.com/problem/15685/ex2.png) |
+
+## 코드 
+
+**잘못된 코드**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.StringTokenizer;
+
+public class Main {
+  // 동, 북, 서, 남
+  static int[] dr = {0, -1, 0, 1};
+  static int[] dc = {1, 0, -1, 0};
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+
+    int[][] curve = new int[N][4];
+    for (int i = 0; i < N; i++) {
+      st = new StringTokenizer(br.readLine());
+      int col = Integer.parseInt(st.nextToken());
+      int row = Integer.parseInt(st.nextToken());
+      int direction = Integer.parseInt(st.nextToken());
+      int level = Integer.parseInt(st.nextToken());
+      curve[i][0] = row;
+      curve[i][1] = col;
+      curve[i][2] = direction;
+      curve[i][3] = level;
+    }
+
+    System.out.println(simulation(curve, N));
+  }
+  static int simulation(int[][] curve, int N) {
+
+    boolean[][] isVisited = new boolean[101][101];
+
+    int count = 0;
+    for (int i = 0; i < N; i++) {
+      int[][] coordinates = dragonCurve(curve[i]);
+
+      for (int j = 0; j < coordinates.length; j++) {
+        int row = coordinates[j][0];
+        int col = coordinates[j][1];
+        if (isValidIdx(row, col)) isVisited[row][col] = true;
+      }
+    }
+
+    for (int i = 0; i < 100; i++) {
+      for (int j = 0; j < 100; j++) {
+        if (isVisited[i][j] && isVisited[i + 1][j] && isVisited[i][j + 1] && isVisited[i + 1][j + 1]) count++;
+      }
+    }
+
+    return count;
+
+  }
+  static int[][] dragonCurve (int[] curve) {
+    int curLevel = 1;
+
+    int[][] coordinates = new int[2][2];
+    coordinates[0][0] = curve[0];
+    coordinates[0][1] = curve[1];
+    coordinates[1][0] = curve[0] + dr[curve[2]];
+    coordinates[1][1] = curve[1] + dc[curve[2]];
+
+    while (curLevel <= curve[3]) {
+
+      int beforeLength = coordinates.length;
+      int lastRow = coordinates[beforeLength - 1][0];
+      int lastCol = coordinates[beforeLength - 1][1];
+
+      int[][] temp = new int[2 * beforeLength - 1][2];
+      for (int i = 0; i < beforeLength; i++) {
+        temp[i][0] = coordinates[i][0];
+        temp[i][1] = coordinates[i][1];
+      }
+      for (int i = 0; i < beforeLength - 1; i++) {
+          temp[beforeLength + i][0] = lastRow - (coordinates[i][1] - lastCol);
+          temp[beforeLength + i][1] = lastCol + (coordinates[i][0]- lastRow);
+      }
+      coordinates = temp;
+      curLevel++;
+    }
+    return coordinates;
+  }
+  static boolean isValidIdx(int row, int col) {
+    return row >= 0 && col >= 0 && row <= 100 && col <= 100;
+  }
+}
+```
+
+해당 문제는 풀이를 참고해서 문제를 풀었다. 좌표축에서 회전하는 문제에 취약한 것을 알아서 문제를 찾아보고 연습해 보기로 했고, 해당 문제도 추가적으로 익숙해질 때까지 풀자.
+
+일단 **해당 문제 풀이의 핵심**은 끝 점을 기준으로 90도 시계방향 회전이 이전 단계까지 진행했던 순서를 거꾸로 진행하면서 각 순서에서의 방향을 반시계 방향으로 90도 회전한 방향과 일치하는 것이다.
+
+**AC**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Stack;
+import java.util.StringTokenizer;
+
+public class Main {
+  // 동, 북, 서, 남
+  static int[] dr = {0, -1, 0, 1};
+  static int[] dc = {1, 0, -1, 0};
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+
+    Curve[] curves = new Curve[N];
+    for (int i = 0; i < N; i++) {
+      st = new StringTokenizer(br.readLine());
+      int col = Integer.parseInt(st.nextToken());
+      int row = Integer.parseInt(st.nextToken());
+      int direction = Integer.parseInt(st.nextToken());
+      int level = Integer.parseInt(st.nextToken());
+
+      curves[i] = new Curve(row, col, direction, level);
+    }
+
+    System.out.println(simulation(curves, N));
+  }
+  static int simulation(Curve[] curves, int N) {
+
+    boolean[][] isVisited = new boolean[101][101];
+
+    for (int i = 0; i < N; i++) {
+      Curve curve = curves[i];
+
+      ArrayList<Integer[]> coordinates = dragonCurve(curve);
+
+      for (int j = 0; j < coordinates.size(); j++) {
+        int row = coordinates.get(j)[0];
+        int col = coordinates.get(j)[1];
+
+        if (isValidIdx(row, col)) isVisited[row][col] = true;
+      }
+    }
+
+    int count = 0;
+    for (int i = 0; i < 100; i++) {
+      for (int j = 0; j < 100; j++) {
+        if (isVisited[i][j] && isVisited[i + 1][j] && isVisited[i][j + 1] && isVisited[i + 1][j + 1]) count++;
+      }
+    }
+    return count;
+  }
+  static ArrayList<Integer[]> dragonCurve(Curve curve) {
+    ArrayList<Integer[]> coordinates = new ArrayList<>();
+
+    coordinates.add(new Integer[]{curve.row, curve.col});
+    int row = curve.row + dr[curve.direction];
+    int col = curve.col + dc[curve.direction];
+    coordinates.add(new Integer[]{row, col});
+    Stack<Integer> stack = new Stack<>();
+    stack.add(curve.direction);
+    int level = 1;
+    while (level++ <= curve.level) {
+      int size = stack.size();
+      for (int i = size - 1; i >= 0; i--) {
+        int d = (stack.get(i) + 1) % 4;
+
+        row += dr[d];
+        col += dc[d];
+        coordinates.add(new Integer[]{row, col});
+        stack.add(d);
+      }
+    }
+    return coordinates;
+  }
+  static boolean isValidIdx(int row, int col) {
+    return row >= 0 && col >= 0 && row <= 100 && col <= 100;
+  }
+}
+
+class Curve {
+  int row;
+  int col;
+  int direction;
+  int level;
+
+  Curve(int row, int col, int direction, int level) {
+    this.row = row;
+    this.col = col;
+    this.direction = direction;
+    this.level = level;
+  }
+}
+```
+
+> **참고한 사이트**
+> 
+> [백준 15685 드래곤 커브](https://velog.io/@skyepodium/%EB%B0%B1%EC%A4%80-15685-%EB%93%9C%EB%9E%98%EA%B3%A4-%EC%BB%A4%EB%B8%8C)
+
+
+**최종 코드**
+**AC**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Stack;
+import java.util.StringTokenizer;
+
+public class Main {
+  static int[] dr = {0, -1, 0, 1};
+  static int[] dc = {1, 0, -1, 0};
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+
+    Curve[] curves = new Curve[N];
+    for (int i = 0; i < N; i++) {
+      st = new StringTokenizer(br.readLine());
+      int col = Integer.parseInt(st.nextToken());
+      int row = Integer.parseInt(st.nextToken());
+      int direction = Integer.parseInt(st.nextToken());
+      int generation = Integer.parseInt(st.nextToken());
+      curves[i] = new Curve(row, col, direction, generation);
+    }
+
+    System.out.println(simulation(curves, N));
+  }
+  static int simulation(Curve[] curves, int N) {
+
+    boolean[][] isVisited = new boolean[101][101];
+    for (int time = 0; time < N; time++) {
+      Curve curve = curves[time];
+
+      dragonCurve(curve, isVisited);
+    }
+
+    int count = 0;
+    for (int i = 0; i < 100; i++) {
+      for (int j = 0; j < 100; j++) {
+        if (isVisited[i][j] && isVisited[i][j + 1] && isVisited[i + 1][j] && isVisited[i + 1][j + 1]) count++;
+      }
+    }
+    return count;
+  }
+  static void dragonCurve(Curve curve, boolean[][] isVisited) {
+
+    int row = curve.row;
+    int col = curve.col;
+    int direction = curve.direction;
+    int gen = curve.generation;
+
+    isVisited[row][col] = true;
+    row += dr[direction];
+    col += dc[direction];
+
+    isVisited[row][col] = true;
+
+    Stack<Integer> stack = new Stack<>();
+    stack.add(direction);
+
+    while (gen-- > 0) {
+      int size = stack.size();
+
+      while (--size >= 0) {
+        int curDirection = (stack.get(size) + 1) % 4;
+
+        row += dr[curDirection];
+        col += dc[curDirection];
+        isVisited[row][col] = true;
+        stack.add(curDirection);
+      }
+    }
+  }
+}
+class Curve {
+  int row;
+  int col;
+  int direction;
+  int generation;
+
+  Curve(int row, int col, int direction, int generation) {
+    this.row = row;
+    this.col = col;
+    this.direction = direction;
+    this.generation = generation;
+  }
+}
+```

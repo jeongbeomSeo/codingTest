@@ -1,10 +1,10 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Stack;
 import java.util.StringTokenizer;
 
 public class Main {
-  // 동, 북, 서, 남
   static int[] dr = {0, -1, 0, 1};
   static int[] dc = {1, 0, -1, 0};
   public static void main(String[] args) throws IOException {
@@ -13,75 +13,75 @@ public class Main {
 
     int N = Integer.parseInt(br.readLine());
 
-    int[][] curve = new int[N][4];
+    Curve[] curves = new Curve[N];
     for (int i = 0; i < N; i++) {
       st = new StringTokenizer(br.readLine());
       int col = Integer.parseInt(st.nextToken());
       int row = Integer.parseInt(st.nextToken());
       int direction = Integer.parseInt(st.nextToken());
-      int level = Integer.parseInt(st.nextToken());
-      curve[i][0] = row;
-      curve[i][1] = col;
-      curve[i][2] = direction;
-      curve[i][3] = level;
+      int generation = Integer.parseInt(st.nextToken());
+      curves[i] = new Curve(row, col, direction, generation);
     }
 
-    System.out.println(simulation(curve, N));
+    System.out.println(simulation(curves, N));
   }
-  static int simulation(int[][] curve, int N) {
+  static int simulation(Curve[] curves, int N) {
 
     boolean[][] isVisited = new boolean[101][101];
+    for (int time = 0; time < N; time++) {
+      Curve curve = curves[time];
+
+      dragonCurve(curve, isVisited);
+    }
 
     int count = 0;
-    for (int i = 0; i < N; i++) {
-      int[][] coordinates = dragonCurve(curve[i]);
-
-      for (int j = 0; j < coordinates.length; j++) {
-        int row = coordinates[j][0];
-        int col = coordinates[j][1];
-        if (isValidIdx(row, col)) isVisited[row][col] = true;
-      }
-    }
-
     for (int i = 0; i < 100; i++) {
       for (int j = 0; j < 100; j++) {
-        if (isVisited[i][j] && isVisited[i + 1][j] && isVisited[i][j + 1] && isVisited[i + 1][j + 1]) count++;
+        if (isVisited[i][j] && isVisited[i][j + 1] && isVisited[i + 1][j] && isVisited[i + 1][j + 1]) count++;
       }
     }
-
     return count;
-
   }
-  static int[][] dragonCurve (int[] curve) {
-    int curLevel = 1;
+  static void dragonCurve(Curve curve, boolean[][] isVisited) {
 
-    int[][] coordinates = new int[2][2];
-    coordinates[0][0] = curve[0];
-    coordinates[0][1] = curve[1];
-    coordinates[1][0] = curve[0] + dr[curve[2]];
-    coordinates[1][1] = curve[1] + dc[curve[2]];
+    int row = curve.row;
+    int col = curve.col;
+    int direction = curve.direction;
+    int gen = curve.generation;
 
-    while (curLevel <= curve[3]) {
+    isVisited[row][col] = true;
+    row += dr[direction];
+    col += dc[direction];
 
-      int beforeLength = coordinates.length;
-      int lastRow = coordinates[beforeLength - 1][0];
-      int lastCol = coordinates[beforeLength - 1][1];
+    isVisited[row][col] = true;
 
-      int[][] temp = new int[2 * beforeLength - 1][2];
-      for (int i = 0; i < beforeLength; i++) {
-        temp[i][0] = coordinates[i][0];
-        temp[i][1] = coordinates[i][1];
+    Stack<Integer> stack = new Stack<>();
+    stack.add(direction);
+
+    while (gen-- > 0) {
+      int size = stack.size();
+
+      while (--size >= 0) {
+        int curDirection = (stack.get(size) + 1) % 4;
+
+        row += dr[curDirection];
+        col += dc[curDirection];
+        isVisited[row][col] = true;
+        stack.add(curDirection);
       }
-      for (int i = 0; i < beforeLength - 1; i++) {
-          temp[beforeLength + i][0] = lastRow - (coordinates[i][1] - lastCol);
-          temp[beforeLength + i][1] = lastCol + (coordinates[i][0]- lastRow);
-      }
-      coordinates = temp;
-      curLevel++;
     }
-    return coordinates;
   }
-  static boolean isValidIdx(int row, int col) {
-    return row >= 0 && col >= 0 && row <= 100 && col <= 100;
+}
+class Curve {
+  int row;
+  int col;
+  int direction;
+  int generation;
+
+  Curve(int row, int col, int direction, int generation) {
+    this.row = row;
+    this.col = col;
+    this.direction = direction;
+    this.generation = generation;
   }
 }
