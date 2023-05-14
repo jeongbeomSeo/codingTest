@@ -150,3 +150,69 @@ public class Main {
 다른 방향으로 가는 케이스도 고려해줘야 할 것이다.
 
 특정 경로만으로 갈 수 있는 경우가 있을 수 있으므로 고려 해야한다.
+
+결국 다른 사람 풀이를 참고했습니다. 
+
+**AC**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.StringTokenizer;
+
+public class Main {
+  static int[] dr = {-1, 0, 1};
+  static int[] dc = {1, 1, 1};
+  static int R, C;
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    R = Integer.parseInt(st.nextToken());
+    C = Integer.parseInt(st.nextToken());
+
+    String[][] grid = new String[R][C];
+    for (int i = 0; i < R; i++) {
+      String str = br.readLine();
+      for (int j = 0; j < C; j++) {
+        grid[i][j] = str.substring(j, j + 1);
+      }
+    }
+
+    System.out.println(greedy(grid));
+
+  }
+  static int greedy(String[][] grid) {
+
+    boolean[][] isVisited = new boolean[R][C];
+    int count = 0;
+    for (int i = 0; i < R; i++) {
+      if (dfs(grid, isVisited, i, 0)) count++;
+    }
+    return count;
+  }
+  static boolean dfs(String[][] grid, boolean[][] isVisited, int row, int col) {
+
+    isVisited[row][col] = true;
+    if (col == C - 1) return true;
+
+    boolean isSuccess = false;
+    for (int i = 0; i < 3; i++) {
+      int nextRow = row + dr[i];
+      int nextCol = col + dc[i];
+
+      if (!isSuccess && isValidIdx(nextRow, nextCol) && grid[nextRow][nextCol].equals(".") && !isVisited[nextRow][nextCol])
+        isSuccess = dfs(grid, isVisited, nextRow, nextCol);
+    }
+    return isSuccess;
+  }
+  static boolean isValidIdx(int row, int col) {
+    return row >= 0 && col >= 0 && row < R && col < C;
+  }
+}
+```
+
+> **참고**
+> 
+> [백준 3109번: 빵집](https://velog.io/@qwerty1434/%EB%B0%B1%EC%A4%80-3109%EB%B2%88-%EB%B9%B5%EC%A7%91)
