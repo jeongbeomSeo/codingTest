@@ -1,123 +1,126 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.*;
+import java.util.StringTokenizer;
 
 public class Main {
   static int R, C, M;
-  static int[] dr = {-1, 1, 0, 0};
-  static int[] dc = {0, 0, 1, -1};
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
 
-    R = Integer.parseInt(st.nextToken());
-    C = Integer.parseInt(st.nextToken());
+    Shark.R = R = Integer.parseInt(st.nextToken());
+    Shark.C = C = Integer.parseInt(st.nextToken());
     M = Integer.parseInt(st.nextToken());
 
-    List<Shark> sharks = new ArrayList<>();
+    Shark[] sharks = new Shark[M];
     for (int i = 0; i < M; i++) {
       st = new StringTokenizer(br.readLine());
-      int row = Integer.parseInt(st.nextToken()) - 1;
-      int col = Integer.parseInt(st.nextToken()) - 1;
+      int row = Integer.parseInt(st.nextToken());
+      int col = Integer.parseInt(st.nextToken());
       int speed = Integer.parseInt(st.nextToken());
-      int direction = Integer.parseInt(st.nextToken()) - 1;
+      int direction = Integer.parseInt(st.nextToken());
       int size = Integer.parseInt(st.nextToken());
 
-      sharks.add(new Shark(row, col, speed, direction, size, R, C));
+      sharks[i] = new Shark(row, col, speed, direction, size);
     }
 
     System.out.println(simulation(sharks));
   }
-  static int simulation(List<Shark> sharks) {
+  static int simulation(Shark[] sharks) {
 
-    int col = 0;
     int sum = 0;
-    while (col < C) {
+    int col = 1;
+
+    while (col <= C) {
       sum += fishing(sharks, col++);
+
       active(sharks);
     }
     return sum;
   }
-  static void active(List<Shark> sharks) {
-
-    int[][] buffer = new int[R][C];
-    ArrayList<Integer> removeIdx = new ArrayList<>();
-
-    for (int i = 0; i < sharks.size(); i++) {
-      Shark shark = sharks.get(i);
-
-      active_move(shark);
-      if (buffer[shark.row][shark.col] == 0) buffer[shark.row][shark.col] = i + 1;
-      else {
-        int buffer_idx = buffer[shark.row][shark.col] - 1;
-        if (sharks.get(buffer_idx).size < shark.size) {
-          buffer[shark.row][shark.col] = i + 1;
-          removeIdx.add(buffer_idx);
-        }
-        else removeIdx.add(i);
-      }
-    }
-
-    removeIdx.sort(Collections.reverseOrder());
-    for (int idx : removeIdx) {
-      sharks.remove(idx);
-    }
-  }
-  static void active_move(Shark shark) {
-
-    int speed = shark.speed;
-
-    while (speed-- > 0) {
-      if (!isValidIdx(shark.row + dr[shark.direction], shark.col + dc[shark.direction])) {
-        shark.direction = change_direction(shark.direction);
-      }
-      shark.row += dr[shark.direction];
-      shark.col += dc[shark.direction];
-    }
-
-  }
-  static boolean isValidIdx(int row, int col) {
-    return row >= 0 && col >= 0 && row < R && col < C;
-  }
-  static int change_direction(int direction) {
-    if (direction == 0) return 1;
-    else if (direction == 1) return 0;
-    else if (direction == 2) return 3;
-    else return 2;
-  }
-  static int fishing(List<Shark> sharks, int col) {
+  static int fishing(Shark[] sharks, int col) {
 
     int minIdx = -1;
-    for (int i = 0; i < sharks.size(); i++) {
-      if (sharks.get(i).col == col) {
+    for (int i = 0; i < M; i++) {
+      if (!sharks[i].dead && sharks[i].col == col) {
         if (minIdx == -1) minIdx = i;
-        else if (sharks.get(i).row < sharks.get(minIdx).row) minIdx = i;
+        else if (sharks[i].row < sharks[minIdx].row) minIdx = i;
       }
     }
 
     if (minIdx == -1) return 0;
 
-    int size = sharks.get(minIdx).size;
-    sharks.remove(minIdx);
-    return size;
+    sharks[minIdx].dead = true;
+    return sharks[minIdx].size;
+  }
+  static void active(Shark[] sharks) {
+
+    int[][] buffer = new int[R + 1][C + 1];
+
+    for (int i = 0; i < M; i++) {
+      if (sharks[i].dead) continue;
+
+      Shark curShark = sharks[i];
+
+      curShark.move();
+
+      if (buffer[curShark.row][curShark.col] == 0) buffer[curShark.row][curShark.col] = i + 1;
+      else {
+        int otherSharkIdx = buffer[curShark.row][curShark.col] - 1;
+        if (sharks[otherSharkIdx].size < curShark.size) {
+          sharks[otherSharkIdx].dead = true;
+          buffer[curShark.row][curShark.col] = i + 1;
+        }
+        else curShark.dead = true;
+      }
+    }
   }
 }
 class Shark {
+  static final int[] dr = {0, -1, 1, 0, 0};
+  static final int[] dc = {0, 0, 0, 1, -1};
+  boolean dead = false;
+  static int R;
+  static int C;
   int row;
   int col;
   int speed;
   int direction;
   int size;
 
-  Shark(int row, int col, int speed, int direction, int size, int R, int C) {
+  Shark(int row, int col, int speed, int direction, int size) {
     this.row = row;
     this.col = col;
     this.direction = direction;
     this.size = size;
-    if (direction == 0 || direction == 1)
+    if (direction == 1 || direction == 2) {
       this.speed = speed % ((R - 1) * 2);
-    else
+    }
+    else {
       this.speed = speed % ((C - 1) * 2);
+    }
   }
+
+  void move() {
+    int speed = this.speed;
+
+    while (speed-- > 0) {
+      if (!isValidIdx(row + dr[direction],col + dc[direction])) direction = changeDirection(direction);
+      row += dr[direction];
+      col += dc[direction];
+    }
+  }
+
+  boolean isValidIdx(int row, int col) {
+    return row >= 1 && col >= 1 && row <= R && col <= C;
+  }
+
+  int changeDirection(int direction) {
+    if (direction == 1) return 2;
+    else if (direction == 2) return 1;
+    else if (direction == 3) return 4;
+    else return 3;
+  }
+
 }
