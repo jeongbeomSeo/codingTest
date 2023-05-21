@@ -13,55 +13,59 @@ public class Main {
     int M = Integer.parseInt(st.nextToken());
 
     int[] parent = new int[N + 1];
-    for (int i = 1; i <= N; i++) {
-      parent[i] = i;
-    }
+    for (int i = 1; i <= N; i++) parent[i] = i;
 
     st = new StringTokenizer(br.readLine());
-    int knowing_number = Integer.parseInt(st.nextToken());
-    boolean[] know = new boolean[N + 1];
-    for (int i = 0; i < knowing_number; i++) {
-      know[Integer.parseInt(st.nextToken())] = true;
+    int known = Integer.parseInt(st.nextToken());
+    int[] knownList = new int[known];
+    for (int i = 0; i < known; i++) {
+      knownList[i] = Integer.parseInt(st.nextToken());
     }
 
     ArrayList<ArrayList<Integer>> party = new ArrayList<>();
-    for (int i = 0; i < M; i++) {
-      party.add(new ArrayList());
-    }
+    for (int i = 0; i < M; i++) party.add(new ArrayList<>());
     for (int i = 0; i < M; i++) {
       st = new StringTokenizer(br.readLine());
       int size = Integer.parseInt(st.nextToken());
-      int baseNumber = Integer.parseInt(st.nextToken());
-      party.get(i).add(baseNumber);
-      for (int j = 1; j < size; j++) {
-        int num = Integer.parseInt(st.nextToken());
-        union(parent, know, baseNumber, num);
-        party.get(i).add(num);
+
+      for (int j = 0; j < size; j++) {
+        int curNumber = Integer.parseInt(st.nextToken());
+
+        party.get(i).add(curNumber);
+        for (int k = j - 1; k >= 0; k--) {
+          int otherNumber = party.get(i).get(k);
+
+          union_merge(parent, curNumber, otherNumber);
+        }
       }
     }
 
     int count = 0;
-    for (int i = 0; i < party.size(); i++) {
-      int j;
-      int size = party.get(i).size();
-      for (j = 0; j < size; j++) {
-        if (know[find(parent, party.get(i).get(j))]) break;
+    for (int i = 0; i < M; i++) {
+      boolean success = true;
+      for (int j = 0; j < party.get(i).size(); j++) {
+        int checkNumber = union_find(parent, party.get(i).get(j));
+        for (int k = 0; k < known; k++) {
+          if (checkNumber == union_find(parent, knownList[k])) {
+            success = false;
+          }
+        }
+        if (!success) break;
       }
-      if (j == size) count++;
+      if (success) count++;
     }
+
     System.out.println(count);
   }
-  static int find(int[] parent, int x) {
+  static int union_find(int[] parent, int x) {
     if (parent[x] == x) return x;
-    return parent[x] = find(parent, parent[x]);
-  }
-  static void union(int[] parent, boolean[] know, int x, int y) {
-    x = find(parent, x);
-    y = find(parent, y);
 
-    if (x != y) {
-      if (know[x]) parent[y] = x;
-      else parent[x] = y;
-    }
+    return parent[x] = union_find(parent, parent[x]);
+  }
+  static void union_merge(int[] parent, int x, int y) {
+    x = union_find(parent, x);
+    y = union_find(parent, y);
+
+    if (x != y) parent[x] = y;
   }
 }
