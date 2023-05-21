@@ -146,3 +146,57 @@ public class Main {
   }
 }
 ```
+
+**AC**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.StringTokenizer;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+    int[] weight = new int[N];
+    st = new StringTokenizer(br.readLine());
+    for (int i = 0; i < N; i++) {
+      weight[i] = Integer.parseInt(st.nextToken());
+    }
+
+    Arrays.sort(weight);
+
+    System.out.println(greedy(weight, N));
+  }
+
+  static long greedy(int[] weight, int N) {
+
+    if (weight[0] != 1) return 1;
+    long sum = 1;
+
+    for (int i = 1; i < N; i++) {
+      if (sum - weight[i] >= -1) sum += weight[i];
+      else break;
+    }
+
+    return sum + 1;
+  }
+}
+```
+
+이 풀이의 핵심은 DP와 유사하지만 차이가 있다.
+
+추를 오름차순으로 정렬을 해서 sum을 두고 먼저 처음 추 값 1을 넣습니다.
+
+그리고 그 이후부터 sum과 현재 추 값을 비교해서 추가 기존에 만들 수 있는 무게와 대소 비교를 합니다.
+
+여기서 대소 비교를 하는 이유는 두 가지 입니다.
+
+1. 기존에 sum 이전의 모든 무게 값들은 **이전에 사용했던 추만으로 만들 수 있는 무게**
+2. sum보다 2이상 크지 않는 경우 즉, sum + 1 이하인 값들은 앞서 사용했던 무게들에 더해서 만들 수 있음.
+
+따라서, sum + 1 이하인 경우에는 sum에 더해줍니다. 아닌 경우에는 종료하고 그 다음 값을 return 해주면 됩니다.

@@ -10,27 +10,26 @@ public class Main {
     StringTokenizer st;
 
     int N = Integer.parseInt(br.readLine());
-    int[] weight = new int[N];
+
+    int[] weights = new int[N];
     st = new StringTokenizer(br.readLine());
     for (int i = 0; i < N; i++) {
-      weight[i] = Integer.parseInt(st.nextToken());
+      weights[i] = Integer.parseInt(st.nextToken());
     }
 
-    Arrays.sort(weight);
+    Arrays.sort(weights);
 
-    System.out.println(greedy(weight, N));
-  }
-
-  static long greedy(int[] weight, int N) {
-
-    if (weight[0] != 1) return 1;
-    long sum = 1;
-
-    for (int i = 1; i < N; i++) {
-      if (sum - weight[i] >= -1) sum += weight[i];
-      else break;
+    if (weights[0] != 1) {
+      System.out.println(1);
     }
+    else {
+      int sum = weights[0];
+      for (int i = 1; i < N; i++) {
+        if (sum + 1 >= weights[i]) sum += weights[i];
+        else break;
+      }
 
-    return sum + 1;
+      System.out.println(sum + 1);
+    }
   }
 }
