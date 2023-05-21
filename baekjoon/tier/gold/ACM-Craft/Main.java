@@ -15,7 +15,6 @@ public class Main {
 
     while (T-- > 0) {
       st = new StringTokenizer(br.readLine());
-
       int N = Integer.parseInt(st.nextToken());
       int K = Integer.parseInt(st.nextToken());
 
@@ -26,46 +25,48 @@ public class Main {
       }
 
       ArrayList<ArrayList<Integer>> graph = new ArrayList<>();
-      for (int i = 0; i <= N; i++) {
-        graph.add(new ArrayList<>());
-      }
-
+      for (int i = 0; i <= N; i++) graph.add(new ArrayList<>());
       int[] inDegree = new int[N + 1];
-
       for (int i = 0; i < K; i++) {
         st = new StringTokenizer(br.readLine());
         int n1 = Integer.parseInt(st.nextToken());
         int n2 = Integer.parseInt(st.nextToken());
+
         graph.get(n1).add(n2);
         inDegree[n2]++;
       }
 
       int target = Integer.parseInt(br.readLine());
 
-      Queue<Integer> q = new LinkedList<>();
-      int[] dp = new int[N + 1];
+      System.out.println(query(graph, inDegree, cost, target, N));
 
-      for (int i = 1; i <= N; i++) {
-        if (inDegree[i] == 0) q.add(i);
-        dp[i] = cost[i];
-      }
-
-      while (!q.isEmpty()) {
-        int curNode = q.poll();
-
-        for (int i = 0; i < graph.get(curNode).size(); i++) {
-          int nxtNode = graph.get(curNode).get(i);
-
-          if (dp[curNode] + cost[nxtNode] > dp[nxtNode]) {
-            dp[nxtNode] = dp[curNode] + cost[nxtNode];
-          }
-          if (--inDegree[nxtNode] == 0) {
-            q.add(nxtNode);
-          }
-        }
-      }
-
-      System.out.println(dp[target]);
     }
+
+  }
+  static int query(ArrayList<ArrayList<Integer>> graph, int[] inDegree, int[] cost, int target, int N) {
+
+    Queue<Integer> q = new LinkedList<>();
+    int[] result = new int[N + 1];
+    for (int i = 1; i <= N; i++)
+      if (inDegree[i] == 0) {
+        q.add(i);
+        result[i] = cost[i];
+      }
+
+    for (int count = 1; count <= N; count++) {
+      int curIdx = q.poll();
+
+      if (curIdx == target) break;
+
+      for (int i = 0; i < graph.get(curIdx).size(); i++) {
+        int nextIdx = graph.get(curIdx).get(i);
+
+        if (result[nextIdx] < result[curIdx] + cost[nextIdx]) {
+          result[nextIdx] = result[curIdx] + cost[nextIdx];
+        }
+        if (--inDegree[nextIdx] == 0) q.add(nextIdx);
+      }
+    }
+    return result[target];
   }
 }
