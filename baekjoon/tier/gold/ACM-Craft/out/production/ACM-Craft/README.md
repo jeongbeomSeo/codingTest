@@ -20,7 +20,7 @@
 
 따라서 4번건물의 건설을 완료하기 위해서는 우선 처음 1번 건물을 건설하는데 10초가 소요된다. 그리고 2번 건물과 3번 건물을 동시에 건설하기 시작하면 2번은 1초뒤에 건설이 완료되지만 아직 3번 건물이 완료되지 않았으므로 4번 건물을 건설할 수 없다. 3번 건물이 완성되고 나면 그때 4번 건물을 지을수 있으므로 4번 건물이 완성되기까지는 총 120초가 소요된다.
 
-프로게이머 최백준은 애인과의 데이트 비용을 마련하기 위해 서강대학교배 ACM크래프트 대회에 참가했다! 최백준은 화려한 컨트롤 실력을 가지고 있기 때문에 모든 경기에서 특정 건물만 짓는다면 무조건 게임에서 이길 수 있다. 그러나 매 게임마다 특정건물을 짓기 위한 순서가 달라지므로 최백준은 좌절하고 있었다. 백준이를 위해 특정건물을 가장 빨리 지을 때까지 걸리는 최소시간을 알아내는 프로그램을 작성해주자.
+프로게이머 최백준은 애인과의 데이트 비용을 마련하기 위해 서강대학교배 ACM 크래프트 대회에 참가했다! 최백준은 화려한 컨트롤 실력을 가지고 있기 때문에 모든 경기에서 특정 건물만 짓는다면 무조건 게임에서 이길 수 있다. 그러나 매 게임마다 특정건물을 짓기 위한 순서가 달라지므로 최백준은 좌절하고 있었다. 백준이를 위해 특정건물을 가장 빨리 지을 때까지 걸리는 최소시간을 알아내는 프로그램을 작성해주자.
 
 ## 입력 
 
@@ -203,6 +203,83 @@ public class Main {
 
       System.out.println(dp[target]);
     }
+  }
+}
+```
+
+**AC**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.StringTokenizer;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int T = Integer.parseInt(br.readLine());
+
+    while (T-- > 0) {
+      st = new StringTokenizer(br.readLine());
+      int N = Integer.parseInt(st.nextToken());
+      int K = Integer.parseInt(st.nextToken());
+
+      int[] cost = new int[N + 1];
+      st = new StringTokenizer(br.readLine());
+      for (int i = 1; i <= N; i++) {
+        cost[i] = Integer.parseInt(st.nextToken());
+      }
+
+      ArrayList<ArrayList<Integer>> graph = new ArrayList<>();
+      for (int i = 0; i <= N; i++) graph.add(new ArrayList<>());
+      int[] inDegree = new int[N + 1];
+      for (int i = 0; i < K; i++) {
+        st = new StringTokenizer(br.readLine());
+        int n1 = Integer.parseInt(st.nextToken());
+        int n2 = Integer.parseInt(st.nextToken());
+
+        graph.get(n1).add(n2);
+        inDegree[n2]++;
+      }
+
+      int target = Integer.parseInt(br.readLine());
+
+      System.out.println(query(graph, inDegree, cost, target, N));
+
+    }
+
+  }
+  static int query(ArrayList<ArrayList<Integer>> graph, int[] inDegree, int[] cost, int target, int N) {
+
+    Queue<Integer> q = new LinkedList<>();
+    int[] result = new int[N + 1];
+    for (int i = 1; i <= N; i++)
+      if (inDegree[i] == 0) {
+        q.add(i);
+        result[i] = cost[i];
+      }
+
+    for (int count = 1; count <= N; count++) {
+      int curIdx = q.poll();
+
+      if (curIdx == target) break;
+
+      for (int i = 0; i < graph.get(curIdx).size(); i++) {
+        int nextIdx = graph.get(curIdx).get(i);
+
+        if (result[nextIdx] < result[curIdx] + cost[nextIdx]) {
+          result[nextIdx] = result[curIdx] + cost[nextIdx];
+        }
+        if (--inDegree[nextIdx] == 0) q.add(nextIdx);
+      }
+    }
+    return result[target];
   }
 }
 ```
