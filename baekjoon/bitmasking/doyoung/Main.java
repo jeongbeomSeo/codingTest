@@ -4,35 +4,31 @@ import java.io.InputStreamReader;
 import java.util.StringTokenizer;
 
 public class Main {
-  static int N;
-  static int MIN = Integer.MAX_VALUE;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st;
 
-    N = Integer.parseInt(br.readLine());
-
-
-    int[][] ingredients = new int[N][2];
+    int N = Integer.parseInt(br.readLine());
+    int[][] food = new int[N][2];
     for (int i = 0; i < N; i++) {
       st = new StringTokenizer(br.readLine());
-      ingredients[i][0] = Integer.parseInt(st.nextToken());
-      ingredients[i][1] = Integer.parseInt(st.nextToken());
+      food[i][0] = Integer.parseInt(st.nextToken());
+      food[i][1] = Integer.parseInt(st.nextToken());
     }
 
-    combination(ingredients, 1, 0, 0, 0);
+    int min = Integer.MAX_VALUE;
 
-    System.out.println(MIN);
-  }
-  static void combination(int[][] ingredients, int aSum, int bSum, int ptr, int size) {
-
-    if (ptr == N) {
-      if (size != 0) MIN = Math.min(Math.abs(aSum - bSum), MIN);
+    for (int set = 1; set < (1 << N); set++) {
+      int sourCost = 1;
+      int bitterCost = 0;
+      for (int bit = N - 1; bit >= 0; bit--) {
+        if ((set & (1 << bit)) == (1 << bit)) {
+          sourCost *= food[bit][0];
+          bitterCost += food[bit][1];
+        }
+      }
+      min = Math.min(Math.abs(sourCost - bitterCost), min);
     }
-    else {
-      combination(ingredients, aSum * ingredients[ptr][0], bSum + ingredients[ptr][1], ptr + 1, size + 1);
-
-      combination(ingredients, aSum, bSum, ptr + 1, size);
-    }
+    System.out.println(min);
   }
 }
