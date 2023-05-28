@@ -8,34 +8,40 @@ public class Main {
     StringTokenizer st;
 
     int N = Integer.parseInt(br.readLine());
-    int[] nums = new int[N + 1];
+
+    int[] nums = new int[N];
     st = new StringTokenizer(br.readLine());
-    for (int i = 1; i <= N; i++) {
-      nums[i] = Integer.parseInt(st.nextToken());
-    }
+    for (int i = 0; i < N; i++) nums[i] = Integer.parseInt(st.nextToken());
 
-    boolean[][] dp = new boolean[N + 1][N + 1];
-    for (int i = 1; i <= N; i++) {
-      dp[i][i] = true;
-
-      if (i != N && nums[i] == nums[i + 1]) dp[i][i + 1] = true;
-    }
-
-    for (int i = 2; i <= N - 1; i++) {
-      for (int j = 1; i + j <= N; j++) {
-        if (nums[j] == nums[j + i] && dp[j + 1][j + i - 1]) dp[j][j + i] = true;
-      }
-    }
+    boolean[][] is_pd = query_pd(nums, N);
 
     int M = Integer.parseInt(br.readLine());
     for (int i = 0; i < M; i++) {
       st = new StringTokenizer(br.readLine());
-      int s = Integer.parseInt(st.nextToken());
-      int e = Integer.parseInt(st.nextToken());
+      int s = Integer.parseInt(st.nextToken()) - 1;
+      int e = Integer.parseInt(st.nextToken()) - 1;
 
-      bw.write((dp[s][e] ? 1 : 0) + "\n");
+      bw.write((is_pd[s][e] ? 1 : 0) +"\n");
     }
     bw.flush();
     bw.close();
+  }
+  static boolean[][] query_pd(int[] nums, int N) {
+
+    boolean[][] is_pd = new boolean[N][N];
+
+    for (int i = 0; i < N; i++) {
+      is_pd[i][i] = true;
+
+      if (i != N - 1 && nums[i] == nums[i + 1]) is_pd[i][i + 1] = true;
+    }
+
+    for (int i = 2; i <= N - 1; i++) {
+      for (int j = 0; j + i < N; j++) {
+        if (nums[j] == nums[j + i] && is_pd[j + 1][j + i - 1]) is_pd[j][j + i] = true;
+      }
+    }
+
+    return is_pd;
   }
 }
