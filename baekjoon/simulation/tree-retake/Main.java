@@ -9,7 +9,7 @@ import java.util.StringTokenizer;
 public class Main {
   static int N, M, K;
   static int[] dr = {-1, -1, -1, 0, 0, 1, 1, 1};
-  static int[] dc = {-1, 0 ,1, -1, 1, -1, 0, 1};
+  static int[] dc = {-1, 0, 1, -1, 1, -1, 0, 1};
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
@@ -18,106 +18,95 @@ public class Main {
     M = Integer.parseInt(st.nextToken());
     K = Integer.parseInt(st.nextToken());
 
-    int[][] addGrid = new int[N][N];
+    int[][] baseGrid = new int[N][N];
     for (int i = 0; i < N; i++) {
       st = new StringTokenizer(br.readLine());
       for (int j = 0; j < N; j++) {
-        addGrid[i][j] = Integer.parseInt(st.nextToken());
+        baseGrid[i][j] = Integer.parseInt(st.nextToken());
       }
     }
 
-    Deque<Tree> trees = new ArrayDeque<>();
-    Tree[] treesForSort = new Tree[M];
+    Deque<Tree> treeDeque = new ArrayDeque<>();
+
     for (int i = 0; i < M; i++) {
       st = new StringTokenizer(br.readLine());
-      int x = Integer.parseInt(st.nextToken()) - 1;
-      int y = Integer.parseInt(st.nextToken()) - 1;
+
+      int row = Integer.parseInt(st.nextToken()) - 1;
+      int col = Integer.parseInt(st.nextToken()) - 1;
       int age = Integer.parseInt(st.nextToken());
 
-      treesForSort[i] = new Tree(x, y, age);
+      treeDeque.add(new Tree(row, col, age));
     }
 
-    Arrays.sort(treesForSort);
-    for (int i = 0; i < M; i++) trees.add(treesForSort[i]);
-    treesForSort = null;
-
-    System.out.println(simulation(trees, addGrid));
+    System.out.println(simulation(treeDeque, baseGrid));
   }
-  static int simulation(Deque<Tree> trees, int[][] addGrid) {
+  static int simulation(Deque<Tree> treeDeque, int[][] baseGrid) {
 
     int[][] grid = new int[N][N];
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++) grid[i][j] = 5;
+    for (int i = 0; i < N; i++) Arrays.fill(grid[i], 5);
 
     while (K-- > 0) {
-      active(trees, grid, addGrid);
-    }
-    return trees.size();
-  }
-  static void active(Deque<Tree> trees, int[][] grid, int[][] addGrid) {
+      Deque<Tree> deadTree = new ArrayDeque<>();
+      Deque<Tree> aliveTree = new ArrayDeque<>();
+      while (!treeDeque.isEmpty()) {
+        Tree tree = treeDeque.poll();
 
-    Deque<Tree> deadTree = new ArrayDeque<>();
-    Deque<Tree> nextTree = new ArrayDeque<>();
-    while (!trees.isEmpty()) {
-      Tree tree = trees.poll();
-      if (tree.age <= grid[tree.row][tree.col]) {
-        grid[tree.row][tree.col] -= tree.age;
-        tree.age++;
-        nextTree.add(tree);
-      }
-      else deadTree.add(tree);
-    }
-
-    while (!deadTree.isEmpty()) {
-      Tree tree = deadTree.poll();
-
-      grid[tree.row][tree.col] += tree.age / 2;
-    }
-
-    while (!nextTree.isEmpty()) {
-      Tree tree = nextTree.poll();
-
-      if (tree.age % 5 == 0) {
-        for (int i = 0; i < 8; i++) {
-          int nextRow = tree.row + dr[i];
-          int nextCol = tree.col + dc[i];
-          if (isValidIdx(nextRow, nextCol)) {
-            trees.addFirst(new Tree(nextRow, nextCol, 1));
-          }
+        if (grid[tree.row][tree.col] >= tree.age) {
+          grid[tree.row][tree.col] -= tree.age;
+          tree.age++;
+          aliveTree.add(tree);
+        }
+        else {
+          deadTree.add(tree);
         }
       }
-      trees.addLast(tree);
-    }
 
-    initGrid(grid, addGrid);
-  }
-  static void initGrid(int[][] grid, int[][] addGrid) {
+      while (!deadTree.isEmpty()) {
+        Tree tree = deadTree.poll();
 
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < N; j++) {
-        grid[i][j] += addGrid[i][j];
+        grid[tree.row][tree.col] += tree.age / 2;
       }
+
+      while (!aliveTree.isEmpty()) {
+        Tree tree = aliveTree.poll();
+
+        if (tree.age % 5 == 0) {
+          for (int i = 0; i < 8; i++) {
+            int nextRow = tree.row + dr[i];
+            int nextCol = tree.col + dc[i];
+
+            if (isValidIdx(nextRow, nextCol)) {
+              treeDeque.addFirst(new Tree(nextRow, nextCol, 1));
+            }
+          }
+        }
+        treeDeque.addLast(tree);
+      }
+
+      addGrid(grid, baseGrid);
     }
 
+    return treeDeque.size();
   }
   static boolean isValidIdx(int row, int col) {
     return row >= 0 && col >= 0 && row < N && col < N;
   }
+  static void addGrid(int[][] grid, int[][] baseGrid) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        grid[i][j] += baseGrid[i][j];
+      }
+    }
+  }
 }
-
-class Tree implements Comparable<Tree>{
+class Tree{
   int row;
   int col;
   int age;
 
-  Tree (int row, int col, int age) {
+  Tree(int row, int col, int age) {
     this.row = row;
     this.col = col;
     this.age = age;
-  }
-
-  @Override
-  public int compareTo(Tree o) {
-    return this.age - o.age;
   }
 }
