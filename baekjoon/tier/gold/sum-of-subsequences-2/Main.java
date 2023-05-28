@@ -15,53 +15,51 @@ public class Main {
 
     int[] nums = new int[N];
     st = new StringTokenizer(br.readLine());
-    for (int i = 0; i < N; i++) {
-      nums[i] = Integer.parseInt(st.nextToken());
-    }
+    for (int i = 0; i < N; i++) nums[i] = Integer.parseInt(st.nextToken());
 
     ArrayList<Integer> aSum = new ArrayList<>();
     ArrayList<Integer> bSum = new ArrayList<>();
 
-    combination(nums, aSum, 0, N / 2, 0);
-    combination(nums, bSum, N / 2, N, 0);
+    combination(aSum, nums, 0, 0, N / 2);
+    combination(bSum, nums, N / 2, 0, N);
 
     Collections.sort(bSum);
-    long count = 0;
     int size = bSum.size();
+    long count = 0;
     for (int i = 0; i < aSum.size(); i++) {
       int target = S - aSum.get(i);
-      count += upper_bound(bSum, 0, size, target) - lower_bound(bSum, 0, size, target);
-    }
 
+      count += (upper_bound(bSum, 0 , size, target) - lower_bound(bSum, 0, size, target));
+    }
     if (S == 0) System.out.println(count - 1);
     else System.out.println(count);
-
   }
-  static int lower_bound(ArrayList<Integer> sum, int left, int right, int target) {
+  static int upper_bound(ArrayList<Integer> bSum, int left, int right, int target) {
     while (left < right) {
       int mid = (left + right) / 2;
 
-      if (sum.get(mid) < target) left = mid + 1;
+      if (bSum.get(mid) <= target) left = mid + 1;
       else right = mid;
     }
     return left;
   }
-  static int upper_bound(ArrayList<Integer> sum, int left, int right, int target) {
+  static int lower_bound(ArrayList<Integer> bSum, int left, int right, int target) {
     while (left < right) {
       int mid = (left + right) / 2;
 
-      if(sum.get(mid) <= target) left = mid + 1;
+      if (bSum.get(mid) < target) left = mid + 1;
       else right = mid;
     }
     return left;
   }
-  static void combination(int[] nums, ArrayList<Integer> sumList, int ptr, int size, int sum) {
-    if(ptr == size) {
+  static void combination(ArrayList<Integer> sumList, int[] nums, int ptr, int sum, int size) {
+
+    if (ptr == size) {
       sumList.add(sum);
     }
     else {
-      combination(nums, sumList, ptr + 1, size, sum + nums[ptr]);
-      combination(nums, sumList, ptr + 1, size, sum);
+      combination(sumList, nums, ptr + 1, sum + nums[ptr], size);
+      combination(sumList, nums, ptr + 1, sum, size);
     }
   }
 }
