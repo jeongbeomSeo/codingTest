@@ -1,85 +1,86 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class Main {
   static int INF = Integer.MAX_VALUE;
-  static int max = 0;
   static int[] dr = {INF, -1, -1, 0, 1, 1, 1, 0, -1};
   static int[] dc = {INF, 0, -1, -1, -1, 0, 1, 1, 1};
+  static int max = 0;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st;
 
-    int[][] fish_id_grid = new int[4][4];
     Fish[] fishes = new Fish[4 * 4 + 1];
-
+    int[][] idx_grid = new int[4][4];
     for (int i = 0; i < 4; i++) {
       st = new StringTokenizer(br.readLine());
       for (int j = 0; j < 4; j++) {
-        int id = Integer.parseInt(st.nextToken());
+        int idx = Integer.parseInt(st.nextToken());
         int direction = Integer.parseInt(st.nextToken());
-        fish_id_grid[i][j] = id;
-        fishes[id] = new Fish(i, j, direction);
+        fishes[idx] = new Fish(i ,j, direction);
+        idx_grid[i][j] = idx;
       }
     }
 
-    System.out.println(simulation(fish_id_grid, fishes));
+    System.out.println(simulation(fishes, idx_grid));
   }
-  static int simulation(int[][] fish_id_grid, Fish[] fishes) {
+  static int simulation(Fish[] fishes, int[][] idx_grid) {
 
-    backtracking(fish_id_grid, fishes, new Shark(0, 0, 0), 0);
+    active_shark(fishes, new Shark(0, 0, 0), idx_grid, 0);
 
     return max;
   }
-  static void backtracking(int[][] fish_id_grid, Fish[] fishes, Shark shark, int sum) {
+  static void active_shark(Fish[] fishes, Shark shark, int[][] idx_grid, int sum) {
 
-    int id = fish_id_grid[shark.row][shark.col];
-    sum += id;
-    fish_id_grid[shark.row][shark.col] = 0;
-    fishes[id].isDead = true;
-    shark.direction = fishes[id].direction;
+    int idx = idx_grid[shark.row][shark.col];
+    shark.direction = fishes[idx].direction;
+    sum += idx;
+    fishes[idx].isDead = true;
+    idx_grid[shark.row][shark.col] = 0;
 
-    fishMove(fish_id_grid, fishes, shark);
+    active_fishes(fishes, shark, idx_grid);
 
-    boolean cantMove = true;
+    boolean isMove = false;
     while (isValidIdx(shark.row + dr[shark.direction], shark.col + dc[shark.direction])) {
       shark.row += dr[shark.direction];
       shark.col += dc[shark.direction];
 
-      if (fish_id_grid[shark.row][shark.col] != 0 && !fishes[fish_id_grid[shark.row][shark.col]].isDead) {
-        cantMove = false;
-        int[][] copy_grid = copy_grid(fish_id_grid);
-        Fish[] copy_fish = copy_fish(fishes);
-        backtracking(copy_grid, copy_fish, new Shark(shark.row, shark.col, shark.direction), sum);
+      if (idx_grid[shark.row][shark.col] != 0) {
+        isMove = true;
+        int[][] newGrid = copy_grid(idx_grid);
+        Fish[] newFishes = copy_fish(fishes);
+
+        active_shark(newFishes, new Shark(shark.row, shark.col, shark.direction), newGrid, sum);
       }
     }
 
-    if (cantMove) max = Math.max(max, sum);
+    if (!isMove) max = Math.max(max, sum);
   }
-  static int[][] copy_grid(int[][] fish_id_grid) {
+  static int[][] copy_grid(int[][] idx_grid) {
+    //int[][] grid = Arrays.copyOf(idx_grid, 4);
     int[][] grid = new int[4][4];
-
     for (int i = 0; i < 4; i++) {
       for (int j = 0; j < 4; j++) {
-        grid[i][j] = fish_id_grid[i][j];
+        grid[i][j] = idx_grid[i][j];
       }
     }
     return grid;
   }
-  static Fish[] copy_fish (Fish[] fishes){
-    Fish[] newFishList = new Fish[17];
+  static Fish[] copy_fish(Fish[] fishes) {
 
-    for (int i = 1; i <= 16; i++) newFishList[i] = new Fish(fishes[i].row, fishes[i].col, fishes[i].direction, fishes[i].isDead);
+    Fish[] newFishes = new Fish[17];
+    for (int i = 1; i <= 16; i++)
+      newFishes[i] = new Fish(fishes[i].row, fishes[i].col, fishes[i].direction, fishes[i].isDead);
 
-    return newFishList;
+    return newFishes;
   }
-  static void fishMove(int[][] fish_id_grid, Fish[] fishes, Shark shark) {
+  static void active_fishes(Fish[] fishes, Shark shark, int[][] idx_grid) {
 
     for (int i = 1; i <= 16; i++) {
       Fish fish = fishes[i];
-
       if (!fish.isDead) {
         int baseDirection = fish.direction;
         do {
@@ -87,20 +88,25 @@ public class Main {
           int nextCol = fish.col + dc[fish.direction];
 
           if (isValidIdx(nextRow, nextCol) && !(shark.row == nextRow && shark.col == nextCol)) {
-            fish_id_grid[fish.row][fish.col] = fish_id_grid[nextRow][nextCol];
+            int otherIdx = idx_grid[nextRow][nextCol];
+            if(otherIdx != 0) {
+              fishes[otherIdx].row = fish.row;
+              fishes[otherIdx].col = fish.col;
+            }
+            idx_grid[fish.row][fish.col] = otherIdx;
+
             fish.row = nextRow;
             fish.col = nextCol;
-            fish_id_grid[fish.row][fish.col] = i;
+            idx_grid[nextRow][nextCol] = i;
             break;
           }
-          else {
-            fish.direction++;
-            if (fish.direction == 9) fish.direction = 1;
-          }
+
+          if (++fish.direction == 9) fish.direction = 1;
         } while (fish.direction != baseDirection);
       }
     }
   }
+
   static boolean isValidIdx(int row, int col) {
     return row >= 0 && col >= 0 && row < 4 && col < 4;
   }
@@ -116,12 +122,11 @@ class Shark {
     this.direction = direction;
   }
 }
-class Fish{
+class Fish {
   int row;
   int col;
   int direction;
   boolean isDead;
-
 
   Fish(int row, int col, int direction) {
     this.row = row;
@@ -129,8 +134,7 @@ class Fish{
     this.direction = direction;
     isDead = false;
   }
-
-  Fish (int row, int col, int direction, boolean isDead) {
+  Fish(int row, int col, int direction, boolean isDead) {
     this(row, col, direction);
     this.isDead = isDead;
   }
