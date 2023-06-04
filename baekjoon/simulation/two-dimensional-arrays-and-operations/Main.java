@@ -6,14 +6,14 @@ import java.util.Collections;
 import java.util.StringTokenizer;
 
 public class Main {
-  static int r, c, k;
+  static int R, C, K;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
 
-    r = Integer.parseInt(st.nextToken()) - 1;
-    c = Integer.parseInt(st.nextToken()) - 1;
-    k = Integer.parseInt(st.nextToken());
+    R = Integer.parseInt(st.nextToken()) - 1;
+    C = Integer.parseInt(st.nextToken()) - 1;
+    K = Integer.parseInt(st.nextToken());
 
     int[][] grid = new int[3][3];
     for (int i = 0; i < 3; i++) {
@@ -23,117 +23,110 @@ public class Main {
       }
     }
 
-    if (isValidIdx(3, 3) && grid[r][c] == k) System.out.println(0);
-    else System.out.println(simulation(grid));
-
+    System.out.println(simulation(grid));
   }
   static int simulation(int[][] grid) {
+
     int time = 0;
+    while (time != 101) {
 
-    while (time <= 100) {
+      if (isValidIdx(grid.length, grid[0].length) && grid[R][C] == K) break;
 
-      int rowLen = grid.length;
-      int colLen = grid[0].length;
-
-      if (isValidIdx(rowLen, colLen) && grid[r][c] == k) break;
-
-      if (rowLen >= colLen) {
-        grid = RCalc(grid, rowLen, colLen);
-      }
-      else {
-        grid = CCalc(grid, rowLen, colLen);
-      }
+      if (grid.length >= grid[0].length) grid = RCalc(grid);
+      else grid = CClac(grid);
       time++;
-    }
 
-    if (time > 100) return -1;
+    }
+    if (time == 101) return -1;
     return time;
   }
-  static int[][] RCalc(int[][] grid, int rowLen, int colLen) {
-    ArrayList<Sorting>[] lists = new ArrayList[rowLen];
-    int maxSize = 0;
+  static int[][] RCalc(int[][] grid) {
+    int rowLen = grid.length;
+    int colLen = grid[0].length;
 
+    ArrayList<Number>[] numberList = new ArrayList[rowLen];
+    int maxSize = 0;
     for (int i = 0; i < rowLen; i++) {
-      lists[i] = new ArrayList<>();
+      numberList[i] = new ArrayList<>();
       for (int j = 0; j < colLen; j++) {
-        int num = grid[i][j];
-        if (num == 0) continue;
-        int k;
-        for (k = 0; k < lists[i].size(); k++) {
-          if (lists[i].get(k).num == num) {
-            lists[i].get(k).count++;
+        if (grid[i][j] == 0) continue;
+        int k = 0;
+        for (;k < numberList[i].size(); k++) {
+          if (numberList[i].get(k).value == grid[i][j]) {
+            numberList[i].get(k).count++;
             break;
           }
         }
-        if (k == lists[i].size()) lists[i].add(new Sorting(num, 1));
+        if (k == numberList[i].size()) numberList[i].add(new Number(grid[i][j]));
       }
-      maxSize = Math.max(maxSize, lists[i].size());
+      maxSize = Math.max(maxSize, numberList[i].size());
     }
 
-    int newColSize = Math.min(maxSize * 2, 100);
+    int newColLen = Math.min(maxSize * 2, 100);
+    int[][] newGrid = new int[rowLen][newColLen];
 
-    int[][] newGrid = new int[rowLen][newColSize];
     for (int i = 0; i < rowLen; i++) {
-      Collections.sort(lists[i]);
-      for (int j = 0; j < lists[i].size(); j++) {
-        newGrid[i][2 * j] = lists[i].get(j).num;
-        newGrid[i][2 * j + 1] = lists[i].get(j).count;
+      Collections.sort(numberList[i]);
+      for (int j = 0; j < numberList[i].size(); j++) {
+        newGrid[i][2 * j] = numberList[i].get(j).value;
+        newGrid[i][2 * j + 1] = numberList[i].get(j).count;
       }
     }
     return newGrid;
   }
-  static int[][] CCalc(int[][] grid, int rowLen, int colLen) {
-    ArrayList<Sorting>[] lists = new ArrayList[colLen];
-    int maxSize = 0;
+  static int[][] CClac(int[][] grid) {
+    int rowLen = grid.length;
+    int colLen = grid[0].length;
 
+    int maxSize = 0;
+    ArrayList<Number>[] numberList = new ArrayList[colLen];
     for (int j = 0; j < colLen; j++) {
-      lists[j] = new ArrayList<>();
+      numberList[j] = new ArrayList<>();
       for (int i = 0; i < rowLen; i++) {
-        int num = grid[i][j];
-        if (num == 0) continue;
-        int k;
-        for (k = 0; k < lists[j].size(); k++) {
-          if (lists[j].get(k).num == num) {
-            lists[j].get(k).count++;
+        if (grid[i][j] == 0) continue;
+        int k = 0;
+        for (; k < numberList[j].size(); k++) {
+          if (numberList[j].get(k).value == grid[i][j]) {
+            numberList[j].get(k).count++;
             break;
           }
         }
-        if (k == lists[j].size()) lists[j].add(new Sorting(num, 1));
+        if (k == numberList[j].size()) numberList[j].add(new Number(grid[i][j]));
       }
-      maxSize = Math.max(maxSize, lists[j].size());
+      maxSize = Math.max(maxSize, numberList[j].size());
     }
 
-    int newRowSize = Math.min(maxSize * 2, 100);
-    int[][] newGrid = new int[newRowSize][colLen];
+    int newRowLen = Math.min(maxSize * 2, 100);
+    int[][] newGrid = new int[newRowLen][colLen];
+
     for (int j = 0; j < colLen; j++) {
-      Collections.sort(lists[j]);
-      for (int i = 0; i < lists[j].size(); i++) {
-        newGrid[2 * i][j] = lists[j].get(i).num;
-        newGrid[2 * i + 1][j] = lists[j].get(i).count;
+      Collections.sort(numberList[j]);
+      for (int i = 0; i < numberList[j].size(); i++) {
+        newGrid[2 * i][j] = numberList[j].get(i).value;
+        newGrid[2 * i + 1][j] = numberList[j].get(i).count;
       }
     }
-
     return newGrid;
   }
   static boolean isValidIdx(int rowLen, int colLen) {
-    return r < rowLen && c < colLen;
+    return R < rowLen && C < colLen;
   }
 }
-class Sorting implements Comparable<Sorting>{
-  int num;
+class Number implements Comparable<Number>{
+  int value;
   int count;
 
-  Sorting(int num, int count) {
-    this.num = num;
-    this.count = count;
+  Number(int value) {
+    this.value = value;
+    this.count = 1;
   }
 
   @Override
-  public int compareTo(Sorting o) {
+  public int compareTo(Number o) {
     if (this.count > o.count) return 1;
     else if (this.count < o.count) return -1;
     else {
-      return this.num - o.num;
+      return this.value - o.value;
     }
   }
 }

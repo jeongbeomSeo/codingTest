@@ -118,7 +118,7 @@ A[r][c]에 들어있는 값이 k가 되기 위한 연산의 최소 시간을 출
 
 ## 코드 
 
-**AC**
+**최종 코드(AC)**
 
 ```java
 import java.io.BufferedReader;
