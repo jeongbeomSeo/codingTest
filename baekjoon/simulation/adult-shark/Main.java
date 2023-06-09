@@ -1,7 +1,7 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.PriorityQueue;
+import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.StringTokenizer;
 
@@ -17,15 +17,15 @@ public class Main {
     M = Integer.parseInt(st.nextToken());
     K = Integer.parseInt(st.nextToken());
 
+    int[][] idx_grid = new int[N][N];
     Shark[] sharks = new Shark[M + 1];
-    boolean[][] shark_grid = new boolean[N][N];
+
     for (int i = 0; i < N; i++) {
       st = new StringTokenizer(br.readLine());
       for (int j = 0; j < N; j++) {
-        int idx = Integer.parseInt(st.nextToken());
-        if (idx != 0) {
-          sharks[idx] = new Shark(i, j);
-          shark_grid[i][j] = true;
+        idx_grid[i][j] = Integer.parseInt(st.nextToken());
+        if (idx_grid[i][j] != 0) {
+          sharks[idx_grid[i][j]] = new Shark(i, j);
         }
       }
     }
@@ -35,153 +35,143 @@ public class Main {
       sharks[i].direction = Integer.parseInt(st.nextToken());
     }
 
-    for (int i = 1; i <= M; i++) {
-      for (int j = 1; j <= 4; j++) {
+    for (int idx = 1; idx <= M; idx++) {
+      for (int i = 1; i <= 4; i++) {
         st = new StringTokenizer(br.readLine());
-        for (int d = 1; d <= 4; d++) {
-          sharks[i].direction_grid[j][d] = Integer.parseInt(st.nextToken());
+        for (int j = 1; j <= 4; j++) {
+          sharks[idx].grid_direction[i][j] = Integer.parseInt(st.nextToken());
         }
       }
     }
 
-    System.out.println(simulation(sharks, shark_grid));
-
+    System.out.println(simulation(sharks, idx_grid));
   }
-  static int simulation(Shark[] sharks, boolean[][] shark_grid) {
-    int time = 0;
+  static int simulation (Shark[] sharks, int[][] idx_grid) {
 
-    int[][] smell_grid = new int[N][N];
-    Queue<Smell> pq = new PriorityQueue<>();
-    active_smell(pq, sharks, smell_grid);
+    int time = 0;
+    Queue<Smell> smells = new ArrayDeque<>();
+    active_smell(smells, sharks, idx_grid);
+
     while (time != 1001) {
 
-      active_move(sharks, smell_grid, shark_grid);
+      smells = active_move(smells, sharks, idx_grid);
 
-      pq = active_smell_time(pq, smell_grid, shark_grid);
-
-      active_smell(pq, sharks, smell_grid);
+      active_smell(smells, sharks, idx_grid);
 
       time++;
       if (isEnd(sharks)) break;
     }
 
     if (time == 1001) return -1;
-    return time;
+    else return time;
   }
-  static boolean isEnd(Shark[] sharks) {
+  static boolean isEnd (Shark[] sharks) {
 
     int count = 0;
-    for (int i = 1; i <= M; i++) if (!sharks[i].isDead) count++;
+    for (int i = 1; i <= M; i++) {
+      if (!sharks[i].isDead) count++;
+    }
     return count == 1;
   }
-  static void active_move(Shark[] sharks, int[][] smell_grid, boolean[][] shark_grid) {
+  static Queue<Smell> active_move(Queue<Smell> smells, Shark[] sharks, int[][] idx_grid) {
 
-    boolean[][] isShark = new boolean[N][N];
+    int[][] buffer = new int[N][N];
+
     for (int i = 1; i <= M; i++) {
       Shark shark = sharks[i];
+
       if (!shark.isDead) {
-        shark_grid[shark.row][shark.col] = false;
-        int base_direction = shark.direction;
+        int baseDirection = shark.direction;
 
         int j;
         for (j = 1; j <= 4; j++) {
-          int next_direction = shark.direction_grid[base_direction][j];
+          int nextDirection = shark.grid_direction[baseDirection][j];
 
-          int nextRow = shark.row + dr[next_direction];
-          int nextCol = shark.col + dc[next_direction];
+          int nextRow = shark.row + dr[nextDirection];
+          int nextCol = shark.col + dc[nextDirection];
 
-          if (isValidIdx(nextRow, nextCol) && smell_grid[nextRow][nextCol] == 0) {
-            if (isShark[nextRow][nextCol]) {
+          if (isValidIdx(nextRow, nextCol) && idx_grid[nextRow][nextCol] == 0) {
+            if (buffer[nextRow][nextCol] != 0) {
               shark.isDead = true;
               break;
             }
-            isShark[nextRow][nextCol] = true;
             shark.row = nextRow;
             shark.col = nextCol;
-            shark.direction = next_direction;
-            shark_grid[shark.row][shark.col] = true;
+            shark.direction = nextDirection;
+            buffer[nextRow][nextCol] = i;
             break;
           }
         }
         if (j == 5) {
           for (j = 1; j <= 4; j++) {
-            int next_direction = shark.direction_grid[base_direction][j];
+            int nextDirection = shark.grid_direction[baseDirection][j];
 
-            int nextRow = shark.row + dr[next_direction];
-            int nextCol = shark.col + dc[next_direction];
+            int nextRow = shark.row + dr[nextDirection];
+            int nextCol = shark.col + dc[nextDirection];
 
-            if (isValidIdx(nextRow, nextCol) && smell_grid[nextRow][nextCol] == i) {
+            if (isValidIdx(nextRow, nextCol) && idx_grid[nextRow][nextCol] == i) {
               shark.row = nextRow;
               shark.col = nextCol;
-              shark.direction = next_direction;
-              isShark[nextRow][nextCol] = true;
-              shark_grid[nextRow][nextCol] = true;
+              shark.direction = nextDirection;
+              buffer[nextRow][nextCol] = i;
               break;
             }
           }
         }
       }
     }
+
+    Queue<Smell> newSmellQueue = new ArrayDeque<>();
+    // Smell decrease Count
+    while (!smells.isEmpty()) {
+      Smell smell = smells.poll();
+
+      if (buffer[smell.row][smell.col] != 0 || --smell.time == 0) {
+        idx_grid[smell.row][smell.col] = 0;
+      }
+      else newSmellQueue.add(smell);
+    }
+    return newSmellQueue;
   }
-  static void active_smell(Queue<Smell> pq, Shark[] sharks, int[][] smell_grid) {
+  static void active_smell(Queue<Smell> smells, Shark[] sharks, int[][] idx_grid) {
 
     for (int i = 1; i <= M; i++) {
       Shark shark = sharks[i];
 
       if (!shark.isDead) {
-        smell_grid[shark.row][shark.col] = i;
-        pq.add(new Smell(shark.row, shark.col, i, K));
+        smells.add(new Smell(shark.row, shark.col, K, i));
+        idx_grid[shark.row][shark.col] = i;
       }
     }
-  }
-  static Queue<Smell> active_smell_time(Queue<Smell> pq, int[][] smell_grid, boolean[][] shark_grid) {
-    Queue<Smell> newPQ = new PriorityQueue<>();
-
-    while (!pq.isEmpty()) {
-      Smell smell = pq.poll();
-
-      if (!shark_grid[smell.row][smell.col]) {
-        if (--smell.time == 0) smell_grid[smell.row][smell.col] = 0;
-        else {
-          smell_grid[smell.row][smell.col] = smell.idx;
-          newPQ.add(smell);
-        }
-      }
-    }
-    return newPQ;
   }
   static boolean isValidIdx(int row, int col) {
     return row >= 0 && col >= 0 && row < N && col < N;
   }
 }
-class Smell implements Comparable<Smell> {
+class Smell {
   int row;
   int col;
-  int idx;
   int time;
+  int idx;
 
-  Smell(int row, int col, int idx, int time) {
+  Smell (int row, int col, int time, int idx) {
     this.row = row;
     this.col = col;
-    this.idx = idx;
     this.time = time;
-  }
-
-  @Override
-  public int compareTo(Smell o) {
-    return this.time - o.time;
+    this.idx = idx;
   }
 }
 class Shark {
   int row;
   int col;
   int direction;
+  int[][] grid_direction;
   boolean isDead;
-  int[][] direction_grid;
 
   Shark(int row, int col) {
     this.row = row;
     this.col = col;
-    direction_grid = new int[5][5];
+    this.grid_direction = new int[5][5];
+    isDead = false;
   }
 }
