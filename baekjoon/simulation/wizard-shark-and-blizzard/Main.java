@@ -1,17 +1,21 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Queue;
+import java.util.StringTokenizer;
 
 public class Main {
   static int N, M;
-  static int sharkRow, sharkCol;
-  // 북, 남, 서, 동
+
   static int[] throw_dr = {0, -1, 1, 0, 0};
   static int[] throw_dc = {0, 0, 0, -1, 1};
-  // 남, 동, 북, 서
-  static int[] move_dr = {0, 1, 0, -1, 0};
-  static int[] move_dc = {0, 0, 1, 0, -1};
+
+  // 북, 서, 남, 동
+  static int[] move_dr = {0, -1, 0, 1, 0};
+  static int[] move_dc = {0, 0, -1, 0, 1};
+  static int sharkRow, sharkCol;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
@@ -19,267 +23,174 @@ public class Main {
     N = Integer.parseInt(st.nextToken());
     M = Integer.parseInt(st.nextToken());
 
-    sharkRow = sharkCol = (N + 1) / 2;
+    sharkRow = sharkCol = N / 2;
 
-    int[][] grid = new int[N + 1][N + 1];
-    for (int i = 1; i <= N; i++) {
+    int[] oneDimensionGrid = new int[N * N];
+    int[][] numberTagGrid = new int[N][N];
+    paintNumberTagGrid(numberTagGrid);
+
+    for (int i = 0; i < N; i++) {
       st = new StringTokenizer(br.readLine());
-      for (int j = 1; j <= N; j++) {
-        grid[i][j] = Integer.parseInt(st.nextToken());
+      for (int j = 0; j < N; j++) {
+        int idx = numberTagGrid[i][j];
+        oneDimensionGrid[idx] = Integer.parseInt(st.nextToken());
       }
     }
 
-    int[][] rotate_commands = new int[M][2];
+    int[][] throwCommands = new int[M][2];
     for (int i = 0; i < M; i++) {
       st = new StringTokenizer(br.readLine());
-      rotate_commands[i][0] = Integer.parseInt(st.nextToken());
-      rotate_commands[i][1] = Integer.parseInt(st.nextToken());
+      throwCommands[i][0] = Integer.parseInt(st.nextToken());
+      throwCommands[i][1] = Integer.parseInt(st.nextToken());
     }
 
-    System.out.println(simulation(grid, rotate_commands));
-
+    System.out.println(simulation(numberTagGrid, oneDimensionGrid, throwCommands));
   }
-  static int simulation(int[][] grid, int[][] rotate_commands) {
+  static int simulation (int[][] numberTagGrid, int[] oneDimensionGrid, int[][] throwCommands) {
 
     int time = 0;
-    int[] burstMarbleNumber = new int[4];
+    int[] burstMarbleCount = new int[4];
     while (time < M) {
 
-      activeThrow(grid, rotate_commands[time]);
+      active_throwMarble(numberTagGrid, oneDimensionGrid, throwCommands[time]);
 
-      sortingGrid(grid);
+      while (active_burst(oneDimensionGrid, burstMarbleCount));
 
-      while (active_burst(grid, burstMarbleNumber)) {
-        sortingGrid(grid);
-      }
-
-      finalSortingGrid(grid);
-
+      //sortingGrid(oneDimensionGrid);
+      oneDimensionGrid = finalSortingGrid(oneDimensionGrid);
       time++;
     }
 
-    return burstMarbleNumber[1] + 2 * burstMarbleNumber[2] + 3 * burstMarbleNumber[3];
+    return burstMarbleCount[1] + 2 * burstMarbleCount[2] + 3 * burstMarbleCount[3];
   }
-  static void finalSortingGrid(int[][] grid) {
+  static int[] finalSortingGrid(int[] oneDimensionGrid) {
+
     Deque<Counter> counters = new ArrayDeque<>();
 
-    boolean[][] isVisited = new boolean[N + 1][N + 1];
-    isVisited[sharkRow][sharkCol] = true;
-
-    int curRow = sharkRow;
-    int curCol = sharkCol - 1;
-    int curDirection = 1;
-
-    while (grid[curRow][curCol] != 0) {
-
-      isVisited[curRow][curCol] = true;
-
-      if (counters.isEmpty()) counters.addLast(new Counter(grid[curRow][curCol]));
-      else {
-        if (counters.peekLast().number == grid[curRow][curCol]) counters.peekLast().count++;
-        else counters.addLast(new Counter(grid[curRow][curCol]));
+    for (int i = 1; i < N * N; i++) {
+      if (oneDimensionGrid[i] != 0) {
+        if (counters.isEmpty()) counters.addLast(new Counter(oneDimensionGrid[i]));
+        else if (counters.peekLast().number == oneDimensionGrid[i]) counters.peekLast().count++;
+        else counters.addLast(new Counter(oneDimensionGrid[i]));
       }
-
-      int[] result = findNextIdx(isVisited, curRow, curCol, curDirection);
-
-      curRow = result[0];
-      curCol = result[1];
-      curDirection = result[2];
     }
 
-    curRow = sharkRow;
-    curCol = sharkCol - 1;
-    curDirection = 1;
-
-    for (int i = 0; i <= N; i++) Arrays.fill(isVisited[i], false);
-    isVisited[sharkRow][sharkCol] = true;
-
+    int[] newOneDimensionGrid = new int[N * N];
+    int ptr = 1;
     while (!counters.isEmpty()) {
       Counter counter = counters.pollFirst();
 
-      grid[curRow][curCol] = counter.count;
-      isVisited[curRow][curCol] = true;
-      if (curRow == 1 && curCol == 1) break;
-
-      int[] result = findNextIdx(isVisited, curRow, curCol, curDirection);
-
-      curRow = result[0];
-      curCol = result[1];
-      curDirection = result[2];
-
-      grid[curRow][curCol] = counter.number;
-      isVisited[curRow][curCol] = true;
-      if (curRow == 1 && curCol == 1) break;
-
-      result = findNextIdx(isVisited, curRow, curCol, curDirection);
-
-      curRow = result[0];
-      curCol = result[1];
-      curDirection = result[2];
+      newOneDimensionGrid[ptr++] = counter.count;
+      if (ptr == N * N) break;
+      newOneDimensionGrid[ptr++] = counter.number;
+      if (ptr == N * N) break;
     }
-
+    return newOneDimensionGrid;
   }
-  static boolean active_burst(int[][] grid, int[] burstMarbleNumber) {
+  static void sortingGrid (int[] oneDimensionGrid) {
 
-    Queue<Point> points = new ArrayDeque<>();
-    boolean[][] isVisited = new boolean[N + 1][N + 1];
-    isVisited[sharkRow][sharkCol] = true;
+    for (int i = 1; i < N * N - 1; i++) {
+      if (oneDimensionGrid[i] == 0) {
+        int j;
+        for (j = i + 1; j < N * N && oneDimensionGrid[j] == 0; j++);
+        if (j == N * N) break;
+        oneDimensionGrid[i] = oneDimensionGrid[j];
+        oneDimensionGrid[j] = 0;
+      }
+    }
+  }
+  static boolean active_burst(int[] oneDimensionGrid, int[] burstMarbleCount) {
 
-    int curRow = sharkRow;
-    int curCol = sharkCol - 1;
-    int curDirection = 1;
-    int curNumber = grid[curRow][curCol];
-
+    Queue<Point> q = new ArrayDeque<>();
     boolean isActiveBurst = false;
 
-    while (!(curRow == 1 && curCol == 1)) {
-
-      isVisited[curRow][curCol] = true;
-
-      if (grid[curRow][curCol] == curNumber) points.add(new Point(curRow, curCol));
-      else {
-        if (points.size() >= 4) {
-          isActiveBurst = true;
-          while (!points.isEmpty()) {
-            Point point = points.poll();
-            grid[point.row][point.col] = 0;
-            burstMarbleNumber[curNumber]++;
+    for (int i = 1; i < N * N; i++) {
+      if (oneDimensionGrid[i] != 0) {
+        if (q.isEmpty()) q.add(new Point(i, oneDimensionGrid[i]));
+        else if (q.peek().number == oneDimensionGrid[i]) q.add(new Point(i, oneDimensionGrid[i]));
+        else {
+          if (q.size() >= 4) {
+            isActiveBurst = true;
+            burstMarbleCount[q.peek().number] += q.size();
+            while (!q.isEmpty()) oneDimensionGrid[q.poll().idx] = 0;
           }
+          else while (!q.isEmpty()) q.poll();
+          q.add(new Point(i, oneDimensionGrid[i]));
         }
-        else while (!points.isEmpty()) points.poll();
-
-        curNumber = grid[curRow][curCol];
-        points.add(new Point(curRow, curCol));
       }
-
-      int[] result = findNextIdx(isVisited, curRow, curCol, curDirection);
-
-      curRow = result[0];
-      curCol = result[1];
-      curDirection = result[2];
     }
-
+    if (q.size() >= 4) {
+      burstMarbleCount[q.peek().number] += q.size();
+      while (!q.isEmpty()) {
+        oneDimensionGrid[q.poll().idx] = 0;
+      }
+    }
     return isActiveBurst;
   }
-  static void sortingGrid(int[][] grid) {
+  static void active_throwMarble(int[][] numberTagGrid, int[] oneDimensionGrid, int[] throwCommand) {
 
-    boolean[][] isVisited = new boolean[N + 1][N + 1];
-    isVisited[sharkRow][sharkCol] = true;
-
-    int curRow = sharkRow;
-    int curCol = sharkCol - 1;
-    int curDirection = 1;
-
-    while (!(curRow == 1 && curCol == 1)) {
-
-      int nextRow;
-      int nextCol;
-      int nextDirection;
-
-      isVisited[curRow][curCol] = true;
-      boolean curValueIsZero = (grid[curRow][curCol] == 0);
-
-      int[] result = findNextIdx(isVisited, curRow, curCol, curDirection);
-      nextRow = result[0];
-      nextCol = result[1];
-      nextDirection = result[2];
-
-      // 현재 위치 0일 경우 처리
-      if (curValueIsZero) {
-        if(!paintZeroToOtherNumber(grid, isVisited, curRow, curCol, nextRow, nextCol, nextDirection)) break;
-      }
-
-      curRow = nextRow;
-      curCol = nextCol;
-      curDirection = nextDirection;
-    }
-  }
-  static boolean paintZeroToOtherNumber(int[][] grid, boolean[][] isVisited, int curRow, int curCol, int nextRow, int nextCol, int nextDirection) {
-
-    if (grid[nextRow][nextCol] != 0) {
-      grid[curRow][curCol] = grid[nextRow][nextCol];
-      grid[nextRow][nextCol] = 0;
-    }
-    else {
-      if (nextRow == 1 && nextCol == 1) return false;
-
-      int copyRow = nextRow;
-      int copyCol = nextCol;
-      int copyDirection = nextDirection;
-      do {
-        int[] findNextResult = findNextIdx(isVisited, copyRow, copyCol, copyDirection);
-
-        copyRow = findNextResult[0];
-        copyCol = findNextResult[1];
-        copyDirection = findNextResult[2];
-
-        if(copyRow == 1 && copyCol == 1) break;
-
-      } while (grid[copyRow][copyCol] == 0);
-
-      if (grid[copyRow][copyCol] == 0) return false;
-
-      grid[curRow][curCol] = grid[copyRow][copyCol];
-      grid[copyRow][copyCol] = 0;
-    }
-    return true;
-  }
-  static int[] findNextIdx(boolean[][] isVisited, int curRow, int curCol, int curDirection) {
-    int[] result = new int[3];
-
-    int leftDirection = getLeftDirection(curDirection);
-
-    int leftRow = curRow + move_dr[leftDirection];
-    int leftCol = curCol + move_dc[leftDirection];
-
-    if (!isVisited[leftRow][leftCol]) {
-      result[0] = leftRow;
-      result[1] = leftCol;
-      result[2] = leftDirection;
-    }
-    else {
-      result[0] = curRow + move_dr[curDirection];
-      result[1] = curCol + move_dc[curDirection];
-      result[2] = curDirection;
-    }
-    return result;
-  }
-  static int getLeftDirection(int direction) {
-    return direction + 1 != 5 ? direction + 1 : 1;
-  }
-  static void activeThrow(int[][] grid, int[] rotate_command) {
-
-    int direction = rotate_command[0];
-    int targetSpeed = rotate_command[1];
+    int direction = throwCommand[0];
+    int speed = throwCommand[1];
 
     int curRow = sharkRow;
     int curCol = sharkCol;
+    while (speed-- > 0) {
 
-    while (targetSpeed-- > 0) {
-      int nextRow = curRow + throw_dr[direction];
-      int nextCol = curCol + throw_dc[direction];
+      curRow += throw_dr[direction];
+      curCol += throw_dc[direction];
 
-      grid[nextRow][nextCol] = 0;
-
-      curRow = nextRow;
-      curCol = nextCol;
+      int idx = numberTagGrid[curRow][curCol];
+      oneDimensionGrid[idx] = 0;
     }
   }
-}
-class Point {
-  int row;
-  int col;
+  static void paintNumberTagGrid(int[][] grid) {
 
-  Point (int row, int col) {
-    this.row = row;
-    this.col = col;
+    boolean[][] isVisited = new boolean[N][N];
+
+    int curRow = sharkRow;
+    int curCol = sharkCol;
+    int direction = 1;
+
+    int numberTag = 0;
+
+    do {
+      isVisited[curRow][curCol] = true;
+      grid[curRow][curCol] = numberTag++;
+
+      int leftDirection = direction + 1 != 5 ? direction + 1 : 1;
+
+      int leftRow = curRow + move_dr[leftDirection];
+      int leftCol = curCol + move_dc[leftDirection];
+
+      if (!isVisited[leftRow][leftCol]) {
+        curRow = leftRow;
+        curCol = leftCol;
+        direction = leftDirection;
+      }
+      else {
+        curRow += move_dr[direction];
+        curCol += move_dc[direction];
+      }
+
+    } while (curRow >= 0 && curCol >= 0);
   }
 }
+
+class Point {
+  int idx;
+  int number;
+
+  Point(int idx, int number) {
+    this.idx = idx;
+    this.number = number;
+  }
+}
+
 class Counter {
   int number;
   int count;
 
-  Counter (int number) {
+  Counter(int number) {
     this.number = number;
     this.count = 1;
   }
