@@ -4,19 +4,41 @@ import java.io.InputStreamReader;
 import java.util.StringTokenizer;
 
 public class Main {
-  static int[] dr = {0, 1, 0, -1};
-  static int[] dc = {-1, 0, 1, 0};
   static int N;
-  static int amount = 0;
+  static int[] dr = {-1, 0, 1, 0};
+  static int[] dc = {0, -1, 0, 1};
+  // 북, 서, 남, 동 (0 ~ 3)(0 ~ 8 / 9는 alpha)
+  static int[][] sand_dr = {
+          {-2, -1, -1, 0, 0, 0, 0, 1, 1, -1},
+          {0, 1, -1, 1, -1, 2, -2, 1, -1, 0},
+          {2, 1, 1, 0, 0, 0, 0, -1, -1, 1},
+          {0, 1, -1, 1, -1, 2, -2, 1, -1, 0}
+  };
+  static int[][] sand_dc = {
+          {0, 1, -1, 1, -1, 2, -2, 1, -1, 0},
+          {-2, -1, -1, 0, 0, 0, 0, 1, 1, -1},
+          {0, 1, -1, 1, -1, 2, -2, 1, -1, 0},
+          {2, 1, 1, 0, 0, 0, 0, -1, -1, 1}
+  };
+  // 0 ~ 8
+  static int[] sand_percent = {
+          5, 10, 10, 7, 7, 2, 2, 1, 1
+  };
+
+  static int startRow, startCol;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st;
+
     N = Integer.parseInt(br.readLine());
 
-    int[][] grid = new int[N][N];
-    for (int i = 0; i < N; i++) {
+    int[][] grid = new int[N + 1][N + 1];
+
+    startRow = startCol = (N + 1) / 2;
+
+    for (int i = 1; i <= N; i++) {
       st = new StringTokenizer(br.readLine());
-      for (int j = 0; j < N; j++) {
+      for (int j = 1; j <= N; j++) {
         grid[i][j] = Integer.parseInt(st.nextToken());
       }
     }
@@ -25,96 +47,74 @@ public class Main {
   }
   static int simulation(int[][] grid) {
 
-    int row = N / 2;
-    int col = N / 2;
-    boolean[][] isVisited = new boolean[N][N];
-    isVisited[row][col] = true;
-
-    while (!(row == 0 && col == 0)) {
-      for (int d = 0; d < 4; d++) {
-
-        int nextD = d + 1 != 4 ? d + 1 : 0;
-        do {
-          if (row == 0 && col == 0) break;
-          int nextRow = row + dr[d];
-          int nextCol = col + dc[d];
-
-          if (isValidIdx(nextRow, nextCol)) {
-            Ratio[] ratios = createTornadoRatio(d);
-            active_tornado(grid, nextRow, nextCol, ratios);
-            row = nextRow;
-            col = nextCol;
-            isVisited[row][col] = true;
-          }
-        } while (isVisited[row + dr[nextD]][col + dc[nextD]]);
-      }
-    }
-    return amount;
+    return activeTornado(grid);
   }
-  static void active_tornado(int[][] grid, int row, int col, Ratio[] ratios) {
+  static int activeTornado(int[][] grid) {
 
-    int outAmount = 0;
-    int originAmount = grid[row][col];
-    int remainAmount = originAmount;
-    if (originAmount == 0) return;
-    for (int i = 0; i <= 8; i++) {
-      if (isValidIdx(row + ratios[i].row, col + ratios[i].col)) {
-        grid[row + ratios[i].row][col + ratios[i].col] += (int)(originAmount * (double)ratios[i].ratio / 100);
+    int outOfSandAmount = 0;
+    boolean[][] isVisited = new boolean[N + 1][N + 1];
+
+    int curRow = startRow;
+    int curCol = startCol;
+    int curDirection = 0;
+
+    while (!(curRow == 1 && curCol == 1)) {
+
+      isVisited[curRow][curCol] = true;
+
+      int leftDirection = getLeftDirection(curDirection);
+
+      int leftRow = curRow + dr[leftDirection];
+      int leftCol = curCol + dc[leftDirection];
+
+      if (!isVisited[leftRow][leftCol]) {
+        curRow = leftRow;
+        curCol = leftCol;
+        curDirection = leftDirection;
       }
-      else outAmount += (int)(originAmount * (double)ratios[i].ratio / 100);
+      else {
+        curRow += dr[curDirection];
+        curCol += dc[curDirection];
+      }
 
-      remainAmount -= (int)(originAmount * (double)ratios[i].ratio / 100);
+      outOfSandAmount += activeMoveSand(grid, curRow, curCol, curDirection);
     }
-    if (isValidIdx(row + ratios[9].row, col + ratios[9].col)) grid[row + ratios[9].row][col + ratios[9].col] += remainAmount;
-    else outAmount += remainAmount;
 
-    amount += outAmount;
-    grid[row][col] = 0;
+    return outOfSandAmount;
+  }
+  static int activeMoveSand(int[][] grid, int row, int col, int direction) {
+
+    int remainSandAmount = grid[row][col];
+    int outOfSandAmount = 0;
+
+    if (remainSandAmount == 0) return 0;
+
+    for (int i = 0; i < 9; i++) {
+      int nextRow = row + sand_dr[direction][i];
+      int nextCol = col + sand_dc[direction][i];
+      int percent = sand_percent[i];
+
+      int moveSandAmount = grid[row][col] * percent / 100;
+
+      if (isValidIdx(nextRow, nextCol)) {
+        grid[nextRow][nextCol] += moveSandAmount;
+      }
+      else outOfSandAmount += moveSandAmount;
+
+      remainSandAmount -= moveSandAmount;
+    }
+
+    int alphaRow = row + sand_dr[direction][9];
+    int alphaCol = col + sand_dc[direction][9];
+    if (isValidIdx(alphaRow, alphaCol)) grid[alphaRow][alphaCol] += remainSandAmount;
+    else outOfSandAmount += remainSandAmount;
+
+    return outOfSandAmount;
+  }
+  static int getLeftDirection(int direction) {
+    return direction + 1 != 4 ? direction + 1 : 0;
   }
   static boolean isValidIdx(int row, int col) {
-    return row >= 0 && col >= 0 && row < N && col < N;
-  }
-  static Ratio[] createTornadoRatio(int direction) {
-    Ratio[] newRatio = new Ratio[10];
-
-    if (direction == 0 || direction == 2) {
-      int pow = direction == 0 ? 1 : -1;
-      newRatio[0] = new Ratio(0, -2, 5, pow);
-      newRatio[1] = new Ratio(-1, -1, 10, pow);
-      newRatio[2] = new Ratio(1, -1, 10, pow);
-      newRatio[3] = new Ratio(-1, 0, 7, pow);
-      newRatio[4] = new Ratio(1, 0, 7, pow);
-      newRatio[5] = new Ratio(-2, 0, 2, pow);
-      newRatio[6] = new Ratio(2, 0, 2, pow);
-      newRatio[7] = new Ratio(-1, 1, 1, pow);
-      newRatio[8] = new Ratio(1, 1, 1, pow);
-      newRatio[9] = new Ratio(0, -1, 0, pow);
-    }
-    else {
-      int pow = direction == 1 ? 1 : -1;
-      newRatio[0] = new Ratio(2, 0, 5, pow);
-      newRatio[1] = new Ratio(1, 1, 10, pow);
-      newRatio[2] = new Ratio(1, -1, 10, pow);
-      newRatio[3] = new Ratio(0, 1, 7, pow);
-      newRatio[4] = new Ratio(0, -1, 7, pow);
-      newRatio[5] = new Ratio(0, 2, 2, pow);
-      newRatio[6] = new Ratio(0, -2, 2, pow);
-      newRatio[7] = new Ratio(-1, -1, 1, pow);
-      newRatio[8] = new Ratio(-1, 1, 1, pow);
-      newRatio[9] = new Ratio(1, 0, 0, pow);
-    }
-    return newRatio;
-  }
-
-}
-class Ratio {
-  int row;
-  int col;
-  int ratio;
-
-  Ratio(int row, int col, int ratio, int pow) {
-    this.row = row * pow;
-    this.col = col * pow;
-    this.ratio = ratio;
+    return row >= 1 && col >= 1 && row <= N && col <= N;
   }
 }
