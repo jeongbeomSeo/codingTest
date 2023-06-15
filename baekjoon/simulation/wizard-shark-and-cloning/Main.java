@@ -1,8 +1,10 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.sql.Array;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Queue;
+import java.util.StringTokenizer;
 
 public class Main {
   static int M, S;
@@ -15,14 +17,14 @@ public class Main {
     M = Integer.parseInt(st.nextToken());
     S = Integer.parseInt(st.nextToken());
 
-    Deque<Fish> fishList = new ArrayDeque<>();
+    Queue<Fish> fishList = new ArrayDeque<>();
     for (int i = 0; i < M; i++) {
       st = new StringTokenizer(br.readLine());
       int row = Integer.parseInt(st.nextToken());
       int col = Integer.parseInt(st.nextToken());
       int direction = Integer.parseInt(st.nextToken());
 
-      fishList.addLast(new Fish(row, col, direction));
+      fishList.add(new Fish(row, col, direction));
     }
 
     st = new StringTokenizer(br.readLine());
@@ -30,32 +32,35 @@ public class Main {
     int sharkCol = Integer.parseInt(st.nextToken());
     Shark shark = new Shark(sharkRow, sharkCol);
 
+
     System.out.println(simulation(fishList, shark));
   }
-  static int simulation(Deque<Fish> fishList, Shark shark) {
+  static int simulation(Queue<Fish> fishList, Shark shark) {
 
-    Deque<Smell> smellList = new ArrayDeque<>();
+    Deque<Smell> smells = new ArrayDeque<>();
     boolean[][] isSmellGrid = new boolean[5][5];
+
     while (S-- > 0) {
+      Queue<Fish>[][] fishGrid = new ArrayDeque[5][5];
 
-      Deque<Fish>[][] fishGrid = new Deque[5][5];
-      Deque<Fish> copyedFish = fishCopy(fishList, fishGrid);
+      // 1단계
+      Queue<Fish> copyedFish = copyFish(fishList, fishGrid);
 
-      fishGrid = activeMoveFish(fishGrid, isSmellGrid, shark);
+      // 2단계
+      fishGrid = activeFishMove(fishGrid, isSmellGrid, shark);
 
-      activeMoveShark(fishGrid, smellList, shark);
+      // 3단계
+      activeSharkMove(fishGrid, smells, shark);
 
-      smellList = activeSmell(smellList, isSmellGrid);
+      // 4단계
+      smells = activeDiffusionSmell(smells, isSmellGrid);
 
-      fishList = integrateFish(copyedFish, fishGrid);
+      fishList = integrateFish(fishGrid, copyedFish);
     }
 
-    return countAllFish(fishList);
-  }
-  static int countAllFish(Deque<Fish> fishList) {
     return fishList.size();
   }
-  static Deque<Fish> integrateFish(Deque<Fish> copyedFish, Deque<Fish>[][] fishGrid) {
+  static Queue<Fish> integrateFish(Queue<Fish>[][] fishGrid, Queue<Fish> copyedFish) {
 
     for (int i = 1; i <= 4; i++) {
       for (int j = 1; j <= 4; j++) {
@@ -67,79 +72,80 @@ public class Main {
 
     return copyedFish;
   }
-  static Deque<Smell> activeSmell(Deque<Smell> smellList, boolean[][] isSmellGrid) {
+  static Deque<Smell> activeDiffusionSmell(Deque<Smell> smells, boolean[][] isSmellGrid) {
 
-    Deque<Smell> newSmellList = new ArrayDeque<>();
-    boolean[][] isSmell = new boolean[5][5];
-    while (!smellList.isEmpty()) {
-      Smell smell = smellList.pollLast();
+    boolean[][] isVisited = new boolean[5][5];
+    Deque<Smell> newSmells = new ArrayDeque<>();
+    while (!smells.isEmpty()) {
+      Smell smell = smells.pollLast();
 
-      if(--smell.time != 0 && !isSmell[smell.row][smell.col]) {
-        isSmellGrid[smell.row][smell.col] = true;
-        newSmellList.addFirst(smell);
-        isSmell[smell.row][smell.col] = true;
+      if (!isVisited[smell.row][smell.col]) {
+        if (--smell.time != 0) {
+          isSmellGrid[smell.row][smell.col] = true;
+          isVisited[smell.row][smell.col] = true;
+          newSmells.addFirst(smell);
+        }
+        else isSmellGrid[smell.row][smell.col] = false;
       }
-      else if (!isSmell[smell.row][smell.col]) isSmellGrid[smell.row][smell.col] = false;
     }
-    return newSmellList;
+
+    return newSmells;
   }
-  static void activeMoveShark(Deque<Fish>[][] fishGrid, Deque<Smell> smellList, Shark shark) {
+  static void activeSharkMove (Queue<Fish>[][] fishGrid, Deque<Smell> smells, Shark shark) {
 
-    Queue<Shark> q = new ArrayDeque<>();
-    int[] move_dr = {0, -1, 0, 1, 0};
-    int[] move_dc = {0, 0, -1, 0, 1};
-    q.add(shark);
+    Queue<MovingShark> q = new ArrayDeque<>();
+    q.add(new MovingShark(shark.row, shark.col));
 
-    Shark maxShark = null;
+    int[] move_dr = {-1, 0, 1, 0};
+    int[] move_dc = {0, -1, 0, 1};
+
+    MovingShark lastShark = null;
+
     while (!q.isEmpty()) {
-      Shark curShark = q.poll();
+      MovingShark movingShark = q.poll();
 
-      if (curShark.time == 3) {
-        if (maxShark == null) maxShark = curShark;
+      if (movingShark.time == 3) {
+        if (lastShark == null) lastShark = movingShark;
         else {
-          if (maxShark.count < curShark.count) maxShark = curShark;
-          else if (maxShark.count == curShark.count) {
-            for (int c = 0; c < 3; c++) {
-              if (maxShark.directionList[c] == curShark.directionList[c]) continue;
-              else if (maxShark.directionList[c] > curShark.directionList[c]) {maxShark = curShark; break;}
-              else break;
-            }
+          if (movingShark.count > lastShark.count) lastShark = movingShark;
+          else if (movingShark.count == lastShark.count) {
+            if (lastShark.compareDirection(movingShark)) lastShark = movingShark;
           }
         }
         continue;
       }
 
-      for (int i = 1; i <= 4; i++) {
-        int nextRow = curShark.row + move_dr[i];
-        int nextCol = curShark.col + move_dc[i];
+      for (int i = 0; i < 4; i++) {
+        int nextRow = movingShark.row + move_dr[i];
+        int nextCol = movingShark.col + move_dc[i];
 
         if (isValidIdx(nextRow, nextCol)) {
           int count = 0;
-          if (!curShark.isVisited[nextRow][nextCol] && fishGrid[nextRow][nextCol] != null) count = fishGrid[nextRow][nextCol].size();
-          q.add(new Shark(nextRow, nextCol, curShark.count + count, curShark.time + 1, curShark.directionList, curShark.isVisited, i, curShark.pointList));
+          if (!movingShark.isVisited(nextRow, nextCol) && fishGrid[nextRow][nextCol] != null)
+            count = fishGrid[nextRow][nextCol].size();
+
+          q.add(new MovingShark(nextRow, nextCol, movingShark.time + 1, movingShark.count + count, i, movingShark.direction, movingShark.points));
         }
       }
     }
 
     for (int i = 0; i < 3; i++) {
-      Point point = maxShark.pointList[i];
-      if (fishGrid[point.row][point.col] != null) {
-        if (!fishGrid[point.row][point.col].isEmpty()) smellList.addLast(new Smell(point.row, point.col));
-        while (!fishGrid[point.row][point.col].isEmpty()) fishGrid[point.row][point.col].poll();
+      int[] point = lastShark.points[i];
+
+      if (fishGrid[point[0]][point[1]] != null) {
+        while (!fishGrid[point[0]][point[1]].isEmpty()) fishGrid[point[0]][point[1]].poll();
+        smells.addLast(new Smell(point[0], point[1]));
       }
     }
 
-    shark.row = maxShark.row;
-    shark.col = maxShark.col;
+    shark.row = lastShark.row;
+    shark.col = lastShark.col;
   }
-  static Deque<Fish>[][] activeMoveFish(Deque<Fish>[][] fishGrid, boolean[][] isSmellGrid, Shark shark) {
+  static Queue<Fish>[][] activeFishMove (Queue<Fish>[][] fishGrid, boolean[][] isSmellGrid, Shark shark) {
 
-
-    Deque<Fish>[][] nextFishGrid = new ArrayDeque[5][5];
-
+    Queue<Fish>[][] copy = new ArrayDeque[5][5];
     for (int i = 1; i <= 4; i++) {
       for (int j = 1; j <= 4; j++) {
-        // 물고기가 있는 칸인 경우
         if (fishGrid[i][j] != null) {
           while (!fishGrid[i][j].isEmpty()) {
             Fish fish = fishGrid[i][j].poll();
@@ -150,36 +156,38 @@ public class Main {
               int nextRow = fish.row + dr[fish.direction];
               int nextCol = fish.col + dc[fish.direction];
 
-              if (isValidIdx(nextRow, nextCol) && !(nextRow == shark.row && nextCol == shark.col) && !isSmellGrid[nextRow][nextCol]) {
+              if (isValidIdx(nextRow, nextCol)
+                      && !(shark.row == nextRow && shark.col == nextCol)
+                      && !isSmellGrid[nextRow][nextCol]) {
                 fish.row = nextRow;
                 fish.col = nextCol;
                 break;
               }
 
               fish.direction = getNextDirection(fish.direction);
-            } while (fish.direction != originDirection);
+            } while (originDirection != fish.direction);
 
-            if (nextFishGrid[fish.row][fish.col] == null) nextFishGrid[fish.row][fish.col] = new ArrayDeque<>();
-            nextFishGrid[fish.row][fish.col].add(fish);
+            if (copy[fish.row][fish.col] == null) copy[fish.row][fish.col] = new ArrayDeque<>();
+            copy[fish.row][fish.col].add(fish);
           }
         }
       }
     }
-
-    return nextFishGrid;
+    return copy;
   }
-  static Deque<Fish> fishCopy (Deque<Fish> fishList, Deque<Fish>[][] fishGrid) {
+  static Queue<Fish> copyFish (Queue<Fish> fishList, Queue<Fish>[][] fishGrid) {
 
-    Deque<Fish> copyedFish = new ArrayDeque<>();
+    Queue<Fish> copy = new ArrayDeque<>();
     while (!fishList.isEmpty()) {
       Fish fish = fishList.poll();
 
-      copyedFish.addLast(new Fish(fish.row, fish.col, fish.direction));
+      copy.add(new Fish(fish.row, fish.col, fish.direction));
 
       if (fishGrid[fish.row][fish.col] == null) fishGrid[fish.row][fish.col] = new ArrayDeque<>();
       fishGrid[fish.row][fish.col].add(fish);
     }
-    return copyedFish;
+
+    return copy;
   }
   static int getNextDirection(int direction) {
     return direction - 1 != 0 ? direction - 1 : 8;
@@ -193,82 +201,93 @@ class Smell {
   int col;
   int time;
 
-  Smell(int row, int col) {
+  Smell (int row, int col) {
     this.row = row;
     this.col = col;
     this.time = 3;
   }
 }
+
 class Shark {
   int row;
   int col;
-  int count;
-  int time;
-  int[] directionList;
-  boolean[][] isVisited;
-  Point[] pointList;
 
-  Shark (int row, int col) {
+  Shark(int row, int col) {
     this.row = row;
     this.col = col;
-    this.count = 0;
-    this.time = 0;
-    this.directionList = new int[3];
-    isVisited = new boolean[5][5];
-    isVisited[row][col] = false;
-    pointList = new Point[3];
-  }
-
-  Shark (int row, int col, int count, int time, int[] directionList, boolean[][] isVisited, int direction, Point[] pointList) {
-    this.row = row;
-    this.col = col;
-    this.count = count;
-    this.time = time;
-    this.directionList = Arrays.copyOf(directionList, 3);
-    this.directionList[time - 1] = direction;
-    this.isVisited = copyIsVisited(isVisited);
-    this.isVisited[row][col] = true;
-    this.pointList = copyPointList(pointList);
-    this.pointList[time - 1] = new Point(row, col);
-  }
-
-  Point[] copyPointList(Point[] pointList) {
-    Point[] newPointList = new Point[3];
-
-    for (int i = 0; i < 3; i++) {
-      if (pointList[i] != null) {
-        newPointList[i] = new Point(pointList[i].row, pointList[i].col);
-      }
-      else newPointList[i] = null;
-    }
-    return newPointList;
-  }
-
-  boolean[][] copyIsVisited(boolean[][] isVisited) {
-    boolean[][] newCopyIsVisited = new boolean[5][5];
-    for (int i = 1; i <= 4; i++) {
-      for (int j = 1; j <= 4; j++) {
-        newCopyIsVisited[i][j] = isVisited[i][j];
-      }
-    }
-    return newCopyIsVisited;
   }
 }
-class Point {
+
+class MovingShark {
   int row;
   int col;
+  int time;
+  int count;
+  int[] direction;
+  int[][] points;
 
-  Point (int row, int col) {
+  MovingShark(int row, int col) {
     this.row = row;
     this.col = col;
+    this.time = 0;
+    this.count = 0;
+    this.direction = new int[3];
+    this.points = new int[3][2];
   }
+
+  MovingShark(int row, int col, int time, int count, int curDirection, int[] direction, int[][] points) {
+    this.row = row;
+    this.col = col;
+    this.time = time;
+    this.count = count;
+    this.direction = updateDirection(direction, curDirection, time);
+    this.points = updatePoints(points, row, col, time);
+  }
+
+  boolean isVisited(int row, int col) {
+
+    for (int i = 0; i < 3; i++) {
+      if (this.points[i][0] == row && this.points[i][1] == col) return true;
+    }
+    return false;
+  }
+
+  int[][] updatePoints(int[][] points, int row, int col, int time) {
+    int[][] copy = new int[3][2];
+    for (int i = 0; i < 3; i++) {
+      copy[i][0] = points[i][0];
+      copy[i][1] = points[i][1];
+    }
+    copy[time - 1][0] = row;
+    copy[time - 1][1] = col;
+    return copy;
+  }
+
+  int[] updateDirection(int[] direction, int curDirection, int time) {
+    int[] copy = new int[3];
+
+    for (int i = 0; i < 3; i++) copy[i] = direction[i];
+
+    copy[time - 1] = curDirection;
+    return copy;
+  }
+
+  boolean compareDirection(MovingShark o) {
+    for (int i = 0; i < 3; i++) {
+      if (this.direction[i] > o.direction[i]) return true;
+      else if (this.direction[i] < o.direction[i]) return false;
+    }
+    return false;
+  }
+
 }
+
 class Fish {
   int row;
   int col;
   int direction;
 
-  Fish(int row, int col, int direction) {
+  Fish (int row, int col, int direction) {
     this.row = row;
     this.col = col;
     this.direction = direction;
