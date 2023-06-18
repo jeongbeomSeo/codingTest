@@ -8,13 +8,10 @@ import java.util.StringTokenizer;
 
 public class Main {
   static int N, M;
-
-  static int[] throw_dr = {0, -1, 1, 0, 0};
-  static int[] throw_dc = {0, 0, 0, -1, 1};
-
-  // 북, 서, 남, 동
-  static int[] move_dr = {0, -1, 0, 1, 0};
-  static int[] move_dc = {0, 0, -1, 0, 1};
+  static int[] dr = {0, -1, 1, 0, 0};
+  static int[] dc = {0, 0, 0, -1, 1};
+  static int[] move_dr = {0, 0, 1, 0, -1};
+  static int[] move_dc = {0, -1, 0, 1, 0};
   static int sharkRow, sharkCol;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -23,17 +20,14 @@ public class Main {
     N = Integer.parseInt(st.nextToken());
     M = Integer.parseInt(st.nextToken());
 
-    sharkRow = sharkCol = N / 2;
+    sharkRow = sharkCol = (N + 1) / 2;
 
-    int[] oneDimensionGrid = new int[N * N];
-    int[][] numberTagGrid = new int[N][N];
-    paintNumberTagGrid(numberTagGrid);
-
-    for (int i = 0; i < N; i++) {
+    int[] grid = new int[N * N];
+    int[][] tagGrid = initOneDimensionGrid();
+    for (int i = 1; i <= N; i++) {
       st = new StringTokenizer(br.readLine());
-      for (int j = 0; j < N; j++) {
-        int idx = numberTagGrid[i][j];
-        oneDimensionGrid[idx] = Integer.parseInt(st.nextToken());
+      for (int j = 1; j <= N; j++) {
+        grid[tagGrid[i][j]] = Integer.parseInt(st.nextToken());
       }
     }
 
@@ -44,154 +38,175 @@ public class Main {
       throwCommands[i][1] = Integer.parseInt(st.nextToken());
     }
 
-    System.out.println(simulation(numberTagGrid, oneDimensionGrid, throwCommands));
+    System.out.println(simulation(grid, throwCommands, tagGrid));
+
   }
-  static int simulation (int[][] numberTagGrid, int[] oneDimensionGrid, int[][] throwCommands) {
+  static int simulation(int[] grid, int[][] throwCommands, int[][] tagGrid) {
+    int[] burstMarbleCount = new int[4];
 
     int time = 0;
-    int[] burstMarbleCount = new int[4];
     while (time < M) {
 
-      active_throwMarble(numberTagGrid, oneDimensionGrid, throwCommands[time]);
+      throwMarble(grid, tagGrid, throwCommands[time]);
 
-      while (active_burst(oneDimensionGrid, burstMarbleCount));
+      sortGrid(grid);
 
-      //sortingGrid(oneDimensionGrid);
-      oneDimensionGrid = finalSortingGrid(oneDimensionGrid);
+      while (burstMarble(grid, burstMarbleCount)) sortGrid(grid);
+
+      grid = newGrid(grid);
       time++;
     }
 
     return burstMarbleCount[1] + 2 * burstMarbleCount[2] + 3 * burstMarbleCount[3];
   }
-  static int[] finalSortingGrid(int[] oneDimensionGrid) {
+  static int[] newGrid(int[] grid) {
 
     Deque<Counter> counters = new ArrayDeque<>();
 
     for (int i = 1; i < N * N; i++) {
-      if (oneDimensionGrid[i] != 0) {
-        if (counters.isEmpty()) counters.addLast(new Counter(oneDimensionGrid[i]));
-        else if (counters.peekLast().number == oneDimensionGrid[i]) counters.peekLast().count++;
-        else counters.addLast(new Counter(oneDimensionGrid[i]));
-      }
-    }
-
-    int[] newOneDimensionGrid = new int[N * N];
-    int ptr = 1;
-    while (!counters.isEmpty()) {
-      Counter counter = counters.pollFirst();
-
-      newOneDimensionGrid[ptr++] = counter.count;
-      if (ptr == N * N) break;
-      newOneDimensionGrid[ptr++] = counter.number;
-      if (ptr == N * N) break;
-    }
-    return newOneDimensionGrid;
-  }
-  static void sortingGrid (int[] oneDimensionGrid) {
-
-    for (int i = 1; i < N * N - 1; i++) {
-      if (oneDimensionGrid[i] == 0) {
-        int j;
-        for (j = i + 1; j < N * N && oneDimensionGrid[j] == 0; j++);
-        if (j == N * N) break;
-        oneDimensionGrid[i] = oneDimensionGrid[j];
-        oneDimensionGrid[j] = 0;
-      }
-    }
-  }
-  static boolean active_burst(int[] oneDimensionGrid, int[] burstMarbleCount) {
-
-    Queue<Point> q = new ArrayDeque<>();
-    boolean isActiveBurst = false;
-
-    for (int i = 1; i < N * N; i++) {
-      if (oneDimensionGrid[i] != 0) {
-        if (q.isEmpty()) q.add(new Point(i, oneDimensionGrid[i]));
-        else if (q.peek().number == oneDimensionGrid[i]) q.add(new Point(i, oneDimensionGrid[i]));
+      if (grid[i] != 0) {
+        if (counters.isEmpty()) counters.add(new Counter(grid[i]));
         else {
-          if (q.size() >= 4) {
-            isActiveBurst = true;
-            burstMarbleCount[q.peek().number] += q.size();
-            while (!q.isEmpty()) oneDimensionGrid[q.poll().idx] = 0;
-          }
-          else while (!q.isEmpty()) q.poll();
-          q.add(new Point(i, oneDimensionGrid[i]));
+          if (counters.peekLast().value == grid[i]) counters.peekLast().count++;
+          else counters.addLast(new Counter(grid[i]));
         }
       }
     }
-    if (q.size() >= 4) {
-      burstMarbleCount[q.peek().number] += q.size();
-      while (!q.isEmpty()) {
-        oneDimensionGrid[q.poll().idx] = 0;
+
+    int[] newGrid = new int[N * N];
+    Counter counter = null;
+    if (!counters.isEmpty()) {
+      for (int i = 1; i < N * N; i++) {
+
+        if (i % 2 == 1)  {
+          counter = counters.pollFirst();
+          newGrid[i] = counter.count;
+        }
+        else {
+          newGrid[i] = counter.value;
+          if (counters.isEmpty()) break;
+        }
       }
     }
-    return isActiveBurst;
+
+    return newGrid;
   }
-  static void active_throwMarble(int[][] numberTagGrid, int[] oneDimensionGrid, int[] throwCommand) {
+  static boolean burstMarble (int[] grid, int[] burstMarbleCount) {
+
+    boolean isActive = false;
+    Queue<Integer> idxs = new ArrayDeque<>();
+
+    for (int i = 1; i < N * N; i++) {
+      if (grid[i] != 0) {
+        if (idxs.isEmpty()) idxs.add(i);
+        else {
+          if (grid[idxs.peek()] == grid[i]) idxs.add(i);
+          else {
+            if (idxs.size() >= 4) {
+              burstMarbleCount[grid[idxs.peek()]] += idxs.size();
+              while (!idxs.isEmpty()) grid[idxs.poll()] = 0;
+              isActive = true;
+            }
+            else while (!idxs.isEmpty()) idxs.poll();
+
+            idxs.add(i);
+          }
+        }
+      }
+    }
+
+    if (idxs.size() >= 4) {
+      burstMarbleCount[grid[idxs.peek()]] += idxs.size();
+      while (!idxs.isEmpty()) grid[idxs.poll()] = 0;
+    }
+    return isActive;
+  }
+  static void sortGrid(int[] grid) {
+
+    for (int i = 1; i < N * N - 1; i++) {
+      if (grid[i] == 0) {
+        int j;
+        for (j = i + 1; j < N * N && grid[j] == 0; j++);
+
+        if (j == N * N) break;
+        grid[i] = grid[j];
+        grid[j] = 0;
+      }
+    }
+  }
+  static void throwMarble(int[] grid, int[][] tagGrid, int[] throwCommand) {
 
     int direction = throwCommand[0];
     int speed = throwCommand[1];
 
-    int curRow = sharkRow;
-    int curCol = sharkCol;
+    int row = sharkRow;
+    int col = sharkCol;
+
     while (speed-- > 0) {
+      row += dr[direction];
+      col += dc[direction];
 
-      curRow += throw_dr[direction];
-      curCol += throw_dc[direction];
-
-      int idx = numberTagGrid[curRow][curCol];
-      oneDimensionGrid[idx] = 0;
+      grid[tagGrid[row][col]] = 0;
     }
   }
-  static void paintNumberTagGrid(int[][] grid) {
+  static int[][] initOneDimensionGrid() {
+    boolean[][] isVisited = new boolean[N + 1][N + 1];
+    int[][] tagNumber = new int[N + 1][N + 1];
 
-    boolean[][] isVisited = new boolean[N][N];
+    isVisited[sharkRow][sharkCol] = true;
 
-    int curRow = sharkRow;
-    int curCol = sharkCol;
+    int row = sharkRow;
+    int col = sharkCol - 1;
     int direction = 1;
 
-    int numberTag = 0;
+    int num = 1;
+    while (!(row == 1 && col == 0)) {
 
-    do {
-      isVisited[curRow][curCol] = true;
-      grid[curRow][curCol] = numberTag++;
+      isVisited[row][col] = true;
+      tagNumber[row][col] = num++;
 
-      int leftDirection = direction + 1 != 5 ? direction + 1 : 1;
+      int[] nextPoint = findNextPoint(isVisited, row, col, direction);
 
-      int leftRow = curRow + move_dr[leftDirection];
-      int leftCol = curCol + move_dc[leftDirection];
+      row = nextPoint[0];
+      col = nextPoint[1];
+      direction = nextPoint[2];
+    }
 
-      if (!isVisited[leftRow][leftCol]) {
-        curRow = leftRow;
-        curCol = leftCol;
-        direction = leftDirection;
-      }
-      else {
-        curRow += move_dr[direction];
-        curCol += move_dc[direction];
-      }
-
-    } while (curRow >= 0 && curCol >= 0);
+    return tagNumber;
   }
-}
+  static int[] findNextPoint(boolean[][] isVisited, int row, int col, int direction) {
 
-class Point {
-  int idx;
-  int number;
+    int[] nextPoint = new int[3];
 
-  Point(int idx, int number) {
-    this.idx = idx;
-    this.number = number;
+    int leftDirection = getLeftDirection(direction);
+    int leftRow = row + move_dr[leftDirection];
+    int leftCol = col + move_dc[leftDirection];
+
+    if (!isVisited[leftRow][leftCol]) {
+      nextPoint[0] = leftRow;
+      nextPoint[1] = leftCol;
+      nextPoint[2] = leftDirection;
+    }
+    else {
+      nextPoint[0] = row + move_dr[direction];
+      nextPoint[1] = col + move_dc[direction];
+      nextPoint[2] = direction;
+    }
+
+    return nextPoint;
   }
+  static int getLeftDirection(int direction) {
+    return direction + 1 != 5 ? direction + 1 : 1;
+  }
+
 }
 
 class Counter {
-  int number;
+  int value;
   int count;
 
-  Counter(int number) {
-    this.number = number;
+  Counter(int value) {
+    this.value = value;
     this.count = 1;
   }
 }
