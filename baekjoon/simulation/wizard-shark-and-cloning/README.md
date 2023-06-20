@@ -425,7 +425,7 @@ class Fish {
 }
 ```
 
-## 코드 
+**AC(Better Solution)**
 
 ```java
 import java.io.BufferedReader;
