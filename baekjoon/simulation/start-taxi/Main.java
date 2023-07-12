@@ -6,9 +6,9 @@ import java.util.Queue;
 import java.util.StringTokenizer;
 
 public class Main {
-  static int[] dr = {-1, 0, 1, 0};
-  static int[] dc = {0, 1, 0, -1};
   static int N, M;
+  static int[] dr = {0, -1, 0, 1, 0};
+  static int[] dc = {0, 0, 1, 0, -1};
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
@@ -17,58 +17,57 @@ public class Main {
     M = Integer.parseInt(st.nextToken());
     int gas = Integer.parseInt(st.nextToken());
 
-    int[][] grid = new int[N][N];
-    for (int i = 0; i < N; i++) {
+    int[][] grid = new int[N + 1][N + 1];
+    for (int i = 1; i <= N; i++) {
       st = new StringTokenizer(br.readLine());
-      for (int j = 0; j < N; j++) {
+      for (int j = 1; j <= N; j++) {
         grid[i][j] = Integer.parseInt(st.nextToken());
       }
     }
 
     st = new StringTokenizer(br.readLine());
-    int initRow = Integer.parseInt(st.nextToken()) - 1;
-    int initCol = Integer.parseInt(st.nextToken()) - 1;
+    int row = Integer.parseInt(st.nextToken());
+    int col = Integer.parseInt(st.nextToken());
 
-    Taxi taxi = new Taxi(initRow, initCol, gas);
-    int idx = 2;
+    Taxi taxi = new Taxi(row, col, gas);
     Passenger[] passengers = new Passenger[M + 2];
-
-    for (int i = 0; i < M; i++) {
+    for (int i = 2; i < M + 2; i++) {
       st = new StringTokenizer(br.readLine());
+      int startRow = Integer.parseInt(st.nextToken());
+      int startCol = Integer.parseInt(st.nextToken());
+      int endRow = Integer.parseInt(st.nextToken());
+      int endCol = Integer.parseInt(st.nextToken());
 
-      int startRow = Integer.parseInt(st.nextToken()) - 1;
-      int startCol = Integer.parseInt(st.nextToken()) - 1;
-      int endRow = Integer.parseInt(st.nextToken()) - 1;
-      int endCol = Integer.parseInt(st.nextToken()) - 1;
+      grid[startRow][startCol] = i;
 
-      grid[startRow][startCol] = idx;
-      passengers[idx++] = new Passenger(startRow, startCol, endRow, endCol);
+      passengers[i] = new Passenger(startRow, startCol, endRow, endCol);
     }
 
     System.out.println(simulation(grid, passengers, taxi));
+
   }
   static int simulation(int[][] grid, Passenger[] passengers, Taxi taxi) {
 
     int count = 0;
+
     while (count < M) {
 
       int passengerIdx = findPassenger(grid, taxi);
 
-      if (passengerIdx == -1) break;
+      if (passengerIdx == -1) return -1;
+      else grid[taxi.row][taxi.col] = 0;
 
-      if (!goDest(grid, taxi, passengers[passengerIdx])) break;
+      if (!activeTaxi(grid, passengers[passengerIdx], taxi)) return -1;
 
       count++;
     }
 
-    if (count != M) return -1;
-
     return taxi.gas;
   }
-  static boolean goDest(int[][] grid, Taxi taxi, Passenger passenger) {
+  static boolean activeTaxi(int[][] grid, Passenger passenger, Taxi taxi) {
 
-    boolean[][] isVisited = new boolean[N][N];
     Queue<Taxi> q = new ArrayDeque<>();
+    boolean[][] isVisited = new boolean[N + 1][N + 1];
     q.add(new Taxi(taxi.row, taxi.col, taxi.gas));
     isVisited[taxi.row][taxi.col] = true;
 
@@ -76,35 +75,39 @@ public class Main {
     while (!q.isEmpty()) {
       Taxi curTaxi = q.poll();
 
-      if (curTaxi.row == passenger.endPoint.row && curTaxi.col == passenger.endPoint.col) {
+      if (curTaxi.row == passenger.endRow && curTaxi.col == passenger.endCol) {
         result = curTaxi;
         break;
       }
 
-      for (int i = 0; i < 4; i++) {
+      if (curTaxi.gas == 0) continue;
+
+      for (int i = 1; i <= 4; i++) {
         int nextRow = curTaxi.row + dr[i];
         int nextCol = curTaxi.col + dc[i];
 
-        if (isValidIdx(nextRow, nextCol) && !isVisited[nextRow][nextCol] && grid[nextRow][nextCol] != 1) {
-          q.add(new Taxi(nextRow, nextCol, curTaxi.gas - 1, curTaxi.moveCount + 1));
+        if (isValidIdx(nextRow, nextCol)
+                && !isVisited[nextRow][nextCol]
+                && grid[nextRow][nextCol] != 1) {
+          q.add(new Taxi(nextRow, nextCol, curTaxi.gas - 1));
           isVisited[nextRow][nextCol] = true;
         }
       }
     }
 
-    if (result == null || result.gas < 0) return false;
+    if (result == null) return false;
     else {
       taxi.row = result.row;
       taxi.col = result.col;
-      taxi.gas = result.gas + 2 * result.moveCount;
-      return true;
+      taxi.gas = result.gas + (taxi.gas - result.gas) * 2;
     }
+
+    return true;
   }
-  // return Passenger Idx
   static int findPassenger(int[][] grid, Taxi taxi) {
 
-    boolean[][] isVisited = new boolean[N][N];
     Queue<Taxi> q = new ArrayDeque<>();
+    boolean[][] isVisited = new boolean[N + 1][N + 1];
     q.add(new Taxi(taxi.row, taxi.col, taxi.gas));
     isVisited[taxi.row][taxi.col] = true;
 
@@ -116,79 +119,64 @@ public class Main {
 
       if (grid[curTaxi.row][curTaxi.col] >= 2) {
         if (result == null) result = curTaxi;
-        else {
-          if (result.compare(curTaxi)) result = curTaxi;
-        }
+        else if (result.compare(curTaxi) > 0) result = curTaxi;
         continue;
       }
 
-      for (int i = 0; i < 4; i++) {
+      if (curTaxi.gas == 0) continue;
+
+      for (int i = 1; i <= 4; i++) {
         int nextRow = curTaxi.row + dr[i];
         int nextCol = curTaxi.col + dc[i];
 
-        if (isValidIdx(nextRow, nextCol) && !isVisited[nextRow][nextCol] && grid[nextRow][nextCol] != 1) {
+        if (isValidIdx(nextRow, nextCol)
+                && !isVisited[nextRow][nextCol]
+                && grid[nextRow][nextCol] != 1) {
           q.add(new Taxi(nextRow, nextCol, curTaxi.gas - 1));
           isVisited[nextRow][nextCol] = true;
         }
       }
     }
 
-
-    if (result == null || result.gas < 0) return -1;
+    if (result == null) return -1;
     else {
-      int idx = grid[result.row][result.col];
-      grid[result.row][result.col] = 0;
       taxi.row = result.row;
       taxi.col = result.col;
       taxi.gas = result.gas;
-      return idx;
     }
+
+    return grid[taxi.row][taxi.col];
   }
   static boolean isValidIdx(int row, int col) {
-    return row >= 0 && col >= 0 && row < N && col < N;
+    return row >= 1 && col >= 1 && row <= N && col <= N;
   }
 }
 class Taxi {
   int row;
   int col;
   int gas;
-  int moveCount;
 
-  Taxi (int row, int col, int gas) {
+  Taxi(int row, int col, int gas) {
     this.row = row;
     this.col = col;
     this.gas = gas;
-    this.moveCount = 0;
   }
 
-  Taxi (int row, int col, int gas, int moveCount) {
-    this(row, col, gas);
-    this.moveCount = moveCount;
-  }
-
-  boolean compare(Taxi o) {
-    if (this.row > o.row) return true;
-    else if (this.row < o.row) return false;
-    else return this.col > o.col;
-  }
-}
-class Point {
-  int row;
-  int col;
-  int gas;
-
-  Point (int row, int col, int gas) {
-    this.row = row;
-    this.col = col;
-    this.gas = gas;
+  int compare(Taxi o) {
+    if (this.row != o.row) return this.row - o.row;
+    else return this.col - o.col;
   }
 }
 class Passenger {
-  Point startPoint;
-  Point endPoint;
+  int startRow;
+  int startCol;
+  int endRow;
+  int endCol;
 
   Passenger(int startRow, int startCol, int endRow, int endCol) {
-    this.startPoint = new Point(startRow, startCol, 0);
-    this.endPoint = new Point(endRow, endCol, 0);
+    this.startRow = startRow;
+    this.startCol = startCol;
+    this.endRow = endRow;
+    this.endCol = endCol;
   }
 }
