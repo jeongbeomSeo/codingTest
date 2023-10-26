@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/data-structure" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/dvds" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/find-the-interval-multiplication" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/find-the-sum-intervals" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/find-the-sum-intervals-2" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/josephus-problem-2" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/min-and-max" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/minimum-value" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/number-of-increasing-sequences" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sequences-and-query-16" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sequences-and-query-17" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sequences-and-query-21" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
