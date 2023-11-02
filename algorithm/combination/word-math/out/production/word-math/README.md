@@ -3,6 +3,7 @@
 **골드 4**
 
 |시간 제한	|메모리 제한|	제출|	정답|	맞힌 사람|	정답 비율|
+|---|---|---|---|---|---|
 |2 초	|256 MB|	28096|	12776|	9687|	45.201%|
 
 ## 문제 
@@ -150,6 +151,80 @@ public class Main {
     }
 
     System.out.println(sum);
+  }
+}
+```
+
+**좀 더 함수로 쪼갬**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+    int N = Integer.parseInt(br.readLine());
+
+    int[] alphabet = new int['Z' - 'A' + 1];
+    String[] str = new String[N];
+
+    for (int i = 0; i < N; i++) {
+      str[i] = br.readLine();
+    }
+
+    transform_string(str, alphabet, N);
+
+    System.out.println(calculateWordNumber(alphabet));
+  }
+  static private int charToInt(char c) {
+    return c - 'A';
+  }
+
+  static void transform_string(String[] str, int[] alphabet, int N) {
+
+    for (int i = 0; i < N; i++) {
+      int strLength = str[i].length();
+
+      for (int j = 0; j < strLength; j++) {
+        char curChar = str[i].charAt(j);
+        int curIdx = charToInt(curChar);
+
+        alphabet[curIdx] += (int)Math.pow(10, (strLength - 1) - j);
+      }
+    }
+  }
+
+  static int calculateWordNumber(int[] alphabet) {
+
+    int length = 'Z' - 'A' + 1;
+    int sum = 0;
+
+    int num = 9;
+    while (num >= 0) {
+      boolean change = false;
+
+      int maxIdx = -1;
+      int maxValue = 0;
+      for (int i = 0; i < length; i++) {
+        if (maxValue < alphabet[i]) {
+          maxIdx = i;
+          maxValue = alphabet[i];
+          change = true;
+        }
+      }
+
+      if (!change) break;
+
+      sum += (num * alphabet[maxIdx]);
+
+      alphabet[maxIdx] = 0;
+      num--;
+    }
+    return sum;
+
   }
 }
 ```

@@ -42,3 +42,64 @@ C개의 공유기를 N개의 집에 적당히 설치해서, 가장 인접한 두
 ## 힌트
 
 공유기를 1, 4, 8 또는 1, 4, 9에 설치하면 가장 인접한 두 공유기 사이의 거리는 3이고, 이 거리보다 크게 공유기를 3개 설치할 수 없다.
+
+## 코드
+
+**AC**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.StringTokenizer;
+
+public class Main {
+  static int MIN = 0;
+  static int MAX = 1000000000;
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    int N = Integer.parseInt(st.nextToken());
+    int C = Integer.parseInt(st.nextToken());
+
+     int[] house = new int[N];
+
+     for (int i = 0; i < N; i++) {
+       house[i] = Integer.parseInt(br.readLine());
+     }
+
+    Arrays.sort(house);
+    int min = 1;
+    int max = house[N - 1];
+
+    System.out.println(binarySearch(house, min, max + 1, N, C));
+
+  }
+  static int binarySearch(int[] house, int min, int max, int N, int C) {
+
+    while (min < max) {
+      int mid = (min + max) / 2;
+
+      int beforeIdx = 0;
+      int count = 1;
+      for(int i = 1; i < N; i++) {
+        if (house[i] - house[beforeIdx] >= mid) {
+          count++;
+          beforeIdx = i;
+        }
+      }
+
+      if (count >= C) min = mid + 1;
+      else max = mid;
+    }
+
+    return min - 1;
+  }
+}
+```
+
+해당 풀이는 **둘 수 있는 간격을 매개 변수로 두는 방식**을 사용한 것이다. 
+
+다른 사람의 풀이를 참고해 버려서 반복적으로 풀고 완벽히 익히고 가져가자..

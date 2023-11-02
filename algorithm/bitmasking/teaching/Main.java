@@ -11,46 +11,52 @@ public class Main {
     int N = Integer.parseInt(st.nextToken());
     int K = Integer.parseInt(st.nextToken());
 
-    String[] words = new String[N];
+    String[] list = new String[N];
     for (int i = 0; i < N; i++) {
-      words[i] = br.readLine();
+      list[i] = br.readLine();
     }
+    if (K < 5) {
+      System.out.println(0);
+    } else {
+      System.out.println(queryResult(list, N, K));
+    }
+  }
+  private static int queryResult(String[] list, int N, int K) {
 
-    int max = 0;
-    if (K >= 5) {
-      for (int i = (1 << K) - 1; i < (1 << 26); i++) {
-        if (Integer.bitCount(i) == K) {
-          if (!basic_condition(i)) continue;
-          int count = 0;
-          for (String word : words) {
-            int j;
-            for (j = 0; j < word.length(); j++) {
-              int idx = convertToInt(word.charAt(j));
-              if (((1 << idx) & i) != (1 << idx)) break;
-            }
-            if (j == word.length()) count++;
+    int max = Integer.MIN_VALUE;
+    for (int i = (1 << K) - 1; i < (1 << 26); i++) {
+      if (Integer.bitCount(i) == K && checkValidation(i)) {
+        int count = 0;
+        for (int j = 0; j < N; j++) {
+          if (checkCanReading(list[j], i)) {
+            count++;
           }
-          max = Math.max(max, count);
         }
+        max = Math.max(max, count);
       }
     }
-    System.out.println(max);
+
+    return max;
   }
-  static boolean basic_condition(int num) {
-    int a = convertToInt('a');
-    if (((1 << a) & num) != (1 << a)) return false;
-    int n = convertToInt('n');
-    if (((1 << n) & num) != (1 << n)) return false;
-    int t = convertToInt('t');
-    if (((1 << t) & num) != (1 << t)) return false;
-    int i = convertToInt('i');
-    if (((1 << i) & num) != (1 << i)) return false;
-    int c = convertToInt('c');
-    if (((1 << c) & num) != (1 << c)) return false;
+  private static boolean checkCanReading(String word, int num) {
+    for (int i = 0; i < word.length(); i++) {
+      char c = word.charAt(i);
+
+      if ((num & (1 << convertCharToInt(c))) == 0) return false;
+    }
+    return true;
+  }
+  private static boolean checkValidation(int num) {
+
+    if ((num & (1 << convertCharToInt('a'))) == 0) return false;
+    if ((num & (1 << convertCharToInt('n'))) == 0) return false;
+    if ((num & (1 << convertCharToInt('t'))) == 0) return false;
+    if ((num & (1 << convertCharToInt('i'))) == 0) return false;
+    if ((num & (1 << convertCharToInt('c'))) == 0) return false;
 
     return true;
   }
-  static int convertToInt(char c) {
+  private static int convertCharToInt(char c) {
     return c - 'a';
   }
 }

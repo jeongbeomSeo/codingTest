@@ -2,107 +2,143 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Queue;
 import java.util.StringTokenizer;
 
 public class Main {
+    static String N;
+    static int M;
     public static void main(String[] args) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         StringTokenizer st;
 
-        int N = Integer.parseInt(br.readLine());
-        int M = Integer.parseInt(br.readLine());
+        N = br.readLine();
+        M = Integer.parseInt(br.readLine());
 
-        boolean[] notWorkingBtn = new boolean[10];
+        boolean[] isWorkingBtn = new boolean[10];
+        Arrays.fill(isWorkingBtn, true);
         if (M > 0) {
             st = new StringTokenizer(br.readLine());
             for (int i = 0; i < M; i++) {
-                int brokenBtnNum = Integer.parseInt(st.nextToken());
-
-                notWorkingBtn[brokenBtnNum] = true;
+                int btn = Integer.parseInt(st.nextToken());
+                isWorkingBtn[btn] = false;
             }
         }
 
-        System.out.println(queryResult(notWorkingBtn, N));
+        System.out.println(queryResult(isWorkingBtn));
     }
-    static int queryResult(boolean[] notWorkingBtn, int target) {
-        int result = Math.abs(target - 100);
-
-        return Math.min(result, getMinCount(notWorkingBtn, String.valueOf(target)));
-    }
-    private static int getMinCount(boolean[] notWorkingBtn, String target) {
+    private static int queryResult(boolean[] isWorkingBtn) {
         Queue<Node> q = new ArrayDeque<>();
 
-        int size = target.length();
+        int size = N.length();
 
-        q.add(new Node("", 0));
+        q.add(new Node("", 0, false, false));
 
-        int min = Integer.MAX_VALUE;
-        while(!q.isEmpty()) {
+        int result = onlyChannelMoveCount();
+        while (!q.isEmpty()) {
             Node curNode = q.poll();
 
             if (curNode.ptr == size) {
-                min = Math.min(calcCount(curNode, target, size), min);
+                result = Math.min(result, getCount(curNode));
                 continue;
             }
 
-            updateQueue(q, curNode, notWorkingBtn, target);
+            if (!curNode.isConsiderValueSize) {
+                updateQueueByNearNumber(isWorkingBtn, q, curNode);
+            } else {
+                updateQueue(isWorkingBtn, q, curNode);
+            }
         }
-        return min;
-    }
-    private static int calcCount(Node node, String target, int size) {
-        return Math.abs(Integer.parseInt(node.value) - Integer.parseInt(target)) + size;
-    }
-    private static void updateQueue(Queue<Node> q, Node curNode, boolean[] notWorkingBtn, String target) {
 
-        int upNum = findNearestUpNum(notWorkingBtn, target, curNode.ptr);
-        int downNum = findNearestDownNum(notWorkingBtn, target, curNode.ptr);
-
-        if (upNum == downNum) {
-            q.add(new Node(
-                    curNode.value + getNumChar(upNum), curNode.ptr + 1));
+        return result;
+    }
+    private static void updateQueue(boolean[] isWorkingBtn, Queue<Node> q, Node curNode) {
+        if (curNode.isSmall) {
+            int idx = getBigestNum(isWorkingBtn);
+            q.add(new Node(curNode.value + getChar(idx), curNode.ptr + 1, true, true));
         } else {
-            q.add(new Node(
-                    curNode.value + getNumChar(upNum), curNode.ptr + 1));
-
-            q.add(new Node(
-                    curNode.value + getNumChar(downNum), curNode.ptr + 1));
+            int idx = getSmallestNum(isWorkingBtn);
+            q.add(new Node(curNode.value + getChar(idx), curNode.ptr + 1, true, false));
         }
     }
-    private static int findNearestUpNum (boolean[] notWorkingBtn, String target, int ptr) {
-        int idx = getNumIdx(target.charAt(ptr));
-        while (notWorkingBtn[idx]) {
-            idx = getUpIdx(idx);
+    private static int getBigestNum(boolean[] isWorkingBtn) {
+        for (int i = 9; i >= 0; i--) {
+            if (isWorkingBtn[i])
+                return i;
         }
+        return -1;
+    }
+    private static int getSmallestNum(boolean[] isWorkingBtn) {
+        for (int i = 0; i <= 9; i++) {
+            if (isWorkingBtn[i])
+                return i;
+        }
+        return -1;
+    }
+    private static void updateQueueByNearNumber(boolean[] isWorkingBtn, Queue<Node> q, Node node) {
+        char c = N.charAt(node.ptr);
+
+        int idx = getIdx(c);
+
+        if (isWorkingBtn[idx]) {
+            q.add(new Node(node.value + c, node.ptr + 1, false, false));
+        }
+
+        int downNum = getNearestWorkingDownNumBtn(isWorkingBtn, idx);
+        if (idx != downNum)
+            q.add(new Node(node.value + getChar(downNum), node.ptr + 1, true, downNum < idx));
+
+        int upNum = getNearestWorkingUpNumBtn(isWorkingBtn, idx);
+        if (downNum != upNum)
+            q.add(new Node(node.value + getChar(upNum), node.ptr + 1, true, upNum < idx));
+
+    }
+    private static int getNearestWorkingUpNumBtn(boolean[] isWorkingBtn, int idx) {
+
+        while (!isWorkingBtn[idx]) {
+            idx = upIdx(idx);
+        }
+
         return idx;
     }
-    private static int findNearestDownNum (boolean[] notWorkingBtn, String target, int ptr) {
-        int idx = getNumIdx(target.charAt(ptr));
+    private static int getNearestWorkingDownNumBtn(boolean[] isWorkingBtn, int idx) {
 
-        while (notWorkingBtn[idx]) {
-            idx = getDownIdx(idx);
+        while (!isWorkingBtn[idx]) {
+            idx = downIdx(idx);
         }
+
         return idx;
     }
-    private static int getNumIdx(char c) {
-        return c - '0';
-    }
-    private static char getNumChar(int idx) {
+    private static char getChar(int idx) {
         return (char)(idx + '0');
     }
-    private static int getUpIdx(int idx) {
+    private static int upIdx(int idx) {
         return idx + 1 != 10 ? idx + 1 : 0;
     }
-    private static int getDownIdx(int idx) {
+    private static int downIdx(int idx) {
         return idx - 1 != -1 ? idx - 1 : 9;
     }
-}
-class Node {
-    String value;
-    int ptr;
+    private static int getIdx(char c) {
+        return c - '0';
+    }
+    private static int getCount(Node node) {
+        return Math.abs(Integer.parseInt(node.value) - Integer.parseInt(N)) + N.length();
+    }
+    private static int onlyChannelMoveCount() {
+        return Math.abs(100 - Integer.parseInt(N));
+    }
+    static class Node {
+        String value;
+        int ptr;
+        boolean isConsiderValueSize;
+        boolean isSmall;
 
-    Node(String value, int ptr) {
-        this.value = value;
-        this.ptr = ptr;
+        Node(String value, int ptr, boolean isConsiderValueSize, boolean isSmall) {
+            this.value = value;
+            this.ptr = ptr;
+            this.isConsiderValueSize = isConsiderValueSize;
+            this.isSmall = isSmall;
+        }
     }
 }

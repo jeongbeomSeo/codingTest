@@ -117,3 +117,206 @@ public class Main {
   }
 }
 ```
+
+**주의할 점**
+
+여기서 일반적인 방식으로 boolean 배열의 flag를 2개로 만들어서 기울기가 +, -인 경우로 만들어 두고 비숍을 놓을 수 있는 위치(1)를 전부 체크해 가면서 하는 풀이는 시간 초과가 나옵니다.
+
+해당 풀이는 아래와 같습니다.
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+
+    List<Node> nodeList = new ArrayList<>();
+    for (int i = 0; i < N; i++) {
+      st = new StringTokenizer(br.readLine());
+      for (int j = 0; j < N; j++) {
+        if (Integer.parseInt(st.nextToken()) == 1) {
+          nodeList.add(new Node(i, j));
+        }
+      }
+    }
+
+    System.out.println(queryResult(nodeList, N));
+  }
+  private static int queryResult(List<Node> nodeList, int N) {
+
+    boolean[] flag_XR = new boolean[2 * N - 1];
+    boolean[] flag_XL = new boolean[2 * N - 1];
+
+    return recursive(nodeList, flag_XR, flag_XL, 0, 0, nodeList.size(), N);
+  }
+  private static int recursive(List<Node> nodeList, boolean[] flag_XR, boolean[] flag_XL, int ptr, int count, int size, int N) {
+    int max = Integer.MIN_VALUE;
+    if (ptr == size) {
+      max = count;
+      return max;
+    } else {
+      Node node = nodeList.get(ptr);
+
+      if (!flag_XR[node.row + node.col] && !flag_XL[(N - 1) - node.row + node.col]) {
+        flag_XR[node.row + node.col] =
+                flag_XL[(N - 1) - node.row + node.col] = true;
+        max = Math.max(max, recursive(nodeList, flag_XR, flag_XL, ptr + 1, count + 1, size, N));
+        flag_XR[node.row + node.col] =
+                flag_XL[(N - 1) - node.row + node.col] = false;
+      }
+
+      if (max == Integer.MIN_VALUE || (max < count + (size - (ptr + 1)))) {
+        max = Math.max(max, recursive(nodeList, flag_XR, flag_XL, ptr + 1, count, size, N));
+      }
+    }
+
+    return max;
+  }
+}
+class Node {
+  int row;
+  int col;
+
+  Node(int row, int col) {
+    this.row = row;
+    this.col = col;
+  }
+}
+```
+
+다음은 좀 더 최적화 된 코드입니다.
+
+**최적화 코드**
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.StringTokenizer;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+
+    int[][] grid = new int[N][N];
+    for (int i = 0; i < N; i++) {
+      st = new StringTokenizer(br.readLine());
+      for (int j = 0; j < N; j++) {
+        grid[i][j] = Integer.parseInt(st.nextToken());
+      }
+    }
+
+    System.out.println(queryResult(grid, N));
+  }
+  private static int queryResult(int[][] grid, int N) {
+    boolean[] flag = new boolean[2 * N - 1];
+
+    return backTracking(grid, flag, 0, 0, N);
+  }
+  private static int backTracking(int[][] grid, boolean[] flag, int ptr, int count, int N) {
+    int max = Integer.MIN_VALUE;
+
+    if (ptr == 2 * N - 1) {
+      return count;
+    } else {
+      int row = ptr < N ? ptr : N - 1;
+      int col = ptr < N ? 0 : ptr - (N - 1);
+
+      boolean active = false;
+      while (row >= 0 && col < N) {
+        if (grid[row][col] == 1) {
+          if (!flag[(N - 1) - row + col]) {
+            active = true;
+
+            flag[(N - 1) - row + col] = true;
+            max = Math.max(max, backTracking(grid, flag, ptr + 1, count + 1, N));
+            flag[(N - 1) - row + col] = false;
+          }
+        }
+        row--;
+        col++;
+      }
+      if (!active) max = Math.max(max, backTracking(grid, flag, ptr + 1, count, N));
+    }
+    return max;
+  }
+}
+```
+
+이 문제는 사실 이와 같은 방식으로 푸는 문제는 아닌 것 같습니다. 왜 이 방식의 풀이가 통과되는 것인지 모르겠습디만
+
+정석적이라면 놓을 수 있는 경우에도 일부러 놓지 않는 경우도 고려해야 됩니다. 즉, active가 true일지라도 실행해야 되는 상황이 발생하는 것입니다. 
+
+다음 풀이가 정석적인 풀이이고 참고 사이트 링크는 아래에 달아놨습니다.
+
+**가장 최적화된 풀이**
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.StringTokenizer;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st;
+
+        int N = Integer.parseInt(br.readLine());
+
+        int[][] grid = new int[N][N];
+        for (int i = 0; i < N; i++) {
+            st = new StringTokenizer(br.readLine());
+            for (int j = 0; j < N; j++) {
+                grid[i][j] = Integer.parseInt(st.nextToken());
+            }
+        }
+
+        System.out.println(queryResult(grid, N));
+    }
+    private static int queryResult(int[][] grid, int N) {
+        boolean[] flag = new boolean[2 * N - 1];
+
+        int evenResult = backTracking(grid, flag, 0, 0, N);
+        int oddResult = backTracking(grid, flag, 1, 0, N);
+
+        return evenResult + oddResult;
+    }
+    private static int backTracking(int[][] grid, boolean[] flag, int ptr, int count, int size) {
+        int max = Integer.MIN_VALUE;
+
+        if (ptr >= 2 * size - 1) {
+            return count;
+        } else {
+            int row = ptr < size ? ptr : size - 1;
+            int col = ptr < size ? 0 : ptr - (size - 1);
+
+            while (row >= 0 && col < size) {
+                if (grid[row][col] == 1 && !flag[(size - 1) - row + col]) {
+                    flag[(size - 1) - row + col] = true;
+                    max = Math.max(max, backTracking(grid, flag, ptr + 2, count + 1, size));
+                    flag[(size - 1) - row + col] = false;
+                }
+                row--;
+                col++;
+            }
+            max = Math.max(max, backTracking(grid, flag, ptr + 2, count, size));
+        }
+
+        return max;
+    }
+}
+```
+
+**참고한 사이트**
+- [[백준] 1799번 비숍](https://velog.io/@ddongh1122/%EB%B0%B1%EC%A4%80-1799%EB%B2%88-%EB%B9%84%EC%88%8D)

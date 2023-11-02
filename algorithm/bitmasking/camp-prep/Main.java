@@ -1,7 +1,6 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class Main {
@@ -14,32 +13,38 @@ public class Main {
     int R = Integer.parseInt(st.nextToken());
     int X = Integer.parseInt(st.nextToken());
 
-    int[] level = new int[N];
+    int[] levels = new int[N];
+
     st = new StringTokenizer(br.readLine());
     for (int i = 0; i < N; i++) {
-      level[i] = Integer.parseInt(st.nextToken());
+      levels[i] = Integer.parseInt(st.nextToken());
     }
 
-    Arrays.sort(level);
+    System.out.println(queryResult(levels, N, L, R, X));
+  }
+  private static int queryResult(int[] levels, int N, int L, int R, int X) {
 
     int count = 0;
-    for (int i = 1; i < 1 << N; i++) {
-      int sum = 0;
-      int maxIdx = 0;
-      int minIdx = -1;
-      for (int j = 0; j < N; j++) {
-        if (((1 << j) & i) == (1 << j)) {
-          sum += level[j];
-          if (minIdx == -1) minIdx = j;
-          maxIdx = j;
+    for (int i = 0; i < (1 << N); i++) {
+      if (Integer.bitCount(i) >= 2) {
+        int sum = 0;
+        int min = Integer.MAX_VALUE;
+        int max = Integer.MIN_VALUE;
+
+        for (int j = 0; j < N; j++) {
+          if ((i & (1 << j)) != 0) {
+            min = Math.min(min, levels[j]);
+            max = Math.max(max, levels[j]);
+            sum += levels[j];
+          }
         }
+        int diff = max - min;
+        if (sum < L || sum > R) continue;
+        if (diff < X) continue;
+
+        count++;
       }
-      if (sum < L || sum  > R) continue;
-      if (minIdx == maxIdx || level[maxIdx] - level[minIdx] < X) continue;
-      count++;
     }
-
-    System.out.println(count);
-
+    return count;
   }
 }

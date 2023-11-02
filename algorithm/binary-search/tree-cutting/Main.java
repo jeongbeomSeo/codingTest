@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class Main {
@@ -12,36 +13,41 @@ public class Main {
     int M = Integer.parseInt(st.nextToken());
 
     int[] trees = new int[N];
+
     st = new StringTokenizer(br.readLine());
-    int right = 0;
+    long max = Integer.MIN_VALUE;
     for (int i = 0; i < N; i++) {
       trees[i] = Integer.parseInt(st.nextToken());
-      right = Math.max(trees[i], right);
+      max = Math.max(trees[i], max);
     }
 
-    System.out.println(binarySearch(trees, M, right));
+
+    System.out.println(upper_bound(trees, 0, max + 1, M, N));
+
   }
-  static int binarySearch(int[] trees, int M, int right) {
-
-    int left = 0;
-    int result = 0;
-
+  private static int upper_bound(int[] trees, long left, long right, int target, int trees_length) {
     while (left < right) {
-      int mid = (left + right) / 2;
+      long mid = (left + right) / 2;
 
-      long woodCut = 0;
-      for (int tree : trees) {
-        if (tree > mid) woodCut += (tree - mid);
-      }
+      long allTreeLength = getAllTreeLength(trees, trees_length, mid);
 
-      if (woodCut >= M) {
-        result = mid;
+      if (allTreeLength >= target) {
         left = mid + 1;
-      }
-      else {
+      } else {
         right = mid;
       }
     }
-    return result;
+    return (int)(left - 1);
+  }
+  private static long getAllTreeLength (int[] trees, int size, long target) {
+    long length = 0;
+
+    for (int i = 0; i < size; i++) {
+      if (trees[i] > target) {
+        length += trees[i] - target;
+      }
+    }
+
+    return length;
   }
 }

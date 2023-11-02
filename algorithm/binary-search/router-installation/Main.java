@@ -5,8 +5,6 @@ import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class Main {
-  static int MIN = 0;
-  static int MAX = 1000000000;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
@@ -14,37 +12,41 @@ public class Main {
     int N = Integer.parseInt(st.nextToken());
     int C = Integer.parseInt(st.nextToken());
 
-     int[] house = new int[N];
+    int[] house = new int[N];
 
-     for (int i = 0; i < N; i++) {
-       house[i] = Integer.parseInt(br.readLine());
-     }
-
+    for (int i = 0; i < N; i++) {
+      house[i] = Integer.parseInt(br.readLine());
+    }
     Arrays.sort(house);
-    int min = 1;
+    int min = house[0];
     int max = house[N - 1];
 
-    System.out.println(binarySearch(house, min, max + 1, N, C));
-
+    System.out.println(upper_bound(house, 0, max - min + 1, C, N));
   }
-  static int binarySearch(int[] house, int min, int max, int N, int C) {
+  private static int upper_bound(int[] house, long left, long right, int target, int N) {
+    while (left < right) {
+      long mid = (left + right) / 2;
 
-    while (min < max) {
-      int mid = (min + max) / 2;
+      int count = queryCanInstallationCount(house, N, mid);
 
-      int beforeIdx = 0;
-      int count = 1;
-      for(int i = 1; i < N; i++) {
-        if (house[i] - house[beforeIdx] >= mid) {
-          count++;
-          beforeIdx = i;
-        }
+      if (count >= target) {
+        left = mid + 1;
+      } else {
+        right = mid;
       }
-
-      if (count >= C) min = mid + 1;
-      else max = mid;
     }
+    return (int)(left - 1);
+  }
+  private static int queryCanInstallationCount(int[] house, int size, long distance) {
 
-    return min - 1;
+    int count = 1;
+    int lastIdx = 0;
+    for (int i = 1; i < size; i++) {
+      if (house[i] - house[lastIdx] >= distance) {
+        count++;
+        lastIdx = i;
+      }
+    }
+    return count;
   }
 }
