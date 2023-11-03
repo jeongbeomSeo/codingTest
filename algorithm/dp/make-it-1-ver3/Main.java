@@ -1,50 +1,59 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
 
 public class Main {
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
-    long N = Long.parseLong(br.readLine());
+    Long N = Long.parseLong(br.readLine());
 
-    Map<Long, Long> map = new HashMap<>();
-    Queue<Long> q = new ArrayDeque<>();
+    System.out.println(queryResult(N));
+  }
+  private static int queryResult(Long N) {
 
-    q.offer(N);
-    map.put(N, 0L);
+    Queue<Node> q = new ArrayDeque<>();
+
+    Map<Long, Boolean> isVisited = new HashMap<>();
+
+    q.add(new Node(N, 0));
 
     while (!q.isEmpty()) {
-      long n = q.poll();
-      long curCnt = map.get(n);
+      Node node = q.poll();
 
-      if (n == 1) {
-        System.out.println(curCnt);
-        break;
+      if (node.value <= 0) continue;
+      else if (node.value == 1) {
+        return node.count;
       }
 
-      if (n % 3 == 0 && n / 3 >= 1) {
-        long nextNum = n / 3;
-        if (!map.containsKey(nextNum)) {
-          map.put(nextNum, curCnt + 1);
-          q.offer(nextNum);
-        }
+
+      if (!isVisited.getOrDefault(node.value / 3, false) && node.value % 3 == 0) {
+        q.add(new Node(node.value / 3, node.count + 1));
+        isVisited.put(node.value / 3, true);
       }
-      if (n % 2 == 0 && n / 2 >= 1) {
-        long nextNum = n / 2;
-        if (!map.containsKey(nextNum)) {
-          map.put(nextNum, curCnt + 1);
-          q.offer(nextNum);
-        }
+      if (!isVisited.getOrDefault(node.value / 2, false) && node.value % 2 == 0) {
+        q.add(new Node(node.value / 2, node.count + 1));
+        isVisited.put(node.value / 2, true);
       }
-      if (n - 1 >= 1) {
-        long nextNum = n - 1;
-        if (!map.containsKey(n - 1)) {
-          map.put(nextNum, curCnt + 1);
-          q.offer(nextNum);
-        }
+      if (!isVisited.getOrDefault(node.value - 1, false)) {
+        q.add(new Node(node.value - 1, node.count + 1));
+        isVisited.put(node.value - 1, true);
       }
     }
+
+    return -1;
+  }
+}
+class Node {
+  long value;
+  int count;
+
+  Node(long value, int count) {
+    this.value = value;
+    this.count = count;
   }
 }

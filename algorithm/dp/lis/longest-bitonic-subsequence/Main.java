@@ -9,44 +9,56 @@ public class Main {
     StringTokenizer st;
 
     int N = Integer.parseInt(br.readLine());
-
-    int[] dp_front = new int[N];
-    int[] dp_back = new int[N];
-    int[] arr = new int[N];
+    int[] nums = new int[N];
 
     st = new StringTokenizer(br.readLine());
     for (int i = 0; i < N; i++) {
-      arr[i] = Integer.parseInt(st.nextToken());
+      nums[i] = Integer.parseInt(st.nextToken());
     }
 
-    System.out.println(lbs_dp(dp_front, dp_back, arr, N));
+    System.out.println(queryResult(nums, N));
   }
-  static int lbs_dp(int[] dp_front, int[] dp_back, int[] arr, int N) {
+  private static int queryResult(int[] nums, int N) {
+    int[] table_front = initTableFront(nums, N);
+    int[] table_back = initTableBack(nums, N);
+
+    return getLogestLength(table_front, table_back, N);
+  }
+  private static int getLogestLength(int[] table_front, int[] table_back, int N) {
+
+    int maxValue = Integer.MIN_VALUE;
     for (int i = 0; i < N; i++) {
-      int back_i = N - 1 - i;
-      dp_front[i] = 1;
-      dp_back[back_i] = 0;
+      if (maxValue < (table_front[i] + table_back[i] - 1)) {
+        maxValue = (table_front[i] + table_back[i] - 1);
+      }
+    }
+    return maxValue;
+  }
+  private static int[] initTableFront(int[] nums, int N) {
+    int[] table_front = new int[N];
+
+    for (int i = 0; i < N; i++) {
+      table_front[i] = 1;
       for (int j = 0; j < i; j++) {
-        int back_j = N - 1 - j;
-        if (arr[j] < arr[i])
-          dp_front[i] = Math.max(dp_front[i], dp_front[j] + 1);
-        if (arr[back_i] > arr[back_j])
-          dp_back[back_i] = Math.max(dp_back[back_i], dp_back[back_j] + 1);
+        if (nums[i] > nums[j]) {
+          table_front[i] = Math.max(table_front[i], table_front[j] + 1);
+        }
       }
     }
-    /*
+    return table_front;
+  }
+  private static int[] initTableBack(int[] nums, int N) {
+    int[] table_back = new int[N];
+
     for (int i = N - 1; i >= 0; i--) {
-      dp_back[i] = 0;
+      table_back[i] = 1;
       for (int j = N - 1; j > i; j--) {
-        if (arr[i] > arr[j])
-          dp_back[i] = Math.max(dp_back[i], dp_back[j] + 1);
+        if (nums[i] > nums[j]) {
+          table_back[i] = Math.max(table_back[i], table_back[j] + 1);
+        }
       }
     }
-    */
-    int max = 0;
-    for (int i = 0; i < N; i++) {
-      max = Math.max(max, dp_front[i] + dp_back[i]);
-    }
-    return max;
+
+    return table_back;
   }
 }

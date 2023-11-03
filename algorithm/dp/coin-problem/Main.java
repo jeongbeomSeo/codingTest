@@ -1,44 +1,53 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.Arrays;
 
 public class Main {
-  static long INF = Long.MAX_VALUE;
+  static int INF = Integer.MAX_VALUE;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
 
     int T = Integer.parseInt(br.readLine());
-    long[] dp = new long[101];
-    int[] arr = {1, 10, 25, 100};
 
-    Arrays.fill(dp, INF);
-    dp[0] = 0;
-
-    init_dp(dp, arr);
-
+    int[] table = initDpTable();
     for (int tc = 0; tc < T; tc++) {
-       long K = Long.parseLong(br.readLine());
+      long cost = Long.parseLong(br.readLine());
 
-      System.out.println(coin_dp(dp, K));
-     }
+      int count = 0;
+
+      while (cost != 0) {
+
+        int remain = (int)(cost % 100);
+
+        count += table[remain];
+
+        cost /= 100;
+      }
+
+      bw.write(count + "\n");
+    }
+
+    bw.flush();
+    bw.close();
   }
-  static void init_dp(long[] dp, int[] arr) {
-    for (int i = 0; i < arr.length; i++) {
-      for (int j = arr[i]; j < 101; j++) {
-        dp[j] = Math.min(dp[j], dp[j - arr[i]] + 1);
+  private static int[] initDpTable() {
+
+    int[] table = new int[100];
+
+    Arrays.fill(table, INF);
+
+    table[0] = 0;
+    int[] coins = {1, 10, 25};
+    for (int i = 0; i < 3; i++) {
+      int coin = coins[i];
+
+      for (int j = coin; j < 100; j++) {
+        if (table[j - coin] != INF) {
+          table[j] = Math.min(table[j], table[j - coin] + 1);
+        }
       }
     }
-  }
 
-  static long coin_dp(long[] dp, long K) {
-    long ans = 0;
-
-    while (K > 0) {
-      ans += dp[(int)(K % 100)];
-      K /= 100;
-    }
-
-    return ans;
+    return table;
   }
 }
