@@ -287,3 +287,142 @@ public class Main {
   }
 }
 ```
+
+**TLE**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.security.Key;
+import java.util.StringTokenizer;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+
+    Item[] items = new Item[N + 1];
+
+    for (int i = 1; i < N + 1; i++) {
+      st = new StringTokenizer(br.readLine());
+      int weight = Integer.parseInt(st.nextToken());
+      int cost = Integer.parseInt(st.nextToken());
+      int quota = Integer.parseInt(st.nextToken());
+
+      items[i] = new Item(weight, cost, quota);
+    }
+
+    int[][] table = new int[N + 1][M + 1];
+
+    activeDp(items, table, N, M);
+
+    System.out.println(table[N][M]);
+  }
+  private static void activeDp(Item[] items, int[][] table, int N, int M) {
+
+    for (int i = 1; i < N + 1; i++) {
+      for (int j = 1; j < M + 1; j++) {
+        if (j >= items[i].weight) {
+          int max = table[i - 1][j];
+          for (int k = 1; k <= items[i].quantity; k++) {
+            if (j - k * items[i].weight < 0) break;
+            max = Math.max(max, table[i - 1][j - k * items[i].weight] + k * items[i].cost);
+          }
+          table[i][j] = max;
+        } else {
+          table[i][j] = table[i - 1][j];
+        }
+      }
+    }
+  }
+}
+class Item {
+  int weight;
+  int cost;
+  int quantity;
+
+  Item(int weight, int cost, int quantity) {
+    this.weight = weight;
+    this.cost = cost;
+    this.quantity = quantity;
+  }
+}
+```
+
+해당 문제의 풀이 핵심은 주어진 양을 그대로 활용하면 시간 초과가 나오기 때문에 그것을 쪼개서 사용해야 합니다.
+
+모든 수는 2진수의 형태로 표현이 가능한 것과 나머지를 이용하는 방식을 사용하면 다음과 같은 형태로 문제를 해결할 수 있습니다.
+
+**AC**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+
+    List<Item> itemList = new ArrayList<>();
+    for (int i = 1; i < N + 1; i++) {
+      st = new StringTokenizer(br.readLine());
+      int weight = Integer.parseInt(st.nextToken());
+      int cost = Integer.parseInt(st.nextToken());
+      int quantity = Integer.parseInt(st.nextToken());
+
+      addItems(itemList, weight, cost, quantity);
+    }
+
+    System.out.println(getMaxCost(itemList, M));
+  }
+  private static int getMaxCost(List<Item> itemList, int M) {
+
+    int listSize = itemList.size();
+    int[][] table = new int[listSize + 1][M + 1];
+
+    for (int i = 1; i < listSize + 1; i++) {
+      Item item = itemList.get(i - 1);
+
+      for (int j = 1; j < M + 1; j++) {
+        if (j < item.weight) {
+          table[i][j] = table[i - 1][j];
+        } else {
+          table[i][j] = Math.max(table[i - 1][j], table[i - 1][j - item.weight] + item.cost);
+        }
+      }
+    }
+
+    return table[listSize][M];
+  }
+  private static void addItems(List<Item> itemList, int weight, int cost, int quantity) {
+    for (int i = quantity; i > 0; i = (i >> 1)) {
+      int remain = i - (i >> 1);
+
+      itemList.add(new Item(weight * remain, cost * remain, remain));
+    }
+  }
+}
+class Item {
+  int weight;
+  int cost;
+  int quota;
+
+  Item(int weight, int cost, int quota) {
+    this.weight = weight;
+    this.cost = cost;
+    this.quota = quota;
+  }
+}
+```

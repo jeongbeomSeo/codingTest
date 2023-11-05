@@ -210,4 +210,145 @@ Item의 갯수가 하나가 아니기 때문에 대각선을 이용하기 위해
 
 즉, 따로 값을 저장해둘 필요가 있다. (다행히도, 앞에서도 remainder를 구하는 작업을 요구하기 때문에 시간 복잡도는 늘어나지 않고, 공간 복잡도만 늘어남)
 
+중간에 무엇을 놓친것 같다....
 
+**WA**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.StringTokenizer;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+
+    int[][] knapsack = new int[N + 1][3];
+    int[][] dp = new int[N + 1][M + 1];
+    int[][] remainder = new int[N + 1][M + 1];
+
+    for (int i = 1; i < N + 1; i++) {
+      st = new StringTokenizer(br.readLine());
+
+      knapsack[i][0] = Integer.parseInt(st.nextToken());
+      knapsack[i][1] = Integer.parseInt(st.nextToken());
+      knapsack[i][2] = Integer.parseInt(st.nextToken());
+    }
+
+    knapsack_dp(knapsack, dp, remainder, N, M);
+
+    System.out.println(dp[N][M]);
+  }
+  static void knapsack_dp(int[][] knapsack, int[][] dp, int[][] remainder, int N, int M) {
+    for (int i = 1; i < N + 1; i++) remainder[0][i] = i;
+
+    for (int i = 1; i < N + 1; i++) {
+      int itemWeight = knapsack[i][0];
+      int itemSatisfy = knapsack[i][1];
+      int itemAmount = knapsack[i][2];
+      for (int w = 1; w < M + 1; w++) {
+        if (itemWeight > w) {
+          dp[i][w] = dp[i - 1][w];
+        }
+        else {
+          int canUseItemAmount = (w / itemWeight) > itemAmount ? itemAmount : w / itemWeight;
+          int itemTotalWeight = canUseItemAmount * itemWeight;
+          int diagonalRemainder = w - itemTotalWeight;
+
+          int diagonalTotalSatisfy = dp[i - 1][diagonalRemainder] + itemSatisfy * canUseItemAmount;
+          int upTotalSatisfy = dp[i - 1][w] + dp[i][remainder[i - 1][w]];
+
+          if (diagonalTotalSatisfy > upTotalSatisfy) {
+            dp[i][w] = diagonalTotalSatisfy;
+            remainder[i][w] = remainder[i - 1][diagonalRemainder];
+          }
+          else if (diagonalTotalSatisfy == upTotalSatisfy) {
+            if (remainder[i - 1][diagonalRemainder] >= remainder[i - 1][w]) {
+              dp[i][w] = diagonalTotalSatisfy;
+              remainder[i][w] = remainder[i - 1][diagonalRemainder];
+            }
+            else {
+              dp[i][w] = upTotalSatisfy;
+              remainder[i][w] = remainder[i - 1][w] % itemWeight;
+            }
+          }
+          else {
+            dp[i][w] = upTotalSatisfy;
+            remainder[i][w] = remainder[i - 1][w] % itemWeight;
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**TLE**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.security.Key;
+import java.util.StringTokenizer;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+
+    Item[] items = new Item[N + 1];
+
+    for (int i = 1; i < N + 1; i++) {
+      st = new StringTokenizer(br.readLine());
+      int weight = Integer.parseInt(st.nextToken());
+      int cost = Integer.parseInt(st.nextToken());
+      int quota = Integer.parseInt(st.nextToken());
+
+      items[i] = new Item(weight, cost, quota);
+    }
+
+    int[][] table = new int[N + 1][M + 1];
+
+    activeDp(items, table, N, M);
+
+    System.out.println(table[N][M]);
+  }
+  private static void activeDp(Item[] items, int[][] table, int N, int M) {
+
+    for (int i = 1; i < N + 1; i++) {
+      for (int j = 1; j < M + 1; j++) {
+        if (j >= items[i].weight) {
+          int max = table[i - 1][j];
+          for (int k = 1; k <= items[i].quantity; k++) {
+            if (j - k * items[i].weight < 0) break;
+            max = Math.max(max, table[i - 1][j - k * items[i].weight] + k * items[i].cost);
+          }
+          table[i][j] = max;
+        } else {
+          table[i][j] = table[i - 1][j];
+        }
+      }
+    }
+  }
+}
+class Item {
+  int weight;
+  int cost;
+  int quantity;
+
+  Item(int weight, int cost, int quantity) {
+    this.weight = weight;
+    this.cost = cost;
+    this.quantity = quantity;
+  }
+}
+```

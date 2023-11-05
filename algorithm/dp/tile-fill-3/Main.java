@@ -9,24 +9,34 @@ public class Main {
 
     int N = Integer.parseInt(br.readLine());
 
-    long[][] dp = new long[1000001][2];
+    if (N == 1) System.out.println(2);
+    else if (N == 2) System.out.println(7);
+    else {
+      long[][] table = initDpTable(N);
 
-    dp[0][0] = 1;
-    dp[1][0] = 2;
-    dp[2][0] = 4 + 3;
-    dp[0][1] = 1;
-    dp[1][1] = 3;
-    dp[2][1] = 10;
+      activeDp(table, N);
 
-    for (int i = 3; i <= N; i++) {
-      long count = (dp[i - 1][0] * 2 + dp[i - 2][0] * 3) % MOD;
-
-      count = (count + 2 * dp[i - 3][1]) % MOD;
-
-      dp[i][0] = count;
-      dp[i][1] = (dp[i - 1][1] + dp[i][0]) % MOD;
+      System.out.println(table[N][0]);
     }
+  }
+  private static void activeDp(long[][] table, int N) {
 
-    System.out.println(dp[N][0]);
+    for (int i = 3; i < N + 1; i++) {
+      table[i][0] = ((2 * table[i - 1][0]) % MOD + (3 * table[i - 2][0]) % MOD + (2 * table[i - 3][1]) % MOD) % MOD;
+
+      table[i][1] = (table[i - 1][1] + table[i][0]) % MOD;
+    }
+  }
+  private static long[][] initDpTable(int N) {
+
+    long[][] table = new long[N + 1][2];
+
+    table[0][0] = table[0][1] = 1;
+    table[1][0] = 2;
+    table[1][1] = table[0][1] + table[1][0];
+    table[2][0] = 7;
+    table[2][1] = table[1][1] + table[2][0];
+
+    return table;
   }
 }

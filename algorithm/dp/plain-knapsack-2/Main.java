@@ -1,6 +1,8 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
 
 public class Main {
@@ -11,61 +13,53 @@ public class Main {
     int N = Integer.parseInt(st.nextToken());
     int M = Integer.parseInt(st.nextToken());
 
-    int[][] knapsack = new int[N + 1][3];
-    int[][] dp = new int[N + 1][M + 1];
-    int[][] remainder = new int[N + 1][M + 1];
-
+    List<Item> itemList = new ArrayList<>();
     for (int i = 1; i < N + 1; i++) {
       st = new StringTokenizer(br.readLine());
+      int weight = Integer.parseInt(st.nextToken());
+      int cost = Integer.parseInt(st.nextToken());
+      int quantity = Integer.parseInt(st.nextToken());
 
-      knapsack[i][0] = Integer.parseInt(st.nextToken());
-      knapsack[i][1] = Integer.parseInt(st.nextToken());
-      knapsack[i][2] = Integer.parseInt(st.nextToken());
+      addItems(itemList, weight, cost, quantity);
     }
 
-    knapsack_dp(knapsack, dp, remainder, N, M);
-
-    System.out.println(dp[N][M]);
+    System.out.println(getMaxCost(itemList, M));
   }
-  static void knapsack_dp(int[][] knapsack, int[][] dp, int[][] remainder, int N, int M) {
-    for (int i = 1; i < N + 1; i++) remainder[0][i] = i;
+  private static int getMaxCost(List<Item> itemList, int M) {
 
-    for (int i = 1; i < N + 1; i++) {
-      int itemWeight = knapsack[i][0];
-      int itemSatisfy = knapsack[i][1];
-      int itemAmount = knapsack[i][2];
-      for (int w = 1; w < M + 1; w++) {
-        if (itemWeight > w) {
-          dp[i][w] = dp[i - 1][w];
-        }
-        else {
-          int canUseItemAmount = (w / itemWeight) > itemAmount ? itemAmount : w / itemWeight;
-          int itemTotalWeight = canUseItemAmount * itemWeight;
-          int diagonalRemainder = w - itemTotalWeight;
+    int listSize = itemList.size();
+    int[][] table = new int[listSize + 1][M + 1];
 
-          int diagonalTotalSatisfy = dp[i - 1][diagonalRemainder] + itemSatisfy * canUseItemAmount;
-          int upTotalSatisfy = dp[i - 1][w] + dp[i][remainder[i - 1][w]];
+    for (int i = 1; i < listSize + 1; i++) {
+      Item item = itemList.get(i - 1);
 
-          if (diagonalTotalSatisfy > upTotalSatisfy) {
-            dp[i][w] = diagonalTotalSatisfy;
-            remainder[i][w] = remainder[i - 1][diagonalRemainder];
-          }
-          else if (diagonalTotalSatisfy == upTotalSatisfy) {
-            if (remainder[i - 1][diagonalRemainder] >= remainder[i - 1][w]) {
-              dp[i][w] = diagonalTotalSatisfy;
-              remainder[i][w] = remainder[i - 1][diagonalRemainder];
-            }
-            else {
-              dp[i][w] = upTotalSatisfy;
-              remainder[i][w] = remainder[i - 1][w] % itemWeight;
-            }
-          }
-          else {
-            dp[i][w] = upTotalSatisfy;
-            remainder[i][w] = remainder[i - 1][w] % itemWeight;
-          }
+      for (int j = 1; j < M + 1; j++) {
+        if (j < item.weight) {
+          table[i][j] = table[i - 1][j];
+        } else {
+          table[i][j] = Math.max(table[i - 1][j], table[i - 1][j - item.weight] + item.cost);
         }
       }
     }
+
+    return table[listSize][M];
+  }
+  private static void addItems(List<Item> itemList, int weight, int cost, int quantity) {
+    for (int i = quantity; i > 0; i = (i >> 1)) {
+      int remain = i - (i >> 1);
+
+      itemList.add(new Item(weight * remain, cost * remain, remain));
+    }
+  }
+}
+class Item {
+  int weight;
+  int cost;
+  int quota;
+
+  Item(int weight, int cost, int quota) {
+    this.weight = weight;
+    this.cost = cost;
+    this.quota = quota;
   }
 }

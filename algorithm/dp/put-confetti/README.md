@@ -239,3 +239,106 @@ public class Main {
 ```
 
 LIS 알고리즘 공부하러가자..
+
+**최종 LIS 최적화 풀이**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.StringTokenizer;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+
+    Confetti[] confettis = new Confetti[N];
+
+    for (int i = 0; i < N; i++) {
+      st = new StringTokenizer(br.readLine());
+      int n1 = Integer.parseInt(st.nextToken());
+      int n2 = Integer.parseInt(st.nextToken());
+
+      confettis[i] = new Confetti(n1, n2);
+    }
+
+    Arrays.sort(confettis);
+
+    System.out.println(activeDp(confettis, N));
+  }
+  private static int activeDp(Confetti[] confettis, int N) {
+
+    int[] table = new int[N];
+
+    int size = 0;
+    table[size++] = confettis[0].col;
+
+    for (int i = 1; i < N; i++) {
+      if (table[size - 1] <= confettis[i].col) {
+        table[size] = confettis[i].col;
+        size++;
+      } else if (table[size - 1] > confettis[i].col) {
+        int idx = upper_bound(table, 0, size, confettis[i].col);
+
+        table[idx] = confettis[i].col;
+      }
+    }
+
+    return size;
+  }
+  private static int upper_bound(int[] array, int left, int right, int target) {
+    while (left < right) {
+      int mid = (left + right) / 2;
+
+      if (array[mid] <= target) {
+        left = mid + 1;
+      } else {
+        right = mid;
+      }
+    }
+    return right;
+  }
+  private static int lower_bound(int[] array, int left, int right, int target) {
+    while (left < right) {
+      int mid = (left + right) / 2;
+
+      if (array[mid] < target) {
+        left = mid + 1;
+      } else {
+        right = mid;
+      }
+    }
+    return left;
+  }
+}
+class Confetti implements Comparable<Confetti>{
+  int row;
+  int col;
+
+  Confetti(int a, int b) {
+    if (a > b) {
+      this.row = a;
+      this.col = b;
+    } else {
+      this.row = b;
+      this.col = a;
+    }
+  }
+
+  @Override
+  public int compareTo(Confetti o) {
+    if (this.row - o.row != 0) return this.row - o.row;
+    else return this.col - o.col;
+  }
+}
+```
+
+여기서 중요한 점은 이분 탐색할 때 lower_bound를 사용하면 안되고, upper_bound를 사용해야 된다는 점입니다.
+
+그 이유는 같은 값인 경우 색종이를 쌓아 올릴 수 있기 때문에 같은 값을 비교하는 경우 해당 index를 가르키게되는 lower_bound 특성과 맞지 않는다.
+
+값은 값인 경우 다음 idx를 가르키게되는 upper_bound를 사용해야 문제가 해결됩니다.
