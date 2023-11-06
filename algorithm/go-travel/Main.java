@@ -11,42 +11,62 @@ public class Main {
     int N = Integer.parseInt(br.readLine());
     int M = Integer.parseInt(br.readLine());
 
-    int[] parent = new int[N + 1];
-    for (int i = 1; i <= N; i++) {
-      parent[i] = i;
-    }
+    int[] parentArray = unionArray(N);
 
     for (int i = 0; i < N; i++) {
       st = new StringTokenizer(br.readLine());
+
       for (int j = 0; j < N; j++) {
-        int num = Integer.parseInt(st.nextToken());
-        if (i == j) continue;
-        if (num == 1) union_merge(parent, i + 1, j + 1);
+        if (Integer.parseInt(st.nextToken()) == 1) {
+          connect(parentArray, i, j);
+        }
       }
     }
 
     st = new StringTokenizer(br.readLine());
-    int target_parent = parent[Integer.parseInt(st.nextToken())];
-    int i = 1;
-    for (; i < M; i++) {
-      if (target_parent != parent[Integer.parseInt(st.nextToken())]) break;
+
+    int[] list = new int[M];
+    for (int i = 0; i < M; i++) {
+      list[i] = Integer.parseInt(st.nextToken()) - 1;
     }
-    if (i == M) System.out.println("YES");
-    else System.out.println("NO");
+
+    int parent = getParent(parentArray, list[0]);
+    int j;
+    for (j = 1; j < M; j++) {
+      if (parent != getParent(parentArray, list[j])) {
+        System.out.println("NO");
+        break;
+      }
+    }
+    if (j == M) {
+      System.out.println("YES");
+    }
 
   }
-  static int union_find(int[] parent, int x) {
-    if (parent[x] == x) return x;
-    return parent[x] = union_find(parent, parent[x]);
+  private static int getParent(int[] parentArray, int child) {
+    if (parentArray[child] == child) return child;
+
+    return parentArray[child] = getParent(parentArray, parentArray[child]);
   }
-  static void union_merge(int[] parent, int x, int y) {
+  private static void connect(int[] parentArray, int child1, int child2) {
+    int parent1 = getParent(parentArray, child1);
+    int parent2 = getParent(parentArray, child2);
 
-    x = union_find(parent, x);
-    y = union_find(parent, y);
-
-    if (x != y) {
-      if (x < y) parent[y] = x;
-      else parent[x] = y;
+    if (parent1 != parent2) {
+      if (parent1 > parent2) {
+        parentArray[parent1] = parent2;
+      } else {
+        parentArray[parent2] = parent1;
+      }
     }
+  }
+  private static int[] unionArray(int N) {
+    int[] array = new int[N];
+
+    for (int i = 0; i < N; i++) {
+      array[i] = i;
+    }
+
+    return array;
   }
 }
