@@ -4,57 +4,58 @@ import java.io.InputStreamReader;
 import java.util.*;
 
 public class Main {
+  static int N;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st;
 
-    int N = Integer.parseInt(br.readLine());
+    N = Integer.parseInt(br.readLine());
 
-    Class[] classes = new Class[N];
+    Time[] times = new Time[N];
     for (int i = 0; i < N; i++) {
       st = new StringTokenizer(br.readLine());
       int start = Integer.parseInt(st.nextToken());
       int end = Integer.parseInt(st.nextToken());
-      classes[i] = new Class(start, end);
+
+      times[i] = new Time(start, end);
     }
 
-    Arrays.sort(classes);
+    Arrays.sort(times);
 
-    System.out.println(greedy(classes, N));
-
+    System.out.println(queryResult(times));
   }
-  static int greedy(Class[] classes, int N) {
-    Queue<Class> q = new PriorityQueue<>((o1, o2) -> o1.end - o2.end);
-    q.add(classes[0]);
-    int ptr = 1;
-    while (ptr < N) {
-      Class curClass = q.peek();
+  private static int queryResult(Time[] times) {
 
-      if (curClass.end <= classes[ptr].start) {
-        q.poll();
+    Queue<Time> q = new PriorityQueue<>((o1, o2) -> o1.end - o2.end);
+
+    q.add(times[0]);
+    int maxSize = 1;
+    for (int i = 1; i < N; i++) {
+      if (!q.isEmpty() && q.peek().end <= times[i].start) {
+        while (!q.isEmpty() && q.peek().end <= times[i].start) q.poll();
+        q.add(times[i]);
+      } else {
+        q.add(times[i]);
+        maxSize = Math.max(maxSize, q.size());
       }
-      q.add(new Class(classes[ptr].start, classes[ptr].end));
-      ptr++;
     }
-    return q.size();
+
+    return maxSize;
   }
 }
-
-class Class implements Comparable<Class>{
+class Time implements Comparable<Time> {
   int start;
   int end;
 
-  Class(int start, int end) {
+  Time(int start, int end) {
     this.start = start;
     this.end = end;
   }
 
   @Override
-  public int compareTo(Class o) {
-    if (this.start > o.start) return 1;
-    else if (this.start < o.start) return -1;
-    else {
-      return this.end - o.end;
-    }
+  public int compareTo(Time o) {
+    if (this.start - o.start != 0) return this.start - o.start;
+
+    return this.end - o.end;
   }
 }

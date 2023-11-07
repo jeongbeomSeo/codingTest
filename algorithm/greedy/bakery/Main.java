@@ -14,46 +14,48 @@ public class Main {
     R = Integer.parseInt(st.nextToken());
     C = Integer.parseInt(st.nextToken());
 
-    String[][] grid = new String[R][C];
+    char[][] grid = new char[R][C];
     for (int i = 0; i < R; i++) {
       String str = br.readLine();
       for (int j = 0; j < C; j++) {
-        grid[i][j] = str.substring(j, j + 1);
+        grid[i][j] = str.charAt(j);
       }
     }
 
-    System.out.println(greedy(grid));
+    System.out.println(queryResult(grid));
   }
-  static int greedy(String[][] grid) {
+  private static int queryResult(char[][] grid) {
 
-    int row = 0;
     int count = 0;
-    while (row < R) {
-      if (dfs(grid, row, 0)) count++;
-      row++;
+    for (int i = 0; i < R; i++) {
+      if (dfs(grid, i, 0)) count++;
     }
-
     return count;
   }
-  static boolean dfs(String[][] grid, int row, int col) {
+  private static boolean dfs(char[][] grid, int row, int col) {
 
-    grid[row][col] = "@";
+    if (col == C - 1) {
+      grid[row][col] = 'O';
+      return true;
+    } else {
+      for (int i = 0; i < 3; i++) {
+        int nxtRow = row + dr[i];
+        int nxtCol = col + dc[i];
 
-    if (col == C - 1) return true;
-
-    boolean isSuccess = false;
-
-    for (int i = 0; i < 3; i++) {
-      int nextRow = row + dr[i];
-      int nextCol = col + dc[i];
-      if (!isSuccess && isValidIdx(nextRow, nextCol) && grid[nextRow][nextCol].equals(".")) {
-        isSuccess = dfs(grid, nextRow, nextCol);
+        if (boundaryCheck(nxtRow, nxtCol) && grid[nxtRow][nxtCol] == '.') {
+          if (dfs(grid, nxtRow, nxtCol)) {
+            grid[nxtRow][nxtCol] = 'O';
+            return true;
+          }
+          else {
+            grid[nxtRow][nxtCol] = 'X';
+          }
+        }
       }
     }
-
-    return isSuccess;
+    return false;
   }
-  static boolean isValidIdx(int row, int col) {
+  private static boolean boundaryCheck(int row, int col) {
     return row >= 0 && col >= 0 && row < R && col < C;
   }
 }

@@ -107,3 +107,106 @@ class Class implements Comparable<Class>{
   }
 }
 ```
+
+해당 문제는 **백준 1931 문제: 회의실 배정**과는 다른 방식을 접근해야 합니다.
+
+회의실 배정문제에서는 끝나는 시간만 고려하면 되었지만, 이것은 시작 시간도 같이 고려해줘야 합니다. 
+
+회의실 배정 문제는 주어진 하나의 강의실을 가지고 최대한 많은 회의를 넣어주는 형태의 문제이기 때문에 종료 시간만 고려하면 됐습니다.
+
+하지만, 이 문제는 강의 시간에 맞춰서 필요한 최소한의 강의실 갯수를 구하는 문제이다.
+
+따라서 정렬을 할 때 끝나는 시간으로 정렬하지 말고, 시작 시간으로 정렬을 한 뒤 끝나는 시간으로 우선순위 큐를 만들어서 사용해야 합니다.
+
+**위의 풀이 반레**
+
+**입력**
+
+```
+8
+1 8
+9 16
+3 7
+8 10
+10 14
+5 6
+6 11
+11 12
+```
+
+**출력**
+
+```
+5
+```
+
+**정답**
+
+```
+3
+```
+
+**AC**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.*;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+
+    Class[] classes = new Class[N];
+    for (int i = 0; i < N; i++) {
+      st = new StringTokenizer(br.readLine());
+      int start = Integer.parseInt(st.nextToken());
+      int end = Integer.parseInt(st.nextToken());
+      classes[i] = new Class(start, end);
+    }
+
+    Arrays.sort(classes);
+
+    System.out.println(greedy(classes, N));
+
+  }
+  static int greedy(Class[] classes, int N) {
+    Queue<Class> q = new PriorityQueue<>((o1, o2) -> o1.end - o2.end);
+    q.add(classes[0]);
+    int ptr = 1;
+    while (ptr < N) {
+      Class curClass = q.peek();
+
+      if (curClass.end <= classes[ptr].start) {
+        q.poll();
+      }
+      q.add(new Class(classes[ptr].start, classes[ptr].end));
+      ptr++;
+    }
+    return q.size();
+  }
+}
+
+class Class implements Comparable<Class>{
+  int start;
+  int end;
+
+  Class(int start, int end) {
+    this.start = start;
+    this.end = end;
+  }
+
+  @Override
+  public int compareTo(Class o) {
+    if (this.start > o.start) return 1;
+    else if (this.start < o.start) return -1;
+    else {
+      return this.end - o.end;
+    }
+  }
+}
+```
