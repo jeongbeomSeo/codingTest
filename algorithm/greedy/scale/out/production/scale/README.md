@@ -200,3 +200,43 @@ public class Main {
 2. sum보다 2이상 크지 않는 경우 즉, sum + 1 이하인 값들은 앞서 사용했던 무게들에 더해서 만들 수 있음.
 
 따라서, sum + 1 이하인 경우에는 sum에 더해줍니다. 아닌 경우에는 종료하고 그 다음 값을 return 해주면 됩니다.
+
+**최종 코드(AC)**
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.StringTokenizer;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+
+    int[] weights = new int[N];
+    st = new StringTokenizer(br.readLine());
+    for (int i = 0; i < N; i++) {
+      weights[i] = Integer.parseInt(st.nextToken());
+    }
+
+    Arrays.sort(weights);
+
+    if (weights[0] != 1) {
+      System.out.println(1);
+    }
+    else {
+      int sum = weights[0];
+      for (int i = 1; i < N; i++) {
+        if (sum + 1 >= weights[i]) sum += weights[i];
+        else break;
+      }
+
+      System.out.println(sum + 1);
+    }
+  }
+}
+```

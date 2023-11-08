@@ -4,67 +4,81 @@ import java.io.InputStreamReader;
 import java.util.StringTokenizer;
 
 public class Main {
+  static int N, K;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
 
-    int N = Integer.parseInt(st.nextToken());
-    int K = Integer.parseInt(st.nextToken());
+    N = Integer.parseInt(st.nextToken());
+    K = Integer.parseInt(st.nextToken());
 
-    int[] tap = new int[N];
-    int size = 0;
-    boolean[] isUsing = new boolean[K + 1];
-
-    int[] items = new int[K];
+    int[] buffer = new int[K];
     st = new StringTokenizer(br.readLine());
     for (int i = 0; i < K; i++) {
-      items[i] = Integer.parseInt(st.nextToken());
+      buffer[i] = Integer.parseInt(st.nextToken());
     }
+
+    System.out.println(queryResult(buffer));
+  }
+  private static int queryResult(int[] buffer) {
 
     int count = 0;
+
+    int[] tap = new int[N];
+    boolean[] isUsing = new boolean[K + 1];
+
+    int tapSize = 0;
     for (int i = 0; i < K; i++) {
-      int item = items[i];
+      int item = buffer[i];
+
       if (isUsing[item]) continue;
 
-      if (size < N) tap[size++] = item;
-      else {
-        int nextUsingCount = 0;
-        int[] nextUsingIdx = new int[N];
-        for (int j = i + 1; j < K; j++) {
-          if (isUsing[items[j]]) {
-            for (int k = 0; k < N; k++) {
-              if (tap[k] == items[j]) {
-                if (nextUsingIdx[k] != 0) break;
-                nextUsingIdx[k] = j;
-                nextUsingCount++;
-                break;
-              }
-            }
-          }
-        }
+      if (tapSize != N) {
+        tap[tapSize++] = item;
+      } else {
+        int itemIdxPlugedTap = getRemoveableOutletIdx(tap, buffer, i);
+        int itemPlugedTap = tap[itemIdxPlugedTap];
 
-        if (nextUsingCount != size) {
-          for (int j = 0; j < N; j++) {
-            if (nextUsingIdx[j] == 0) {
-              isUsing[tap[j]] = false;
-              tap[j] = item;
-              break;
-            }
-          }
-        }
-        else {
-          int maxIdx = 0;
-          for (int j = 1; j < N; j++) {
-            if (nextUsingIdx[j] > nextUsingIdx[maxIdx]) maxIdx = j;
-          }
-          isUsing[tap[maxIdx]] = false;
-          tap[maxIdx] = item;
-        }
-
+        tap[itemIdxPlugedTap] = item;
+        isUsing[itemPlugedTap] = false;
         count++;
       }
+
       isUsing[item] = true;
     }
-    System.out.println(count);
+
+    return count;
+  }
+  private static int getRemoveableOutletIdx(int[] tap, int[] buffer, int curIdx) {
+
+    int[] idxList = new int[N];
+    for (int i = 0; i < N; i++) {
+      int item = tap[i];
+      idxList[i] = getNextUsageIndexOfItem(buffer, item, curIdx);
+    }
+
+    return findIndexForOutletRemovalFromArray(idxList);
+  }
+  private static int findIndexForOutletRemovalFromArray(int[] idxList) {
+    int idx = 0;
+
+    if (idxList[idx] == -1) return idx;
+
+    for (int i = 1; i < N; i++) {
+      if (idxList[i] == -1) return i;
+      else if (idxList[idx] < idxList[i]) {
+        idx = i;
+      }
+    }
+
+    return idx;
+  }
+  private static int getNextUsageIndexOfItem(int[] buffer, int item, int curIdx) {
+
+    for (int i = curIdx + 1; i < K; i++) {
+      if (buffer[i] == item) return i;
+    }
+
+    return -1;
   }
 }

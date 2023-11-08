@@ -5,31 +5,38 @@ import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class Main {
+  static int N;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st;
 
-    int N = Integer.parseInt(br.readLine());
+    N = Integer.parseInt(br.readLine());
 
-    int[] weights = new int[N];
+    int[] nums = new int[N];
     st = new StringTokenizer(br.readLine());
     for (int i = 0; i < N; i++) {
-      weights[i] = Integer.parseInt(st.nextToken());
+      nums[i] = Integer.parseInt(st.nextToken());
     }
 
-    Arrays.sort(weights);
+    Arrays.sort(nums);
 
-    if (weights[0] != 1) {
-      System.out.println(1);
-    }
-    else {
-      int sum = weights[0];
-      for (int i = 1; i < N; i++) {
-        if (sum + 1 >= weights[i]) sum += weights[i];
-        else break;
+    System.out.println(queryResult(nums));
+  }
+  private static int queryResult(int[] nums) {
+
+    int MAX = 1;
+
+    if (nums[0] != 1) return MAX;
+
+    for (int i = 1; i < N; i++) {
+      int num = nums[i];
+
+      if (MAX >= num - 1) {
+        MAX += num;
+      } else {
+        break;
       }
-
-      System.out.println(sum + 1);
     }
+    return MAX + 1;
   }
 }

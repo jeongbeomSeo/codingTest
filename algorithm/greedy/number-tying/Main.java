@@ -5,50 +5,50 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public class Main {
+  static int N;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
-    int N = Integer.parseInt(br.readLine());
+    N = Integer.parseInt(br.readLine());
 
-    Integer[] nums = new Integer[N];
+    int[] plus = new int[N];
+    int[] minus = new int[N];
+
+    int plusSize = 0;
+    int minusSize = 0;
     for (int i = 0; i < N; i++) {
-      nums[i] = Integer.parseInt(br.readLine());
+      int num = Integer.parseInt(br.readLine());
+
+      if (num > 0) {
+        plus[plusSize++] = num;
+      } else {
+        minus[minusSize++] = num;
+      }
     }
 
-    Arrays.sort(nums, Collections.reverseOrder());
+    plus = Arrays.stream(plus)
+                    .boxed()
+                            .sorted(Collections.reverseOrder())
+                                    .mapToInt(Integer::intValue).toArray();
+    Arrays.sort(minus);
 
-    int ptr = 0;
+    System.out.println(getSum(plus, plusSize) + getSum(minus, minusSize));
+  }
+  private static long getSum(int[] array, int size) {
+
+    int i;
     long sum = 0;
-    while (ptr < N) {
-      if (nums[ptr] > 0) {
-        if (ptr + 1 < N &&
-                nums[ptr] * nums[ptr + 1] > nums[ptr] + nums[ptr + 1]) {
-          sum += (nums[ptr] * nums[ptr + 1]);
-          ptr += 2;
+    for (i = 0; i < size; i += 2) {
+      if (i + 1 < size) {
+        if (array[i + 1] == 1) {
+          sum += (long)array[i] + (long)array[i + 1];
+        } else {
+          sum += ((long)array[i] * (long)array[i + 1]);
         }
-        else {
-          sum += nums[ptr];
-          ptr += 1;
-        }
+      } else {
+        sum += array[i];
       }
-      else break;
     }
-
-    int minusPtr = N - 1;
-    while (minusPtr >= ptr) {
-      if (nums[minusPtr] <= 0) {
-        if (minusPtr - 1 >= ptr &&
-                nums[minusPtr] * nums[minusPtr - 1] > nums[minusPtr] + nums[minusPtr - 1]) {
-          sum += nums[minusPtr] * nums[minusPtr - 1];
-          minusPtr -= 2;
-        }
-        else {
-          sum += nums[minusPtr];
-          minusPtr -= 1;
-        }
-      }
-      else break;
-    }
-    System.out.println(sum);
-   }
+    return sum;
+  }
 }
