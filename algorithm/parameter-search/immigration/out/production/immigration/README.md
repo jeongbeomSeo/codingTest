@@ -121,31 +121,31 @@ public class Main {
     int M = Integer.parseInt(st.nextToken());
 
     int[] oprTime = new int[N];
-    long min = 0;
+    long max = 0;
     for (int i = 0; i < N; i++) {
       oprTime[i] = Integer.parseInt(br.readLine());
-      min = Math.min(min, oprTime[i]);
+      max = Math.max(max, oprTime[i]);
     }
 
     Arrays.sort(oprTime);
 
-    System.out.println(binarySearch(oprTime, 1, min * (M / N + 1), N, M));
+    System.out.println(binarySearch(oprTime, 1, max * (M / N + 1), N, M));
   }
   static long binarySearch(int[] oprTime, long left, long right, int N, int M) {
-      while (left < right) {
-        long mid = (left + right) / 2;
+    while (left < right) {
+      long mid = (left + right) / 2;
 
-        long sum = 0;
-        for (int i = 0; i < N; i++) {
-          sum += mid / oprTime[i];
+      long sum = 0;
+      for (int i = 0; i < N; i++) {
+        sum += mid / oprTime[i];
 
-          if (sum >= M) break;
-        }
-
-        if (sum < M) left = mid + 1;
-        else right = mid;
+        if (sum >= M) break;
       }
-      return left;
+
+      if (sum < M) left = mid + 1;
+      else right = mid;
+    }
+    return left;
   }
 }
 ```

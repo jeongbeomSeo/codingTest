@@ -1,39 +1,48 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.StringTokenizer;
 
 public class Main {
+  static int N;
+  static int MAX = 1000001;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-    StringTokenizer st = new StringTokenizer(br.readLine());
+    StringTokenizer st;
+    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
 
-    int N = Integer.parseInt(st.nextToken());
+    N = Integer.parseInt(br.readLine());
 
-    int[] card = new int[N + 1];
-    int[] checkNum = new int[1000001];
-
+    int[] array = new int[N + 1];
+    int[] isUsingNumberIdx = new int[MAX];
     st = new StringTokenizer(br.readLine());
-    for (int i = 1; i <= N; i++) {
+    for (int i = 0; i < N; i++) {
       int num = Integer.parseInt(st.nextToken());
 
-      checkNum[num] = i;
-      card[i] = num;
+      array[i + 1] = num;
+      isUsingNumberIdx[num] = i + 1;
     }
 
-    int[] result = new int[N + 1];
-    for (int i = 1; i <= N; i++) {
-      for (int j = card[i] * 2; j <= 1000000; j += card[i]) {
+    int[] result = queryResult(array, isUsingNumberIdx);
 
-        if (checkNum[j] != 0) {
+    for (int i = 1; i < N + 1; i++) {
+      bw.write(result[i] + " ");
+    }
+    bw.flush();
+    bw.close();
+  }
+  private static int[] queryResult(int[] array, int[] isUsingNumberIdx) {
+
+    int[] result = new int[N + 1];
+
+    for (int i = 1; i < N + 1; i++) {
+      int num = array[i];
+
+      for (int j = num * 2; j < MAX; j += num) {
+        if (isUsingNumberIdx[j] != 0) {
           result[i]++;
-          result[checkNum[j]]--;
+          result[isUsingNumberIdx[j]]--;
         }
       }
     }
-
-    for (int i = 1; i <= N; i++) {
-      System.out.print(result[i] + " ");
-    }
+    return result;
   }
 }
