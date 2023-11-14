@@ -1,151 +1,131 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.StringTokenizer;
 
-class Node {
-  /*
-  이 방식 보다 아래 방식이 후에 경로 추적하기에 편할 것임.
-  int v;
-  int w;
-  int cost;
-
-  Node(int v, int w, int cost) {
-    this.v = v;
-    this.w = w;
-    this.cost = cost;
-  }
-  */
-  int idx;
-  int cost;
-
-  Node(int idx, int cost) {
-    this.idx = idx;
-    this.cost = cost;
-  }
-}
 public class Main {
-  static int INF = Integer.MAX_VALUE;
-
+  static int INF = Integer.MIN_VALUE;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-    StringTokenizer st= new StringTokenizer(br.readLine());
+    StringTokenizer st = new StringTokenizer(br.readLine());
 
-    // 도시의 수, 시작 노드, 끝 노드, 교통 수단의 개수
     int N = Integer.parseInt(st.nextToken());
     int start = Integer.parseInt(st.nextToken());
     int end = Integer.parseInt(st.nextToken());
     int M = Integer.parseInt(st.nextToken());
 
-    // 그래프 초기화 (0번 노드부터 시작)
-    ArrayList<ArrayList<Node>> graph = new ArrayList<>();
-    for(int i = 0; i < N; i++) {
-      graph.add(new ArrayList<>());
-    }
+    Edge[] edges = new Edge[M];
 
-    // 그래프 정보
-    for(int i = 0; i < M; i++) {
+    for (int i = 0; i < M; i++) {
       st = new StringTokenizer(br.readLine());
-      int n1 = Integer.parseInt(st.nextToken());
-      int n2 = Integer.parseInt(st.nextToken());
+      int src = Integer.parseInt(st.nextToken());
+      int dst = Integer.parseInt(st.nextToken());
       int cost = Integer.parseInt(st.nextToken());
 
-      // 단방향 그래프
-      graph.get(n1).add(new Node(n2, cost));
+      edges[i] = new Edge(src, dst, cost);
     }
 
-    // 도시 도착시 획득 비용
+    int[] city = new int[N];
     st = new StringTokenizer(br.readLine());
-    int[] cityFee = new int[N];
-    for(int i = 0; i < N; i++) {
-      cityFee[i] = -Integer.parseInt(st.nextToken());
+    for (int i = 0; i < N; i++) {
+      city[i] = Integer.parseInt(st.nextToken());
     }
 
-    // 미리 획득 비용을 그래프에 적용 시키기
-    for(int i = 0; i < graph.size(); i++) {
-      for(int j = 0; j < graph.get(i).size(); j++) {
-        Node node = graph.get(i).get(j);
-        node.cost += cityFee[node.idx];
-      }
-    }
-
-    // dist 배열 초기화
-    long[] dist = new long[N];
-    Arrays.fill(dist, INF);
-    dist[start] = cityFee[start];
-
-    // 벨만 포드 알고리즘
-    if(BellmanFord(end, N, graph, dist)) {
-      if(dist[end] == INF) System.out.println("gg");
-      else System.out.println(-dist[end]);
-    }
+    bellmanFord(edges, city, start, end, N, M);
   }
-  static boolean BellmanFord(int end, int N, ArrayList<ArrayList<Node>> graph, long[] dist) {
+  private static void bellmanFord(Edge[] edges, int[] city, int start, int end, int N, int M) {
 
-    Set<Integer> negativeCycle = new HashSet<>();
+    long[] dist = initDistTable(city, N, start);
 
-    // N - 1번 순회
-    for(int count = 0; count < N -1; count++) {
-      boolean update = false;
+    for (int time = 0; time < N; time++) {
 
-      for(int i = 0; i < graph.size(); i++) {
-        if(dist[i] != INF) {
-          for(int j = 0; j < graph.get(i).size(); j++) {
-            // adjNode의 시작 노드는 i, 도착 노드가 idx;
-            Node adjNode = graph.get(i).get(j);
-            dist[adjNode.idx] = Math.min(dist[adjNode.idx], dist[i] + adjNode.cost);
-            update = true;
-          }
-        }
-      }
-      if(!update) break;
-    }
+      for (int i = 0; i < M; i++) {
+        Edge curEdge = edges[i];
 
-    for(int i = 0; i < graph.size(); i++) {
-      if(dist[i] != INF) {
-        for(int j = 0 ; j < graph.get(i).size(); j++) {
-          Node adjNode = graph.get(i).get(j);
-          if(dist[adjNode.idx] > dist[i] + adjNode.cost) {
-            // 음의 사이클 노드 전부 저장
-            negativeCycle.add(adjNode.idx);
-            negativeCycle.add(i);
-          }
+        if (dist[curEdge.src] != INF && dist[curEdge.dst] < dist[curEdge.src] + getMoneyWhenGoNextCity(city, curEdge)) {
+          dist[curEdge.dst] = dist[curEdge.src] + getMoneyWhenGoNextCity(city, curEdge);
         }
       }
     }
 
-    Iterator<Integer> itIdx = negativeCycle.iterator();
-    // BFS 혹은 DFS로 경로 Check
-    // end노드까지 도달 가능 시 => "Gee" 불가능 할 시 => return true
-    while (itIdx.hasNext()) {
-      int idx = itIdx.next();
-      if(checkPath(N, idx, end, graph)) {
-        System.out.println("Gee");
-        return false;
-      }
+    if (!canGoTargetCity(dist, end)) {
+      System.out.println("gg");
+      return;
     }
-    return true;
+
+    if (hasInfiniteCycle(edges, city, dist, end, N, M)) {
+      System.out.println("Gee");
+      return;
+    }
+
+    System.out.println(dist[end]);
   }
-  static boolean checkPath(int N, int start, int end, ArrayList<ArrayList<Node>> graph) {
-    // BFS 사용
-    Queue<Integer> q = new LinkedList();
+  private static boolean hasInfiniteCycle(Edge[] edges, int[] city, long[] dist, int end, int N, int M) {
+
     boolean[] isVisited = new boolean[N];
-    q.add(start);
-    isVisited[start] = true;
-    while (!q.isEmpty()) {
-      if(isVisited[end] == true) return true;
-      int idx = q.poll();
+    for (int i = 0; i < M; i++) {
+      Edge curEdge = edges[i];
 
-      for(int i = 0; i < graph.get(idx).size(); i++) {
-        Node adjNode = graph.get(idx).get(i);
-        //if(adjNode.idx == end) return true;
-
-        if(!isVisited[adjNode.idx]) {
-          q.add(adjNode.idx);
-          isVisited[adjNode.idx] = true;
+      if (dist[curEdge.src] != INF && dist[curEdge.dst] < dist[curEdge.src] + getMoneyWhenGoNextCity(city, curEdge)) {
+        if (!isVisited[curEdge.src] && dfs(edges, isVisited, curEdge.src, end, M)) {
+          return true;
         }
       }
     }
     return false;
+  }
+  private static boolean dfs(Edge[] edges, boolean[] isVisited, int idx, int end, int M) {
+
+    isVisited[idx] = true;
+
+    Deque<Integer> stack = new ArrayDeque<>();
+    stack.add(idx);
+
+    while (!stack.isEmpty()) {
+      int curIdx = stack.peek();
+
+      if (curIdx == end) return true;
+
+      boolean hasNearNode = false;
+      for (int i = 0; i < M; i++) {
+        if (edges[i].src == curIdx && !isVisited[edges[i].dst]) {
+          stack.add(edges[i].dst);
+          isVisited[edges[i].dst] = true;
+          hasNearNode = true;
+          break;
+        }
+      }
+      if (!hasNearNode) stack.pop();
+    }
+    return false;
+  }
+  private static boolean canGoTargetCity(long[] dist, int end) {
+    return dist[end] != INF;
+  }
+  private static int getMoneyWhenGoNextCity(int[] city, Edge edge) {
+    return city[edge.dst] - edge.cost;
+  }
+  private static long[] initDistTable(int[] city, int N, int start) {
+
+    long[] dist = new long[N];
+
+    Arrays.fill(dist, INF);
+
+    dist[start] = city[start];
+    return dist;
+  }
+}
+class Edge {
+  int src;
+  int dst;
+  int cost;
+
+  Edge (int src, int dst, int cost) {
+    this.src = src;
+    this.dst = dst;
+    this.cost = cost;
   }
 }

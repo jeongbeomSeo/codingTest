@@ -1,81 +1,93 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.Arrays;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.StringTokenizer;
 
 public class Main {
-  static int[] a = {-1, 0, 1, 0};
-  static int[] b = {0, 1, 0, -1};
   static int INF = Integer.MAX_VALUE;
+  static int[] dr = {-1, 0, 1, 0};
+  static int[] dc = {0, 1, 0, -1};
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-    int count = 1;
-    while(true) {
-      int V = Integer.parseInt(br.readLine());
+    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
+    StringTokenizer st;
 
-      if(V == 0) break;
+    int time = 1;
+    while (true) {
+      int N = Integer.parseInt(br.readLine());
 
-      int[][] cave= new int[V][V];
-      int[][] dist = new int[V][V];
+      if (N == 0) break;
 
-      StringTokenizer st;
-      for(int i = 0; i < V; i++) {
+      int[][] grid = new int[N][N];
+      for (int i = 0; i < N; i++) {
         st = new StringTokenizer(br.readLine());
-
-        for(int j = 0; j < V; j++) {
-          cave[i][j] = Integer.parseInt(st.nextToken());
-          dist[i][j] = INF;
+        for (int j = 0; j < N; j++) {
+          grid[i][j] = Integer.parseInt(st.nextToken());
         }
       }
 
-      int shortestDist = zeldaDijkstra(V, cave, dist);
+      int[][] table = initDistTable(grid, N);
 
-      System.out.println("Problem " + count++ + ": " + shortestDist);
-
+      bw.write("Problem " + time++ + ": " + dijkstra(grid, table, N) + "\n");
     }
-
+    bw.flush();
+    bw.close();
   }
-  static boolean boundaryCheck(int x, int y, int V) {
-    if(0 <= x && x < V && 0 <= y && y < V) return true;
-    else return false;
-  }
+  private static int dijkstra(int[][] grid, int[][] table, int N) {
 
-  static int zeldaDijkstra(int V, int[][] cave, int[][] dist) {
-    dist[0][0] = cave[0][0];
-    boolean[][] isVisited = new boolean[V][V];
+    Queue<Node> pq = new PriorityQueue<>((o1, o2) -> o1.cost - o2.cost);
 
-    int x = 0;
-    int y = 0;
+    pq.add(new Node(0, 0, 0));
 
-    for(int i = 0 ; i < V * V; i++) {
-      if(x == V - 1 && y == V - 1) {
-        return dist[x][y];
-      }
+    while(!pq.isEmpty()) {
+      Node curNode = pq.poll();
 
-      isVisited[x][y] = true;
-      int cost = dist[x][y];
+      if (table[curNode.row][curNode.col] < curNode.cost) continue;
 
-      for(int j = 0; j < 4; j++) {
-        int X = x + a[j];
-        int Y = y + b[j];
-        if(boundaryCheck(X, Y, V)) {
-          dist[X][Y] = Math.min(dist[X][Y], cost + cave[X][Y]);
-        }
-      }
+      if (isEndPoint(curNode.row, curNode.col, N)) return table[curNode.row][curNode.col];
 
-      int min = Integer.MAX_VALUE;
+      for (int i = 0; i < 4; i++) {
+        int nxtRow = curNode.row + dr[i];
+        int nxtCol = curNode.col + dc[i];
 
-      for(int j = 0; j < V; j++) {
-        for(int z = 0; z < V; z++) {
-          if(!isVisited[j][z] && min > dist[j][z]) {
-            x = j;
-            y = z;
-            min = dist[j][z];
-          }
+        if (isValidIdx(nxtRow, nxtCol, N) &&
+                table[nxtRow][nxtCol] > table[curNode.row][curNode.col] + grid[nxtRow][nxtCol]) {
+          table[nxtRow][nxtCol] = table[curNode.row][curNode.col] + grid[nxtRow][nxtCol];
+
+          pq.add(new Node(nxtRow, nxtCol, table[nxtRow][nxtCol]));
         }
       }
     }
-    return dist[V-1][V-1];
+
+    return -1;
+  }
+  private static boolean isValidIdx(int row, int col, int N) {
+    return row >= 0 && col >= 0 && row < N && col < N;
+  }
+  private static boolean isEndPoint(int curRow, int curCol, int N) {
+    return curRow == N - 1 && curCol == N - 1;
+  }
+  private static int[][] initDistTable(int[][] grid, int N) {
+
+    int[][] dist = new int[N][N];
+    for (int i = 0; i < N; i++) {
+      Arrays.fill(dist[i], INF);
+    }
+
+    dist[0][0] = grid[0][0];
+
+    return dist;
+  }
+}
+class Node {
+  int row;
+  int col;
+  int cost;
+
+  Node(int row, int col, int cost) {
+    this.row = row;
+    this.col = col;
+    this.cost = cost;
   }
 }

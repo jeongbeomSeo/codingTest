@@ -1,71 +1,88 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.StringTokenizer;
 
 public class Main {
+  static int N, M;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
 
-    int N = Integer.parseInt(st.nextToken());
-    int M = Integer.parseInt(st.nextToken());
+    N = Integer.parseInt(st.nextToken());
+    M = Integer.parseInt(st.nextToken());
 
-    int[] parent = new int[N + 1];
-    for (int i = 1; i <= N; i++) parent[i] = i;
+    int[] parent = initParentTable(N);
 
     st = new StringTokenizer(br.readLine());
-    int known = Integer.parseInt(st.nextToken());
-    int[] knownList = new int[known];
-    for (int i = 0; i < known; i++) {
-      knownList[i] = Integer.parseInt(st.nextToken());
+    int truthSize = Integer.parseInt(st.nextToken());
+    boolean[] hasTruth = new boolean[N + 1];
+    for (int i = 0; i < truthSize; i++) {
+      int idx = Integer.parseInt(st.nextToken());
+
+      hasTruth[idx] = true;
     }
 
-    ArrayList<ArrayList<Integer>> party = new ArrayList<>();
-    for (int i = 0; i < M; i++) party.add(new ArrayList<>());
+    ArrayList<Integer>[] party = new ArrayList[M];
     for (int i = 0; i < M; i++) {
       st = new StringTokenizer(br.readLine());
-      int size = Integer.parseInt(st.nextToken());
 
-      for (int j = 0; j < size; j++) {
-        int curNumber = Integer.parseInt(st.nextToken());
+      party[i] = new ArrayList<>();
+      int partySize = Integer.parseInt(st.nextToken());
 
-        party.get(i).add(curNumber);
-        for (int k = j - 1; k >= 0; k--) {
-          int otherNumber = party.get(i).get(k);
+      int num1 = Integer.parseInt(st.nextToken());
+      party[i].add(num1);
 
-          union_merge(parent, curNumber, otherNumber);
-        }
+      for (int j = 0; j < partySize - 1; j++) {
+        int num2 = Integer.parseInt(st.nextToken());
+        party[i].add(num2);
+
+        unionMerge(parent, hasTruth, num1, num2);
       }
     }
 
-    int count = 0;
+    int count = M;
     for (int i = 0; i < M; i++) {
-      boolean success = true;
-      for (int j = 0; j < party.get(i).size(); j++) {
-        int checkNumber = union_find(parent, party.get(i).get(j));
-        for (int k = 0; k < known; k++) {
-          if (checkNumber == union_find(parent, knownList[k])) {
-            success = false;
-          }
+      for (int idx : party[i]) {
+        if (hasTruth[getParent(parent, idx)]) {
+          count--;
+          break;
         }
-        if (!success) break;
       }
-      if (success) count++;
     }
 
     System.out.println(count);
   }
-  static int union_find(int[] parent, int x) {
-    if (parent[x] == x) return x;
+  private static int getParent(int[] parent, int child) {
+    if (parent[child] == child) return child;
 
-    return parent[x] = union_find(parent, parent[x]);
+    return parent[child] = getParent(parent, parent[child]);
   }
-  static void union_merge(int[] parent, int x, int y) {
-    x = union_find(parent, x);
-    y = union_find(parent, y);
+  private static void unionMerge(int[] parent, boolean[] hasTruth, int child1, int child2) {
+    int parent1 = getParent(parent, child1);
+    int parent2 = getParent(parent, child2);
 
-    if (x != y) parent[x] = y;
+    if (parent1 != parent2) {
+      if (parent1 > parent2) {
+        parent[parent1] = parent2;
+      } else {
+        parent[parent2] = parent1;
+      }
+      if (hasTruth[parent1] || hasTruth[parent2]) {
+        hasTruth[parent1] = hasTruth[parent2] = true;
+      }
+    }
+  }
+  private static int[] initParentTable(int N) {
+
+    int[] parent = new int[N + 1];
+    for (int i = 1; i <= N; i++) {
+      parent[i] = i;
+    }
+
+    return parent;
   }
 }
