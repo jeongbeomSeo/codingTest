@@ -1,129 +1,127 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.PriorityQueue;
-import java.util.StringTokenizer;
+import java.util.*;
 
-class Node {
-  int idx;
-  int cost;
-
-  Node(int idx, int cost) {
-    this.idx = idx;
-    this.cost = cost;
-  }
-}
 public class Main {
   static int INF = Integer.MAX_VALUE;
-  static int E,V;
-  static ArrayList<ArrayList<Node>> graph;
-
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
 
-    // 정점 E 와 간선 V 입력 받기
-    E = Integer.parseInt(st.nextToken());
-    V = Integer.parseInt(st.nextToken());
+    int N = Integer.parseInt(st.nextToken());
+    int E = Integer.parseInt(st.nextToken());
 
-    // 그래프 초기화
-    graph = new ArrayList<>();
-    for(int i = 0; i < E + 1; i++) {
+    List<List<Node>> graph = new ArrayList<>();
+    for (int i = 0; i < N; i++) {
       graph.add(new ArrayList<>());
     }
 
-    // 간선 입력 받기
-    for(int i = 0; i < V; i++) {
+    for (int i = 0; i < E; i++) {
       st = new StringTokenizer(br.readLine());
-      int node1 = Integer.parseInt(st.nextToken());
-      int node2 = Integer.parseInt(st.nextToken());
+      int node1 = Integer.parseInt(st.nextToken()) - 1;
+      int node2 = Integer.parseInt(st.nextToken()) - 1;
       int cost = Integer.parseInt(st.nextToken());
 
       graph.get(node1).add(new Node(node2, cost));
       graph.get(node2).add(new Node(node1, cost));
     }
 
-    // 임의의 두 정점 입력 받기
     st = new StringTokenizer(br.readLine());
-    int v1 = Integer.parseInt(st.nextToken());
-    int v2 = Integer.parseInt(st.nextToken());
+    int[] endPoint = new int[2];
+    endPoint[0] = Integer.parseInt(st.nextToken()) - 1;
+    endPoint[1] = Integer.parseInt(st.nextToken()) - 1;
 
-    int[] dist = new int[E + 1];
-    Arrays.fill(dist, INF);
+    long[] dist = initDistTable(N, 0);
 
-
-    int v1Tov2 = ShortestPath(v1, v2, dist);
-    if(v1Tov2 == -1) {
-      System.out.print(-1);
-      return;
-    }
-    Arrays.fill(dist, INF);
-    int node1Tov1 = ShortestPath(1, v1, dist);
-    if(node1Tov1 == -1) {
-      System.out.print(-1);
-      return;
-    }
-    Arrays.fill(dist, INF);
-    int node1Tov2 = ShortestPath(1, v2, dist);
-    if(node1Tov2 == -1) {
-      System.out.print(-1);
-      return;
-    }
-    Arrays.fill(dist, INF);
-    int v1TonodeE = ShortestPath(v1, E, dist);
-    if(v1TonodeE == -1) {
-      System.out.print(-1);
-      return;
-    }
-    Arrays.fill(dist, INF);
-    int v2TonodeE = ShortestPath(v2, E, dist);
-    if(v2TonodeE == -1) {
-      System.out.print(-1);
+    if(dijkstra(graph, dist, 0, endPoint, N) == INF) {
+      System.out.println(-1);
       return;
     }
 
-    int case1 = node1Tov1 + v2TonodeE;
-    int case2 = node1Tov2 + v1TonodeE;
+    long[] nextDist = initDistTable(N, N - 1);
 
-    if(case1 < case2) {
-      System.out.print(case1 + v1Tov2);
-      return;
-    }
-    else {
-      System.out.print(case2 + v1Tov2);
+    if(dijkstra(graph, nextDist, N - 1, endPoint, N) == INF) {
+      System.out.println(-1);
       return;
     }
 
+    long[] lastDist = initDistTable(N, endPoint[0]);
+    int[] lastEndPoint = new int[1];
+    lastEndPoint[0] = endPoint[1];
+    long middleCost = dijkstra(graph, lastDist, endPoint[0], lastEndPoint, N);
+
+    if (middleCost == INF) {
+      System.out.println("-1");
+      return;
+    }
+
+    long min = Math.min(dist[endPoint[0]] + nextDist[endPoint[1]], dist[endPoint[1]] + nextDist[endPoint[0]]) + middleCost;
+
+    System.out.println(min);
   }
-  static int ShortestPath(int start, int end, int[] dist) {
-    dist[start] = 0;
+  private static long dijkstra(List<List<Node>> graph, long[] dist, int start, int[] endPoint, int N) {
 
-    PriorityQueue<Node> q = new PriorityQueue<>((o1, o2) -> Integer.compare(o1.cost, o2.cost));
+    Queue<Node> pq = new PriorityQueue<>((o1, o2) -> Long.compare(o1.cost, o2.cost));
+    pq.add(new Node(start, 0));
 
-    q.add(new Node(start, 0));
-    while(!q.isEmpty()) {
-      Node curNode = q.poll();
+    int count = 0;
+    int length = endPoint.length;
+    boolean[] isVisitedEndPoint = new boolean[N];
+    while (!pq.isEmpty()) {
+      Node curNode = pq.poll();
 
-      if(curNode.idx == end) {
-        if(curNode.cost == INF) return -1;
-        else return dist[curNode.idx];
+      if (dist[curNode.idx] < curNode.cost) continue;
+
+      if (isEndPoint(endPoint, curNode.idx, isVisitedEndPoint)) {
+        count++;
       }
 
-      if(dist[curNode.idx] < curNode.cost) continue;
+      if (count == length) {
+        if (length == 1) {
+          return dist[curNode.idx];
+        } else {
+          return -1;
+        }
+      }
 
-       for(int i = 0; i < graph.get(curNode.idx).size(); i++) {
-         Node adjNode = graph.get(curNode.idx).get(i);
+      for (int i = 0; i < graph.get(curNode.idx).size(); i++) {
+        Node nxtNode = graph.get(curNode.idx).get(i);
 
-         if(dist[adjNode.idx] > curNode.cost + adjNode.cost) {
-           dist[adjNode.idx] = curNode.cost + adjNode.cost;
-           q.add(new Node(adjNode.idx, dist[adjNode.idx]));
-         }
-       }
+        if (dist[nxtNode.idx] > dist[curNode.idx] + nxtNode.cost) {
+          dist[nxtNode.idx] = dist[curNode.idx] + nxtNode.cost;
 
+          pq.add(new Node(nxtNode.idx, dist[nxtNode.idx]));
+        }
+      }
     }
 
-    return -1;
+    return INF;
+  }
+  private static boolean isEndPoint(int[] endPoint, int curNodeIdx, boolean[] isVisitedEndPoint) {
+    for (int endPointIdx : endPoint) {
+      if (endPointIdx == curNodeIdx && !isVisitedEndPoint[curNodeIdx]) {
+        isVisitedEndPoint[curNodeIdx] = true;
+        return true;
+      }
+    }
+    return false;
+  }
+  private static long[] initDistTable(int N, int start) {
+    long[] dist = new long[N];
+    Arrays.fill(dist, INF);
+
+    dist[start] = 0;
+
+    return dist;
+  }
+}
+class Node {
+  int idx;
+  long cost;
+
+  Node (int idx, long cost) {
+    this.idx = idx;
+    this.cost = cost;
   }
 }

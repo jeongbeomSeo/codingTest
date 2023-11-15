@@ -262,6 +262,10 @@ public class Main {
 
 ## 나의 코드
 
+해당 문제의 경우 출발 지점을 다시 돌아올 때 시간이 보다 되돌아 간 경우가 있는 경우에 "YES"를 출력하라고 했고, 모든 지점에서 검사를 하라 했다.
+
+즉, **음의 사이클만 존재한다면** 다시 돌아오는 과정을 구현할 필요 없이 "YES"를 출력하면 된다.
+
 중간에 **update가 일어 나지 않는 상황**에 무의미하게 반복문이 돌아가므로 break로 끊어주면서 문제를 해결했다.
 
 **Bellman-Ford Algorithm**
@@ -378,8 +382,6 @@ public class Main {
 
 **SPFA**
 
-**MLE**
-
 ```java
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -440,7 +442,10 @@ public class Main {
       boolean hasNegativeCycle = false;
       for(int i = 1; i < N + 1; i++) {
         int[] dist = new int[N + 1];
-        if(SPFA(N, i, dist, graph)) hasNegativeCycle = true;
+        if(SPFA(N, i, dist, graph)) {
+          hasNegativeCycle = true;
+          break;
+        }
       }
       if(hasNegativeCycle) System.out.println("YES");
       else System.out.println("NO");
@@ -481,4 +486,29 @@ public class Main {
   }
 }
 ```
+
+아래 코드는 **오류 코드**이다.
+
+이미 음의 사이클을 발견 했는데 break를 하지 않아서 메모리 초과가 생긴 경우다.
+
+
+**MLE**
+
+```java
+
+  ...
+
+      boolean hasNegativeCycle = false;
+      for(int i = 1; i < N + 1; i++) {
+        int[] dist = new int[N + 1];
+        if(SPFA(N, i, dist, graph)) hasNegativeCycle = true;
+      }
+      if(hasNegativeCycle) System.out.println("YES");
+      else System.out.println("NO");
+    }
+  }
+
+  ...
+```
+
 

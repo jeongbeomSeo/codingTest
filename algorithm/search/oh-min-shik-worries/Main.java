@@ -1,13 +1,10 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.StringTokenizer;
+import java.util.*;
 
 public class Main {
-  static int INF = Integer.MIN_VALUE;
+  private static final int INF = Integer.MIN_VALUE;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
@@ -17,15 +14,19 @@ public class Main {
     int end = Integer.parseInt(st.nextToken());
     int M = Integer.parseInt(st.nextToken());
 
-    Edge[] edges = new Edge[M];
+    ArrayList<ArrayList<Node>> graph = new ArrayList<>();
+    for (int i = 0; i < N; i++) {
+      graph.add(new ArrayList<>());
+    }
 
     for (int i = 0; i < M; i++) {
       st = new StringTokenizer(br.readLine());
+
       int src = Integer.parseInt(st.nextToken());
       int dst = Integer.parseInt(st.nextToken());
       int cost = Integer.parseInt(st.nextToken());
 
-      edges[i] = new Edge(src, dst, cost);
+      graph.get(src).add(new Node(dst, cost));
     }
 
     int[] city = new int[N];
@@ -34,55 +35,61 @@ public class Main {
       city[i] = Integer.parseInt(st.nextToken());
     }
 
-    bellmanFord(edges, city, start, end, N, M);
-  }
-  private static void bellmanFord(Edge[] edges, int[] city, int start, int end, int N, int M) {
-
     long[] dist = initDistTable(city, N, start);
 
-    for (int time = 0; time < N; time++) {
+    spfa(graph, city, dist, start, end, N);
 
-      for (int i = 0; i < M; i++) {
-        Edge curEdge = edges[i];
+  }
+  private static void spfa(ArrayList<ArrayList<Node>> graph, int[] city, long[] dist, int start, int end, int N) {
 
-        if (dist[curEdge.src] != INF && dist[curEdge.dst] < dist[curEdge.src] + getMoneyWhenGoNextCity(city, curEdge)) {
-          dist[curEdge.dst] = dist[curEdge.src] + getMoneyWhenGoNextCity(city, curEdge);
+    int[] visitCount = new int[N];
+    boolean[] isInQueue = new boolean[N];
+    boolean[] isVisited = new boolean[N];
+
+    Queue<Integer> q = new ArrayDeque<>();
+    q.add(start);
+    visitCount[start]++;
+    isInQueue[start] = true;
+
+    while (!q.isEmpty()) {
+      Integer curIdx = q.poll();
+
+      isInQueue[curIdx] = false;
+
+      for (int i = 0; i < graph.get(curIdx).size(); i++) {
+        Node nxtNode = graph.get(curIdx).get(i);
+
+        if (dist[nxtNode.idx] < dist[curIdx] + getMoneyWhenVisitCity(city, nxtNode)) {
+          dist[nxtNode.idx] = dist[curIdx] + getMoneyWhenVisitCity(city, nxtNode);
+
+          if (!isInQueue[nxtNode.idx]) {
+            if (++visitCount[nxtNode.idx] == N) {
+              if (dist[end] == INF) {
+                break;
+              }
+              if (!isVisited[nxtNode.idx] && dfs(graph, isVisited, nxtNode.idx, end)) {
+                System.out.println("Gee");
+                return;
+              }
+            } else {
+              q.add(nxtNode.idx);
+              isInQueue[nxtNode.idx] = true;
+            }
+          }
         }
       }
-    }
-
-    if (!canGoTargetCity(dist, end)) {
-      System.out.println("gg");
-      return;
-    }
-
-    if (hasInfiniteCycle(edges, city, dist, end, N, M)) {
-      System.out.println("Gee");
-      return;
     }
 
     System.out.println(dist[end]);
   }
-  private static boolean hasInfiniteCycle(Edge[] edges, int[] city, long[] dist, int end, int N, int M) {
-
-    boolean[] isVisited = new boolean[N];
-    for (int i = 0; i < M; i++) {
-      Edge curEdge = edges[i];
-
-      if (dist[curEdge.src] != INF && dist[curEdge.dst] < dist[curEdge.src] + getMoneyWhenGoNextCity(city, curEdge)) {
-        if (!isVisited[curEdge.src] && dfs(edges, isVisited, curEdge.src, end, M)) {
-          return true;
-        }
-      }
-    }
-    return false;
+  private static int getMoneyWhenVisitCity(int[] city, Node node) {
+    return city[node.idx] - node.cost;
   }
-  private static boolean dfs(Edge[] edges, boolean[] isVisited, int idx, int end, int M) {
-
-    isVisited[idx] = true;
+  private static boolean dfs(ArrayList<ArrayList<Node>> graph, boolean[] isVisited, int src, int end) {
 
     Deque<Integer> stack = new ArrayDeque<>();
-    stack.add(idx);
+    stack.push(src);
+    isVisited[src] = true;
 
     while (!stack.isEmpty()) {
       int curIdx = stack.peek();
@@ -90,42 +97,37 @@ public class Main {
       if (curIdx == end) return true;
 
       boolean hasNearNode = false;
-      for (int i = 0; i < M; i++) {
-        if (edges[i].src == curIdx && !isVisited[edges[i].dst]) {
-          stack.add(edges[i].dst);
-          isVisited[edges[i].dst] = true;
+      for (int i = 0; i < graph.get(curIdx).size(); i++) {
+        Node nxtNode = graph.get(curIdx).get(i);
+
+        if (!isVisited[nxtNode.idx]) {
+          stack.push(nxtNode.idx);
           hasNearNode = true;
+          isVisited[nxtNode.idx] = true;
           break;
         }
       }
       if (!hasNearNode) stack.pop();
     }
+
     return false;
-  }
-  private static boolean canGoTargetCity(long[] dist, int end) {
-    return dist[end] != INF;
-  }
-  private static int getMoneyWhenGoNextCity(int[] city, Edge edge) {
-    return city[edge.dst] - edge.cost;
   }
   private static long[] initDistTable(int[] city, int N, int start) {
 
     long[] dist = new long[N];
-
     Arrays.fill(dist, INF);
 
     dist[start] = city[start];
+
     return dist;
   }
 }
-class Edge {
-  int src;
-  int dst;
+class Node {
+  int idx;
   int cost;
 
-  Edge (int src, int dst, int cost) {
-    this.src = src;
-    this.dst = dst;
+  Node (int idx, int cost) {
+    this.idx = idx;
     this.cost = cost;
   }
 }
