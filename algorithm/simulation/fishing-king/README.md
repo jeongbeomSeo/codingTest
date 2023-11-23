@@ -127,6 +127,35 @@
 4
 ```
 
+## 복습 포인트
+
+어떤 로직 오류를 범하고 있나요?
+
+```java
+private static int[] getNextPoint(int row, int col, int direction, int speed, int R, int C) {
+
+    int nextRow = row;
+    int nextCol = col;
+    
+    while (speed-- != 0) {
+      nextRow += dr[direction];
+      nextCol += dc[direction];
+      if (!isValidPoint(nextRow, nextCol, R, C)) {
+        direction = reverseDirection(direction);
+        nextRow += dr[direction];
+        nextCol += dc[direction];
+      }
+    }
+
+    return new int[]{nextRow, nextCol, direction};
+}
+```
+
+내부적으로 로직을 끊내놓고 현재 위치에 적용하는 방식으로 로직을 구성하는 습관을 들이자.
+
+즉, 함수의 형태로 만들 수 있도록 확장성을 고려하고 기존 변수의 수정이 로직 안에서 이루어 지는 것을 최대한 피하는 코드를 구성하는 것이 실수를 덜하는 길일 것 같다.
+
+
 ## 코드 
 
 **TLE**

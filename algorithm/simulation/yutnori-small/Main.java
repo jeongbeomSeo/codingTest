@@ -1,254 +1,308 @@
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.StringTokenizer;
 
 public class Main {
-  static int END = -2;
-  static int[] map;
-  static int[] shortMap;
-  static boolean earlyStopError;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
     StringTokenizer st;
 
-    int T = Integer.parseInt(br.readLine());
-    int tc = 1;
+    int tc = Integer.parseInt(st.nextToken());
 
-    map = initMap();
-    shortMap = initShortMap();
-
-    while (tc <= T) {
+    while(tc-- != 0) {
       st = new StringTokenizer(br.readLine());
-      int U = Integer.parseInt(st.nextToken());
-      int N = Integer.parseInt(st.nextToken());
-      int A = Integer.parseInt(st.nextToken());
-      int B = Integer.parseInt(st.nextToken());
 
+      int canUseHorseCount = Integer.parseInt(st.nextToken());
+      int yutCount = Integer.parseInt(st.nextToken());
+      int AHorseCount = Integer.parseInt(st.nextToken());
+      int BHorseCount = Integer.parseInt(st.nextToken());
+
+      int[] yutArray = new int[yutCount];
       st = new StringTokenizer(br.readLine());
-      int[] points = new int[N];
-      for (int i = 0; i < N; i++) {
-        String yut = st.nextToken();
-        points[i] = getPoint(yut);
+      for (int i = 0; i < yutCount; i++) {
+        yutArray[i] = convertYutString(st.nextToken());
       }
 
-      int[] aPoints = new int[U];
-      int[] bPoints = new int[U];
+      Arrays.sort(yutArray);
 
-      st = new StringTokenizer(br.readLine());
-      for (int i = 0; i < A; i++) {
-        aPoints[i] = Integer.parseInt(st.nextToken());
-      }
+      List<Integer[]> list = new ArrayList<>();
+      getNumberOfCase(list, yutArray, new Integer[yutCount], new boolean[yutCount], 0, yutCount);
 
-      st = new StringTokenizer(br.readLine());
-      for (int i = 0; i < B; i++) {
-        bPoints[i] = Integer.parseInt(st.nextToken());
-      }
 
-      earlyStopError = false;
-      String result = simulation(points, aPoints, bPoints, U, N);
-      bw.write("Case #" + tc + ": " + result +"\n");
-
-      tc++;
     }
-    bw.flush();
-    bw.close();
   }
-  static String simulation(int[] points, int[] aPoints, int[] bPoints, int U, int N) {
+  private static void getNumberOfCase(List<Integer[]> list, int[] yutArray, Integer[] buffer, boolean[] isUsed, int ptr, int size) {
 
-    boolean isValidGame = validationCheck(points, aPoints, bPoints, U, N, new int[U], new int[U], 0);
-
-    if (!earlyStopError && isValidGame) return "YES";
-    else return "NO";
-  }
-  static boolean validationCheck(int[] points, int[] aPoints, int[] bPoints, int U, int N, int[] mainBuffer, int[] subBuffer, int ptr) {
-
-    if (earlyStopError) return false;
-    boolean isEnd = false;
-    if (ptr == N) {
-      isEnd = isValidGameCheck(aPoints, bPoints, mainBuffer, subBuffer, U);
-    }
-    else {
-      boolean[] isUsing = new boolean[U];
-      for (int i = 0; i < U; i++) {
-        if (isUsing[i] || mainBuffer[i] == END) continue;
-
-        int[] copyMainBuffer = copyBuffer(mainBuffer);
-        int[] copySubBuffer = copyBuffer(subBuffer);
-
-        int movePoint = points[ptr];
-
-        boolean isCatch = activeThisTurn(movePoint, copyMainBuffer, copySubBuffer, isUsing, U, i);
-
-        if (earlyStop(copyMainBuffer, U)) {
-          if (ptr == N - 1) isEnd = true;
-          else earlyStopError = true;
-          break;
-        }
-
-        if (isCatch) {
-          isEnd = validationCheck(points, aPoints, bPoints, U, N, copyMainBuffer, copySubBuffer, ptr + 1);
-        }
-        else {
-          if (movePoint <= 3) {
-            isEnd = validationCheck(points, aPoints, bPoints, U, N, copySubBuffer, copyMainBuffer, ptr + 1);
-          }
-          else {
-            isEnd = validationCheck(points, aPoints, bPoints, U, N, copyMainBuffer, copySubBuffer, ptr + 1);
-          }
-        }
-        if (isEnd || earlyStopError) break;
-      }
+    if (ptr == size) {
+      list.add(Arrays.copyOf(buffer, size));
+      return;
     }
 
-    return isEnd;
-  }
-  static boolean earlyStop(int[] buffer, int U) {
-    int i;
-    for (i = 0; i < U; i++) {
-      if (buffer[i] != END) break;
-    }
-
-    return i == U;
-  }
-  static boolean activeThisTurn(int movePoint, int[] mainBuffer, int[] subBuffer, boolean[] isUsing, int U, int idx) {
-
-    int point = mainBuffer[idx];
-
-    int nextPoint = getNextPoint(movePoint, point);
-
-    if (point != 0) {
-      for (int i = 0; i < U; i++) {
-        if (i == idx) continue;
-        if (mainBuffer[i] == point) {
-          mainBuffer[i] = nextPoint;
-          isUsing[i] = true;
-        }
-      }
-    }
-
-    mainBuffer[idx] = nextPoint;
-    isUsing[idx] = true;
-
-    boolean isCatch = false;
-
-    if (nextPoint != END) {
-      for (int i = 0; i < U; i++) {
-        if (subBuffer[i] == nextPoint || ((nextPoint == 22 || nextPoint == 27) && (subBuffer[i] == 22 || subBuffer[i] == 27))) {
-          subBuffer[i] = 0;
-          isCatch = true;
-        }
-      }
-    }
-
-    return isCatch;
-  }
-  static int getNextPoint(int movePoint, int point) {
-
-    if (isShortPath(point)) {
-      int shortPathIdx = getShortPathIdx(point);
-      point = shortMap[shortPathIdx];
-      movePoint--;
-    }
-    for (int i = 0; i < movePoint; i++) {
-      point = map[point];
-
-      if (point == END) break;
-    }
-
-    return point;
-  }
-  static int[] copyBuffer(int[] buffer) {
-    int[] copyBuffer = new int[buffer.length];
-
-    for (int i = 0; i < buffer.length; i++) {
-      copyBuffer[i] = buffer[i];
-    }
-
-    return copyBuffer;
-  }
-  static boolean isValidGameCheck(int[] aPoints, int[] bPoints, int[] buffer1, int[] buffer2, int U) {
-
-    if (pointsCheck(aPoints, buffer1, U)) {
-      return pointsCheck(bPoints, buffer2, U);
-    }
-    else {
-      if (pointsCheck(aPoints, buffer2, U)) {
-        return pointsCheck(bPoints, buffer1, U);
-      }
-    }
-
-    return false;
-  }
-  static boolean pointsCheck(int[] points, int[] buffer, int size) {
-
-    boolean[] isCheck = new boolean[size];
     for (int i = 0; i < size; i++) {
-      int j;
-      for (j = 0; j < size; j++) {
-        int bufferPoint = getOriginPoint(buffer[j]);
-        if (points[i] == bufferPoint && !isCheck[j]) {
-          isCheck[j] = true;
-          break;
-        }
+      if (isUsed[i] ||
+              (!isUsed[i] && yutArray[i - 1] == yutArray[i] && !isUsed[i - 1])) continue;
+
+      buffer[i] = yutArray[i];
+      isUsed[i] = true;
+      getNumberOfCase(list, yutArray, buffer, isUsed, ptr + 1, size);
+      buffer[i] = 0;
+      isUsed[i] = false;
+    }
+  }
+  private static int convertYutString(String str) {
+
+    if (str.equals("Do")) return 1;
+    if (str.equals("Gae")) return 2;
+    if (str.equals("Gal")) return 3;
+    if (str.equals("Yut")) return 4;
+
+    return 5;
+  }
+}
+// 게임 진행하기
+// Yut, Mo인 경우에는 Turn이 바뀌면 안됨
+// 말을 잡는 경우에는 Yut, Mo 판정이랑 겹치더라도 한번만 더 던짐
+// 그 외의 경우에는 말이 이동한 후에는 Turn이 바뀜
+// 말이 이동할 때 이동하는 칸에 말이 있는지 없는지 체크
+// 있다면 내 말인지 아닌지 체크 -> 업기 / 잡기 (1번 더)
+// 말이 이동할 때 업혀있는 말인지 아닌지 체크 -> 암튼 전부 제거
+// 말은 선택하는 과정에서 업혀있는 말은 굳이 선택 X
+// 상대방 말을 잡는 경우 상대방 말 reset 시키기
+// 모은 Array를 사용한 후에는 다음 Array가 있다면 reset시키기
+class Game {
+
+  private final Board board;
+  private final User userA;
+  private final User userB;
+  private User thisTurnUser;
+  private Integer[] yutArray;
+  private int turnIdx;
+
+  private Game (User userA, User userB) {
+    this.board = new Board();
+    this.userA = userA;
+    this.userB = userB;
+    this.thisTurnUser = userA;
+    this.turnIdx = 0;
+  }
+
+  private static class SingletonHolder {
+    private static final Game SINGLETON_GAME = new Game();
+  }
+
+  public Game getInstance() {
+    return SingletonHolder.SINGLETON_GAME;
+  }
+
+  public void reset() {
+    userA.reset(board.getHead());
+    userB.reset(board.getHead());
+    thisTurnUser = userA;
+    this.yutArray = null;
+  }
+
+  public boolean isValidGame(Integer[] yutArray) {
+    setYutArray(yutArray);
+
+
+  }
+
+  private void setYutArray(Integer[] yutArray) {
+    this.yutArray = yutArray;
+  }
+  private void playThisTurn () {
+
+    int steps = yutArray[turnIdx++];
+    List<Horse> canChooseHorseList = thisTurnUser.canChooseHorseList(board, steps);
+
+    for (int
+  }
+}
+class Turn {
+  private final Board board;
+  private User thisTurnUser;
+  private int turnIdx;
+
+}
+class Board {
+  private final Point[] pointList;
+
+  public Board() {
+    this.pointList = initPointList();
+  }
+
+  private Point[] initPointList () {
+    Point[] pointList = new Point[31];
+    pointList[0] = new Point(0);
+    for (int i = 1; i < 20; i++) {
+      pointList[i] = new Point(i);
+      pointList[i - 1].setNext(pointList[i - 1]);
+    }
+
+    pointList[20] = new Point(20);
+    pointList[5].setShortCut(pointList[20]);
+
+    for (int i = 21; i < 25; i++) {
+      pointList[i] = new Point(i);
+      pointList[i - 1].setNext(pointList[i - 1]);
+    }
+
+    pointList[25] = new Point(25);
+    pointList[10].setShortCut(pointList[25]);
+
+    pointList[26] = new Point(26);
+    pointList[25].setNext(pointList[25]);
+
+    pointList[30] = new Point(30);
+    pointList[26].setNext(pointList[30]);
+
+    pointList[27] = new Point(27);
+    pointList[30].setNext(pointList[27]);
+    pointList[22].setShortCut(pointList[27]);
+
+    pointList[28] = new Point(28);
+    pointList[27].setShortCut(pointList[28]);
+
+    pointList[29] = new Point(29);
+    pointList[28].setNext(pointList[29]);
+    pointList[19].setNext(pointList[29]);
+
+    pointList[30] = new Point(30);
+    pointList[29].setNext(pointList[30]);
+
+    return pointList;
+  }
+
+  public Point getHead() {
+    return pointList[0];
+  }
+
+  public Point getTargetPoint(Point curPoint, Integer steps) {
+
+    if (curPoint.isHasShortCut()) {
+      curPoint = curPoint.getShortCut();
+      steps--;
+    }
+
+    while (steps-- != 0 || !isEndPoint(curPoint)) {
+      curPoint = curPoint.getNext();
+    }
+
+    return curPoint;
+  }
+
+  public boolean isEndPoint(Point point) {
+    return point.getIdx() == 30;
+  }
+}
+class Point {
+  private final int idx;
+  private Point next;
+  private final boolean hasShortCut;
+  private Point shortCut;
+  private List<Horse> horses;
+
+  Point (int idx) {
+    this.idx = idx;
+    this.hasShortCut = (idx == 5 || idx == 10 || idx == 22);
+  }
+
+  public int getIdx() {
+    return idx;
+  }
+
+  public Point getNext() {
+    return next;
+  }
+
+  public void setNext(Point nextPoint) {
+    this.next = nextPoint;
+  }
+
+  public boolean isHasShortCut() {
+    return hasShortCut;
+  }
+
+  public Point getShortCut() {
+    return shortCut;
+  }
+
+  public void setShortCut(Point shortCut) {
+    this.shortCut = shortCut;
+  }
+
+  public boolean isEmpty() {
+    return horses.isEmpty();
+  }
+
+  public List<Horse> getHorses() {
+    return horses;
+  }
+
+  public void removeHorse(Horse horse) {
+    horses.remove(horse);
+  }
+
+  public void addHorse(Horse horse) {
+    if (!isEmpty()) {
+      horse.isPiggyBacking = true;
+    }
+    horses.add(horse);
+  }
+
+}
+class User {
+  Horse[] horses;
+
+  User(int size) {
+    horses = new Horse[size];
+  }
+
+  public List<Horse> canChooseHorseList(Board board, Integer steps) {
+    List<Horse> list = new ArrayList<>();
+      for (Horse horse : horses) {
+          if (horse.isEnd || horse.isPiggyBacking) continue;
+
+          Point targetPoint = board.getTargetPoint(horse.currentPosition, steps);
+          if (!targetPoint.isEmpty()) {
+            List<Horse> horses = targetPoint.getHorses();
+
+            if(!horses.get(0).user.equals(horse.user)) continue;
+          }
+          list.add(horse);
       }
-      if (j == size) return false;
-    }
 
-    return true;
+    return list;
   }
-  static int[] initMap() {
-    int[] map = new int[31];
 
-    for (int i = 0; i < 20; i++) {
-      map[i] = i + 1;
-    }
-    map[19] = 30;
 
-    for (int i = 20; i < 24; i++) {
-      map[i] = i + 1;
-    }
-    map[24] = 15;
-
-    for (int i = 25; i <= 29; i++) {
-      map[i] = i + 1;
-    }
-
-    map[30] = END;
-
-    return map;
+  public void reset(Point head) {
+      for (Horse horse : horses) {
+        horse.reset(head);
+      }
   }
-  static int getOriginPoint(int point) {
-    if (point <= 26) return point;
-    else if (point == 27) return 22;
-    else if (point == 28) return 27;
-    else if (point == 29) return 28;
+}
+class Horse {
+  Point currentPosition;
+  User user;
+  boolean isEnd;
+  boolean isPiggyBacking;
 
-    return 0;
+  Horse (Point head, User user) {
+    this.currentPosition = head;
+    this.user = user;
+    this.isEnd = false;
+    this.isPiggyBacking = false;
   }
-  static int getPoint(String yut) {
-    if (yut.equals("Do")) return 1;
-    else if (yut.equals("Gae")) return 2;
-    else if (yut.equals("Gul")) return 3;
-    else if (yut.equals("Yut")) return 4;
-    else return 5;
-  }
-  static int getShortPathIdx(int point) {
-    if (point == 5) return 0;
-    else if (point == 10) return 1;
-    else if (point == 15) return 2;
-    else return 3;
-  }
-  static boolean isShortPath(int point) {
-    return point == 5 || point == 10 || point == 15 || point == 22;
-  }
-  static int[] initShortMap() {
-    int[] shortMap = new int[4];
 
-    shortMap[0] = 20;
-    shortMap[1] = 25;
-    shortMap[2] = 16;
-    shortMap[3] = 28;
-
-    return shortMap;
+  public void reset(Point head) {
+    this.currentPosition.removeHorse(this);
+    this.isPiggyBacking = false;
+    this.currentPosition = head;
+    this.isEnd = false;
   }
 }

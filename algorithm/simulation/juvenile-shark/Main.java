@@ -1,141 +1,235 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Queue;
 import java.util.StringTokenizer;
 
 public class Main {
-  static int INF = Integer.MAX_VALUE;
-  static int[] dr = {INF, -1, -1, 0, 1, 1, 1, 0, -1};
-  static int[] dc = {INF, 0, -1, -1, -1, 0, 1, 1, 1};
-  static int max = 0;
+  private static final int[] dr = {0, -1, -1, 0, 1, 1, 1, 0, -1};
+  private static final int[] dc = {0, 0, -1, -1, -1, 0, 1, 1, 1};
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st;
 
-    Fish[] fishes = new Fish[4 * 4 + 1];
-    int[][] idx_grid = new int[4][4];
+    Fish[] fishes = new Fish[17];
+    int[][] fishIdxGrid = new int[4][4];
+
     for (int i = 0; i < 4; i++) {
       st = new StringTokenizer(br.readLine());
       for (int j = 0; j < 4; j++) {
         int idx = Integer.parseInt(st.nextToken());
         int direction = Integer.parseInt(st.nextToken());
-        fishes[idx] = new Fish(i ,j, direction);
-        idx_grid[i][j] = idx;
+        fishes[idx] = new Fish(idx, i, j, direction);
+        fishIdxGrid[i][j] = idx;
       }
     }
 
-    System.out.println(simulation(fishes, idx_grid));
+    System.out.println(simulation(fishes, fishIdxGrid));
   }
-  static int simulation(Fish[] fishes, int[][] idx_grid) {
+  private static int simulation(Fish[] fishes, int[][] fishIdxGrid) {
 
-    active_shark(fishes, new Shark(0, 0, 0), idx_grid, 0);
+    int startFishIdx = fishIdxGrid[0][0];
+    Shark shark = new Shark(0, 0, fishes[startFishIdx].direction, startFishIdx);
+    deadFish(fishes, fishIdxGrid, startFishIdx);
+
+    return getMaxSimulation(shark, fishes, fishIdxGrid);
+  }
+  private static int getMaxSimulation(Shark shark, Fish[] fishes, int[][] fishIdxGrid) {
+
+    Queue<Simulation> q = new ArrayDeque<>();
+    q.add(new Simulation(shark, fishes, fishIdxGrid));
+
+    int max = shark.count;
+    while (!q.isEmpty()) {
+      Simulation simulation = q.poll();
+
+      Fish[] curFishes = simulation.fishes;
+      int[][] curFishIdxGrid = simulation.fishIdxGrid;
+      Shark curShark = simulation.shark;
+
+      activeFish(curFishes, curFishIdxGrid, curShark);
+
+      if (canProgressNextSimulation(curFishIdxGrid, curShark)) {
+        int row = curShark.row;
+        int col = curShark.col;
+
+        while (isValidPoint(row + dr[curShark.direction], col + dc[curShark.direction])) {
+          row += dr[curShark.direction];
+          col += dc[curShark.direction];
+
+          if (curFishIdxGrid[row][col] != 0) {
+            int[][] nextFishIdxGrid = copyFishIdxGrid(curFishIdxGrid);
+            Fish[] nextFishes = copyFishes(curFishes);
+            Shark nextSimulationShark = getNextSimulationShark(curShark, row, col, nextFishes, nextFishIdxGrid);
+            q.add(new Simulation(nextSimulationShark, nextFishes, nextFishIdxGrid));
+          }
+        }
+      } else {
+        max = Math.max(max, curShark.count);
+      }
+    }
 
     return max;
   }
-  static void active_shark(Fish[] fishes, Shark shark, int[][] idx_grid, int sum) {
+  private static int[][] copyFishIdxGrid(int[][] fishIdxGrid) {
+    int[][] copy = new int[4][4];
 
-    int idx = idx_grid[shark.row][shark.col];
-    shark.direction = fishes[idx].direction;
-    sum += idx;
-    fishes[idx].isDead = true;
-    idx_grid[shark.row][shark.col] = 0;
-
-    active_fishes(fishes, shark, idx_grid);
-
-    boolean isMove = false;
-    while (isValidIdx(shark.row + dr[shark.direction], shark.col + dc[shark.direction])) {
-      shark.row += dr[shark.direction];
-      shark.col += dc[shark.direction];
-
-      if (idx_grid[shark.row][shark.col] != 0) {
-        isMove = true;
-        int[][] newGrid = copy_grid(idx_grid);
-        Fish[] newFishes = copy_fish(fishes);
-
-        active_shark(newFishes, new Shark(shark.row, shark.col, shark.direction), newGrid, sum);
-      }
-    }
-
-    if (!isMove) max = Math.max(max, sum);
-  }
-  static int[][] copy_grid(int[][] idx_grid) {
-    //int[][] grid = Arrays.copyOf(idx_grid, 4);
-    int[][] grid = new int[4][4];
     for (int i = 0; i < 4; i++) {
-      for (int j = 0; j < 4; j++) {
-        grid[i][j] = idx_grid[i][j];
-      }
+      copy[i] = Arrays.copyOf(fishIdxGrid[i], 4);
     }
-    return grid;
-  }
-  static Fish[] copy_fish(Fish[] fishes) {
 
-    Fish[] newFishes = new Fish[17];
-    for (int i = 1; i <= 16; i++)
-      newFishes[i] = new Fish(fishes[i].row, fishes[i].col, fishes[i].direction, fishes[i].isDead);
-
-    return newFishes;
+    return copy;
   }
-  static void active_fishes(Fish[] fishes, Shark shark, int[][] idx_grid) {
+  private static Fish[] copyFishes(Fish[] fishes) {
+
+    Fish[] copy = new Fish[17];
+    for (int i = 1; i <= 16; i++) {
+      copy[i] = new Fish(i, fishes[i].row, fishes[i].col, fishes[i].direction, fishes[i].isDead);
+    }
+
+    return copy;
+  }
+  private static Shark getNextSimulationShark(Shark shark, int nextRow, int nextCol, Fish[] fishes, int[][] fishIdxGrid) {
+
+    int fishIdx = fishIdxGrid[nextRow][nextCol];
+    deadFish(fishes, fishIdxGrid, fishIdx);
+    return new Shark(nextRow, nextCol, fishes[fishIdx].direction, shark.count + fishIdx);
+  }
+  private static boolean canProgressNextSimulation(int[][] fishIdxGrid, Shark shark) {
+
+    int row = shark.row + dr[shark.direction];
+    int col = shark.col + dc[shark.direction];
+
+    while (isValidPoint(row, col) &&
+            fishIdxGrid[row][col] == 0) {
+      row += dr[shark.direction];
+      col += dc[shark.direction];
+    }
+
+    return isValidPoint(row, col);
+  }
+  private static void activeFish(Fish[] fishes, int[][] fishIdxGrid, Shark shark) {
 
     for (int i = 1; i <= 16; i++) {
+      if (fishes[i].isDead) continue;
+
       Fish fish = fishes[i];
-      if (!fish.isDead) {
-        int baseDirection = fish.direction;
-        do {
-          int nextRow = fish.row + dr[fish.direction];
-          int nextCol = fish.col + dc[fish.direction];
 
-          if (isValidIdx(nextRow, nextCol) && !(shark.row == nextRow && shark.col == nextCol)) {
-            int otherIdx = idx_grid[nextRow][nextCol];
-            if(otherIdx != 0) {
-              fishes[otherIdx].row = fish.row;
-              fishes[otherIdx].col = fish.col;
-            }
-            idx_grid[fish.row][fish.col] = otherIdx;
+      moveFish(fishes, fish, fishIdxGrid, shark);
+    }
+  }
+  private static void moveFish(Fish[] fishes, Fish fish, int[][] fishIdxGrid, Shark shark) {
 
-            fish.row = nextRow;
-            fish.col = nextCol;
-            idx_grid[nextRow][nextCol] = i;
-            break;
-          }
+    int[] nextPoint = getNextPoint(fish, shark);
 
-          if (++fish.direction == 9) fish.direction = 1;
-        } while (fish.direction != baseDirection);
+    if (isMove(nextPoint, fish)) {
+      if (isFishAtNextPoint(fishIdxGrid, nextPoint)) {
+        swapFish(fishes, fish, fishIdxGrid, nextPoint);
+      } else {
+        moveFish(fish, fishIdxGrid, nextPoint);
       }
     }
   }
+  private static void swapFish(Fish[] fishes, Fish fish, int[][] fishIdxGrid, int[] nextPoint) {
+    int pointFishIdx = fishIdxGrid[nextPoint[0]][nextPoint[1]];
+    fishes[pointFishIdx].row = fish.row;
+    fishes[pointFishIdx].col = fish.col;
+    moveFish(fish, fishIdxGrid, nextPoint);
+    fishIdxGrid[fishes[pointFishIdx].row][fishes[pointFishIdx].col] = pointFishIdx;
+  }
+  private static void moveFish(Fish fish, int[][] fishIdxGrid, int[] nextPoint) {
+    fishIdxGrid[fish.row][fish.col] = 0;
+    fish.row = nextPoint[0];
+    fish.col = nextPoint[1];
+    fish.direction = nextPoint[2];
+    fishIdxGrid[fish.row][fish.col] = fish.idx;
+  }
+  private static boolean isFishAtNextPoint(int[][] fishIdxGrid, int[] nextPoint) {
+    return fishIdxGrid[nextPoint[0]][nextPoint[1]] != 0;
+  }
+  private static boolean isMove(int[] nextPoint, Fish fish) {
+    return !(nextPoint[0] == fish.row && nextPoint[1] == fish.col);
+  }
+  private static int[] getNextPoint(Fish fish, Shark shark) {
 
-  static boolean isValidIdx(int row, int col) {
+    int direction = fish.direction;
+    do {
+      int nextRow = fish.row + dr[direction];
+      int nextCol = fish.col + dc[direction];
+
+      if (canMove(nextRow, nextCol, shark)) {
+        return new int[] {nextRow, nextCol, direction};
+      }
+
+      direction = nextDirection(direction);
+    } while (direction != fish.direction);
+
+    return new int[]{fish.row, fish.col, fish.direction};
+  }
+
+  private static int nextDirection (int direction) {
+    if (direction + 1 != 9) return direction + 1;
+
+    return 1;
+  }
+  private static boolean canMove(int nextRow, int nextCol, Shark shark) {
+    return isValidPoint(nextRow, nextCol) && !isSharkPoint(nextRow, nextCol, shark);
+  }
+  private static boolean isSharkPoint(int row, int col, Shark shark) {
+    return (row == shark.row) && (col == shark.col);
+  }
+  private static boolean isValidPoint(int row, int col) {
     return row >= 0 && col >= 0 && row < 4 && col < 4;
+  }
+  private static void deadFish(Fish[] fishes, int[][] fishIdxGrid, int idx){
+    fishes[idx].isDead = true;
+    fishIdxGrid[fishes[idx].row][fishes[idx].col] = 0;
+  }
+}
+class Simulation {
+  Shark shark;
+  Fish[] fishes;
+  int[][] fishIdxGrid;
+
+  Simulation(Shark shark, Fish[] fishes, int[][] fishIdxGrid) {
+    this.shark = shark;
+    this.fishes = fishes;
+    this.fishIdxGrid = fishIdxGrid;
   }
 }
 class Shark {
   int row;
   int col;
   int direction;
+  int count;
 
-  Shark(int row, int col, int direction) {
+  Shark (int row, int col, int direction, int count) {
     this.row = row;
     this.col = col;
     this.direction = direction;
+    this.count = count;
   }
 }
 class Fish {
+  int idx;
   int row;
   int col;
   int direction;
   boolean isDead;
 
-  Fish(int row, int col, int direction) {
+
+  Fish (int idx, int row, int col, int direction) {
+    this.idx = idx;
     this.row = row;
     this.col = col;
     this.direction = direction;
-    isDead = false;
+    this.isDead = false;
   }
-  Fish(int row, int col, int direction, boolean isDead) {
-    this(row, col, direction);
+
+  Fish (int idx, int row, int col, int direction, boolean isDead) {
+    this(idx, row, col, direction);
     this.isDead = isDead;
   }
 }

@@ -116,6 +116,53 @@
 39
 ```
 
+## 복습 포인즈
+
+어떤 로직 오류를 범하고 있나요?
+
+```java
+private static int[] getNextPoint(Fish fish, Shark shark) {
+
+    int row = fish.row;
+    int col = fish.col;
+    int direction = fish.direction;
+    do {
+      row = fish.row + dr[direction];
+      col = fish.col + dc[direction];
+
+      if (canMove(row, col, shark)) break;
+
+      direction = nextDirection(direction);
+    } while (direction != fish.direction);
+
+    if (direction != fish.direction) return new int[]{row, col, direction};
+
+    return new int[]{fish.row, fish.col, fish.direction};
+  }
+```
+
+```java
+  private static boolean canProgressNextSimulation(int[][] fishIdxGrid, Shark shark) {
+
+    int row = shark.row;
+    int col = shark.col;
+
+    while (isValidPoint(row + dr[shark.direction], col + dc[shark.direction]) &&
+            fishIdxGrid[row + dr[shark.direction]][col + dc[shark.direction]] == 0) {
+      row = row + dr[shark.direction];
+      col = col + dc[shark.direction];
+    }
+
+    return isValidPoint(row, col);
+  }
+```
+
+변수의 이름을 목적에 맞게 정확히 사용하도록 하여서 실수를 줄이고, 위의 로직과 같은 구성으로 구현하는 것은 피하자.
+
+왜냐하면, 변수의 이름이 너무나도 모호해지는 상황이 발생하는 것 같아서 그렇다. 
+
+그리고 되도록이면 반복되는 로직이더라도 한번의 로직이 끝날 때 결과 값을 도출해내고 그것을 기존 변수에 적용하는 식으로 구현하자.
+
 ## 코드
 
 **AC**
