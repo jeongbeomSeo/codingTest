@@ -1,153 +1,153 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.StringTokenizer;
+import java.util.*;
 
 public class Main {
-  // 북, 동, 남, 서
-  static int[] dr = {-1, 0, 1, 0};
-  static int[] dc = {0, 1, 0, -1};
-  static int N, M;
+  private static final int[] dr = {-1, 0, 1, 0};
+  private static final int[] dc = {0, 1, 0, -1};
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
 
-    N = Integer.parseInt(st.nextToken());
-    M = Integer.parseInt(st.nextToken());
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
 
-    String[][] grid = new String[N][M];
-    int rRow = 0;
-    int rCol = 0;
-    int bRow = 0;
-    int bCol = 0;
-
+    char[][] grid = new char[N][M];
+    Ball red = null;
+    Ball blue = null;
     for (int i = 0; i < N; i++) {
       String str = br.readLine();
+
       for (int j = 0; j < M; j++) {
-        grid[i][j] = str.substring(j, j + 1);
-        if (grid[i][j].equals("R")) {
-          rRow = i;
-          rCol = j;
-          grid[i][j] = ".";
-        }
-        if (grid[i][j].equals("B")) {
-          bRow = i;
-          bCol = j;
-          grid[i][j] = ".";
+        grid[i][j] = str.charAt(j);
+
+        if (grid[i][j] == 'R') {
+          red = new Ball(i, j);
+          grid[i][j] = '.';
+        } else if (grid[i][j] == 'B') {
+          blue = new Ball(i, j);
+          grid[i][j] = '.';
         }
       }
     }
 
-    System.out.println(simulation(grid, rRow, rCol, bRow, bCol));
+    System.out.println(simulation(grid, red, blue));
   }
-  static int simulation(String[][] grid, int rRow, int rCol, int bRow, int bCol) {
+  private static int simulation(char[][] grid, Ball red, Ball blue) {
 
-    Queue<Case> q = new LinkedList();
-    boolean[][][][] isVistied = new boolean[N][M][N][M];
-    q.add(new Case(rRow, rCol, bRow, bCol, 0));
-    isVistied[rRow][rCol][bRow][bCol] = true;
+    Set<String> historySet = new HashSet<>();
+    historySet.add(makeHistory(red, blue));
 
+    Queue<Game> games = new ArrayDeque<>();
+    games.add(new Game(red, blue, 0));
+    while (!games.isEmpty()) {
+      Game game = games.poll();
 
-    while (!q.isEmpty()) {
-      Case currentCase = q.poll();
-
-      if (currentCase.time >= 10) break;
-
-      Marble redMarble = currentCase.redMarble;
-      Marble blueMarble = currentCase.blueMarble;
+      if (game.count == 10) continue;
 
       for (int i = 0; i < 4; i++) {
+        Ball nextRedPoint = moveNextPosition(game.red, grid, dr[i], dc[i]);
+        Ball nextBluePoint = moveNextPosition(game.blue, grid, dr[i], dc[i]);
 
-        grid[redMarble.row][redMarble.col] = "R";
-        grid[blueMarble.row][blueMarble.col] = "B";
-
-        int rNum = 0;
-        int bNum = 0;
-
-        boolean fail = false;
-        boolean isMove_RedMarble;
-        boolean isMove_BlueMarble;
-
-        do {
-          isMove_RedMarble = false;
-          isMove_BlueMarble = false;
-          while (grid[redMarble.row + dr[i] * (rNum + 1)][redMarble.col + dc[i] * (rNum + 1)].equals(".")) {
-            grid[redMarble.row + dr[i] * rNum][redMarble.col + dc[i] * rNum] = ".";
-            isMove_RedMarble = true;
-            rNum++;
-            grid[redMarble.row + dr[i] * rNum][redMarble.col + dc[i] * rNum] = "R";
-          }
-          if (grid[redMarble.row + dr[i] * (rNum + 1)][redMarble.col + dc[i] * (rNum + 1)].equals("O")) {
-            grid[redMarble.row + dr[i] * rNum][redMarble.col + dc[i] * rNum] = ".";
-            boolean conCurrencyCheck = false;
-            while (grid[blueMarble.row + dr[i] * (bNum + 1)][blueMarble.col + dc[i] * (bNum + 1)].equals(".")) {
-              grid[blueMarble.row + dr[i] * bNum][blueMarble.col + dc[i] * bNum] = ".";
-              bNum++;
-              grid[blueMarble.row + dr[i] * bNum][blueMarble.col + dc[i] * bNum] = "B";
-            }
-            if (grid[blueMarble.row + dr[i] * (bNum + 1)][blueMarble.col + dc[i] * (bNum + 1)].equals("O")) conCurrencyCheck = true;
-            if (!conCurrencyCheck) return currentCase.time + 1;
-            else {
-              fail = true;
-              break;
-            }
-          }
-
-          while (grid[blueMarble.row + dr[i] * (bNum + 1)][blueMarble.col + dc[i] * (bNum + 1)].equals(".")) {
-            grid[blueMarble.row + dr[i] * bNum][blueMarble.col + dc[i] * bNum] = ".";
-            isMove_BlueMarble = true;
-            bNum++;
-            grid[blueMarble.row + dr[i] * bNum][blueMarble.col + dc[i] * bNum] = "B";
-          }
-          if (grid[blueMarble.row + dr[i] * (bNum + 1)][blueMarble.col + dc[i] * (bNum + 1)].equals("O")) {
-            fail = true;
-            break;
-          }
-        } while (isMove_RedMarble || isMove_BlueMarble);
-
-        if (fail) {
-          grid[redMarble.row + dr[i] * rNum][redMarble.col + dc[i] * rNum] = ".";
-          grid[blueMarble.row + dr[i] * bNum][blueMarble.col + dc[i] * bNum] = ".";
-          continue;
+        if (isFail(grid, nextBluePoint)) continue;
+        if (isEnd(grid, nextRedPoint)) {
+          return game.count + 1;
         }
 
-        int next_RedMarbleRow = redMarble.row + dr[i] * rNum;
-        int next_RedMarbleCol = redMarble.col + dc[i] * rNum;
-        int next_BlueMarbleRow = blueMarble.row + dr[i] * bNum;
-        int next_BlueMarbleCol = blueMarble.col + dc[i] * bNum;
-
-        if (!isVistied[next_RedMarbleRow][next_RedMarbleCol][next_BlueMarbleRow][next_BlueMarbleCol]) {
-          q.add(new Case(next_RedMarbleRow, next_RedMarbleCol,
-                  next_BlueMarbleRow, next_BlueMarbleCol, currentCase.time + 1));
-          isVistied[next_RedMarbleRow][next_RedMarbleCol][next_BlueMarbleRow][next_BlueMarbleCol] = true;
+        modulatePoint(nextRedPoint, nextBluePoint, i, game.red, game.blue);
+        String history = makeHistory(nextRedPoint, nextBluePoint);
+        if (!historySet.contains(history)) {
+          games.add(new Game(nextRedPoint, nextBluePoint, game.count + 1));
+          historySet.add(history);
         }
-        grid[next_RedMarbleRow][next_RedMarbleCol] = ".";
-        grid[next_BlueMarbleRow][next_BlueMarbleCol] = ".";
       }
     }
     return -1;
   }
-}
+  private static void modulatePoint(Ball nextRedPoint, Ball nextBluePoint, int direction, Ball red, Ball blue) {
+    if (isSamePoint(nextRedPoint, nextBluePoint)) {
+      if (isPriority(red, blue, direction)) {
+        modulateBallPoint(nextBluePoint, direction);
+      } else {
+        modulateBallPoint(nextRedPoint, direction);
+      }
+    }
+  }
+  private static void modulateBallPoint(Ball ball, int direction) {
+    if (direction == 0) ball.row++;
+    else if (direction == 1) ball.col--;
+    else if (direction == 2) ball.row--;
+    else ball.col++;
+  }
+  private static boolean isSamePoint(Ball red, Ball blue) {
+    return (red.row == blue.row) && (red.col == blue.col);
+  }
+  private static boolean isFail(char[][] grid, Ball blue) {
+    return grid[blue.row][blue.col] == 'O';
+  }
+  private static boolean isEnd(char[][] grid, Ball red) {
+    return grid[red.row][red.col] == 'O';
+  }
+  private static Ball moveNextPosition(Ball ball, char[][] grid, int dr, int dc) {
 
-class Case {
-  Marble redMarble;
-  Marble blueMarble;
-  int time;
+    Ball newBall = new Ball(ball.row, ball.col);
 
-  Case(int rRow, int rCol, int bRow, int bCol, int time) {
-    redMarble = new Marble(rRow, rCol);
-    blueMarble = new Marble(bRow, bCol);
-    this.time = time;
+    while (!cantMove(newBall, grid, dr, dc)) {
+      newBall.row += dr;
+      newBall.col += dc;
+    }
+
+    return newBall;
+  }
+  private static boolean cantMove(Ball ball, char[][] grid, int dr, int dc) {
+    int nextRow = ball.row + dr;
+    int nextCol = ball.col + dc;
+    return isHole(grid, ball.row, ball.col) || isWall(grid, nextRow, nextCol);
+  }
+  private static boolean isHole(char[][] grid, int row, int col) {
+    return grid[row][col] == 'O';
+  }
+  private static boolean isWall(char[][] grid, int nextRow, int nextCol) {
+    return grid[nextRow][nextCol] == '#';
+  }
+  private static boolean isPriority(Ball red, Ball blue, int direction) {
+    if (direction == 0) return red.row < blue.row;
+    else if (direction == 1) return red.col > blue.col;
+    else if (direction == 2) return red.row > blue.row;
+    else return red.col < blue.col;
+  }
+  private static String makeHistory(Ball red, Ball blue) {
+    return makeBallHistory('R', red.row, red.col)
+            + makeBallHistory('B', blue.row, blue.col);
+  }
+  private static String makeBallHistory(char color, int row, int col) {
+    return String.valueOf(color) + makeString(row) + makeString(col);
+  }
+  private static String makeString(int value) {
+    String str = String.valueOf(value);
+
+    if (str.length() == 1) return "0" + str;
+    return str;
   }
 }
+class Game {
+  Ball red;
+  Ball blue;
+  int count;
 
-class Marble {
+  Game(Ball red, Ball blue, int count) {
+    this.red = red;
+    this.blue = blue;
+    this.count = count;
+  }
+
+}
+class Ball {
   int row;
   int col;
 
-  Marble(int row, int col) {
+  Ball(int row, int col) {
     this.row = row;
     this.col = col;
   }
