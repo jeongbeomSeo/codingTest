@@ -48,8 +48,8 @@ public class Main {
           nextDiscs[i] = getNextDiscRemoved(discs, i, N, M);
         }
       } else {
+        double avg = getAverage(discs, N, M);
         for (int i = 1; i < N + 1; i++) {
-          double avg = getAverage(discs[i], M);
           nextDiscs[i] = getNextDiscUsedAvg(discs[i], M, avg);
         }
       }
@@ -92,9 +92,9 @@ public class Main {
     }
 
     if (j == 1) {
-      if (disc[i][j] == disc[i][j + 1]) return true;
+      if (disc[i][j] == disc[i][j + 1] || disc[i][j] == disc[i][M]) return true;
     } else if (j == M) {
-      if (disc[i][j] == disc[i][j - 1]) return true;
+      if (disc[i][j] == disc[i][j - 1] || disc[i][j] == disc[i][1]) return true;
     } else {
       if (disc[i][j] == disc[i][j + 1] || disc[i][j] == disc[i][j - 1]) return true;
     }
@@ -118,13 +118,15 @@ public class Main {
     }
     return nextDisc;
   }
-  private static double getAverage(int[] disc, int M) {
+  private static double getAverage(int[][] disc, int N, int M) {
 
     double sum = 0;
     int count = 0;
-    for (int i = 1; i < M + 1; i++) {
-      sum += disc[i];
-      if (disc[i] != 0) count++;
+    for (int i = 1; i < N + 1; i++) {
+      for (int j = 1; j < M + 1; j++) {
+        sum += disc[i][j];
+        if (disc[i][j] != 0) count++;
+      }
     }
 
     if (count == 0) return 0;
