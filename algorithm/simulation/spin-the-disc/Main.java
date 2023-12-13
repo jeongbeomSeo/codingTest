@@ -4,123 +4,169 @@ import java.io.InputStreamReader;
 import java.util.StringTokenizer;
 
 public class Main {
-  static int N, M, T;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
 
-    N = Integer.parseInt(st.nextToken());
-    M = Integer.parseInt(st.nextToken());
-    T = Integer.parseInt(st.nextToken());
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+    int T = Integer.parseInt(st.nextToken());
 
-    int[][] disc = new int[N + 1][M + 1];
-    for (int i = 1; i <= N; i++) {
+    int[][] discs = new int[N + 1][M + 1];
+
+    for (int i = 1; i < N + 1; i++) {
       st = new StringTokenizer(br.readLine());
-      for (int j = 1; j <= M; j++) {
-        disc[i][j] = Integer.parseInt(st.nextToken());
+      for (int j = 1; j < M + 1; j++) {
+        discs[i][j] = Integer.parseInt(st.nextToken());
       }
     }
 
-    int[][] rotateList = new int[T][3];
+    int[][] rotateInfo = new int[T][3];
     for (int i = 0; i < T; i++) {
       st = new StringTokenizer(br.readLine());
-      rotateList[i][0] = Integer.parseInt(st.nextToken());
-      rotateList[i][1] = Integer.parseInt(st.nextToken());
-      rotateList[i][2] = Integer.parseInt(st.nextToken());
+      for (int j = 0; j < 3; j++) {
+        rotateInfo[i][j] = Integer.parseInt(st.nextToken());
+      }
     }
 
-    System.out.println(simulation(disc, rotateList));
+    System.out.println(simulation(discs, rotateInfo, N, M, T));
   }
-  static int simulation(int[][] disc, int[][] rotateList){
+  private static int simulation(int[][] discs, int[][] roateInfo, int N, int M, int T) {
 
-    int num = 0;
-    while (num < T) {
+    int time = 0;
+    while (time != T) {
 
-      for (int i = 1; i <= N; i++) {
-        if (i % rotateList[num][0] == 0) rotate(disc[i], rotateList[num][1], rotateList[num][2]);
+      int[] info = roateInfo[time];
+
+      for (int i = info[0]; i < N + 1; i += info[0]) {
+        discs[i] = rotate(discs[i], info[1], info[2], M);
       }
 
-      boolean[][] delete = new boolean[N + 1][M + 1];
-
-      boolean notDelete = true;
-      for (int i = 1; i <= N; i++) {
-        for (int j = 1; j < M; j++) {
-          if (disc[i][j] != 0 && disc[i][j] == disc[i][j + 1]) {
-            delete[i][j] = delete[i][j + 1] = true;
-            notDelete = false;
-          }
+      int[][] nextDiscs = new int[N + 1][M + 1];
+      if (hasRemoveE(discs, N, M)) {
+        for (int i = 1; i < N + 1; i++) {
+          nextDiscs[i] = getNextDiscRemoved(discs, i, N, M);
         }
-        if (disc[i][1] != 0 && disc[i][1] == disc[i][M]) {
-          delete[i][1] = delete[i][M] = true;
-          notDelete = false;
-        }
-      }
-      for (int j = 1; j <= M; j++) {
-        for (int i = 1; i < N; i++) {
-          if (disc[i][j] != 0 && disc[i][j] == disc[i + 1][j]) {
-            delete[i][j] = delete[i + 1][j] = true;
-            notDelete = false;
-          }
+      } else {
+        for (int i = 1; i < N + 1; i++) {
+          double avg = getAverage(discs[i], M);
+          nextDiscs[i] = getNextDiscUsedAvg(discs[i], M, avg);
         }
       }
 
-      if (!notDelete) {
-        for (int i = 1; i <= N; i++) {
-          for (int j = 1; j <= M; j++) {
-            if (delete[i][j]) disc[i][j] = 0;
-          }
-        }
-      }
-      else {
-        int totalNumberSum = 0;
-        int notZero = 0;
-        for (int i = 1; i <= N; i++) {
-          for (int j = 1; j <= M; j++) {
-            if (disc[i][j] != 0) {
-              notZero++;
-              totalNumberSum += disc[i][j];
-            }
-          }
-        }
-        double average = (double)totalNumberSum / notZero;
-        for (int i = 1; i <= N; i++) {
-          for (int j = 1; j <= M; j++) {
-            if (disc[i][j] != 0) {
-              if (disc[i][j] > average) disc[i][j]--;
-              else if (disc[i][j] < average) disc[i][j]++;
-            }
-          }
-        }
-      }
-      num++;
+      discs = nextDiscs;
+      time++;
     }
 
+    return getFinalScore(discs, N, M);
+  }
+  private static int getFinalScore(int[][] discs, int N, int M) {
     int sum = 0;
-    for (int i = 1; i <= N; i++) {
-      for (int j = 1; j <= M; j++) {
-        sum += disc[i][j];
+
+    for (int i = 1; i < N + 1; i++) {
+      for (int j = 1; j < M + 1; j++) {
+        sum += discs[i][j];
       }
     }
+
     return sum;
   }
-  static void rotate(int[] disc, int direction, int count) {
+  private static int[] getNextDiscRemoved(int[][] discs, int i, int N, int M) {
 
-    while (count-- > 0) {
-      int temp;
-      switch (direction) {
-        case 0:
-          temp = disc[M];
-          for (int i = M; i > 1; i--) disc[i] = disc[i - 1];
-          disc[1] = temp;
-          break;
-        case 1:
-          temp = disc[1];
-          for (int i = 1; i < M; i++) disc[i] = disc[i + 1];
-          disc[M] = temp;
-          break;
-        default:
-          break;
+    int[] nextDisc = new int[M + 1];
+    for (int j = 1; j < M + 1; j++) {
+      if (discs[i][j] != 0 && hasNearEqualNumber(discs, i, j, N, M)) nextDisc[j] = 0;
+      else nextDisc[j] = discs[i][j];
+    }
+
+    return nextDisc;
+  }
+  private static boolean hasNearEqualNumber(int[][] disc, int i, int j, int N, int M) {
+
+    if (i == 1) {
+      if (disc[i][j] == disc[i + 1][j]) return true;
+    } else if (i == N) {
+      if (disc[i][j] == disc[i - 1][j]) return true;
+    } else {
+      if (disc[i][j] == disc[i + 1][j] || disc[i][j] == disc[i - 1][j]) return true;
+    }
+
+    if (j == 1) {
+      if (disc[i][j] == disc[i][j + 1]) return true;
+    } else if (j == M) {
+      if (disc[i][j] == disc[i][j - 1]) return true;
+    } else {
+      if (disc[i][j] == disc[i][j + 1] || disc[i][j] == disc[i][j - 1]) return true;
+    }
+
+    return false;
+  }
+  private static int[] getNextDiscUsedAvg(int[] disc, int M, double average) {
+
+    int[] nextDisc = new int[M + 1];
+    if (average != 0) {
+      for (int i = 1; i < M + 1; i++) {
+        if (disc[i] == 0) nextDisc[i] = 0;
+        else if (disc[i] > average) {
+          nextDisc[i] = disc[i] - 1;
+        } else if (disc[i] < average){
+          nextDisc[i] = disc[i] + 1;
+        } else {
+          nextDisc[i] = disc[i];
+        }
       }
     }
+    return nextDisc;
+  }
+  private static double getAverage(int[] disc, int M) {
+
+    double sum = 0;
+    int count = 0;
+    for (int i = 1; i < M + 1; i++) {
+      sum += disc[i];
+      if (disc[i] != 0) count++;
+    }
+
+    if (count == 0) return 0;
+    return sum / count;
+  }
+  private static boolean hasRemoveE(int[][] discs, int N, int M) {
+
+    for (int i = 1; i < N + 1; i++) {
+      for (int j = 1; j < M + 1; j++) {
+        if (discs[i][j] != 0 && hasNearEqualNumber(discs, i, j, N, M)) return true;
+      }
+    }
+
+    return false;
+  }
+  private static int[] rotate(int[] disc, int direction, int K, int M) {
+    if (direction == 0) {
+      return rotateFoward(disc, K, M);
+    } else {
+      return rotateReverse(disc, K, M);
+    }
+  }
+  private static int[] rotateFoward(int[] disc, int K, int M) {
+
+    int[] result = new int[M + 1];
+
+    for (int i = M + 1 - K; i < M + 1; i++) {
+      result[i - M + K] = disc[i];
+    }
+    System.arraycopy(disc, 1, result, K + 1, M - K);
+
+    return result;
+  }
+  private static int[] rotateReverse(int[] disc, int K, int M) {
+
+    int[] result = new int[M + 1];
+
+    for (int i = K; i > 0; i--) {
+      result[i + M - K] = disc[i];
+    }
+    System.arraycopy(disc, K + 1, result, 1, M - K);
+
+    return result;
   }
 }
