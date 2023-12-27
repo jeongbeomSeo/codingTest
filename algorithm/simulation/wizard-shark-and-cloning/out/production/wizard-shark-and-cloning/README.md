@@ -1446,14 +1446,21 @@ public class Main {
         Map<Integer, Integer> smellCountMap = initSmellCountMap();
         while (S != 0) {
 
+            long startTime = System.currentTimeMillis();
+
             List<Fish>[][] copy = copyFishListGrid(fishListGrid);
+
+            long endTime = System.currentTimeMillis();
+            System.out.println("Execution time: " + (endTime - startTime) + " milliseconds");
 
             fishListGrid = moveFishList(fishListGrid, sharkPoint, smellCountMap);
 
             // System.out.println("S is " + S);
             //printFishCountGrid(fishListGrid);
 
+
             sharkPoint = moveShark(fishListGrid, sharkPoint, smellCountMap);
+
 
             downSmellCount(smellCountMap);
 
@@ -1750,3 +1757,41 @@ class Point {
     }
 }
 ```
+**시간 분석 결과**
+```markdown
+Execution time: 0 milliseconds
+Execution time: 0 milliseconds
+Execution time: 0 milliseconds
+Execution time: 0 milliseconds
+Execution time: 0 milliseconds
+Execution time: 0 milliseconds
+Execution time: 0 milliseconds
+Execution time: 0 milliseconds
+Execution time: 0 milliseconds
+Execution time: 0 milliseconds
+Execution time: 0 milliseconds
+Execution time: 0 milliseconds
+Execution time: 0 milliseconds
+Execution time: 1 milliseconds
+Execution time: 1 milliseconds
+Execution time: 1 milliseconds
+Execution time: 3 milliseconds
+Execution time: 4 milliseconds
+Execution time: 10 milliseconds
+Execution time: 24 milliseconds
+Execution time: 63 milliseconds
+Execution time: 193 milliseconds
+Execution time: 559 milliseconds
+Execution time: 1239 milliseconds
+Execution time: 2972 milliseconds
+Execution time: 6449 milliseconds
+```
+
+**문제 분석**
+
+초기 분석: 객체의 생성을 너무 많이 호출하기 때문에 시간이 오래 걸리는 것으로 추측
+
+분석 결과: LinkedList를 사용하여 get()을 사용하면 순차 탐색을 하기 때문에 시간 오버가 발생
+
+문제 해결: LinkedList를 ArrayList로 바꿀 경우, index로 접근하여 요소에 접근하는 것이 O(1)이기 때문에 매우 빠르게 해결
+
