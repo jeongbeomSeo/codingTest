@@ -4,64 +4,74 @@ import java.io.InputStreamReader;
 import java.util.StringTokenizer;
 
 public class Main {
-  static int[] buff;
-  static long swap;
-  static void mergeSort(int[] nums) {
-    int n = nums.length;
-
-    buff = new int[n];
-    swap = 0;
-
-    __mergeSort(nums, 0, n - 1);
-
-    buff = null;
-  }
-
-  static void __mergeSort(int[] nums, int left, int right) {
-    if(left < right) {
-      int i;
-      int j = 0; int p = 0;
-      int center = (left + right) / 2;
-      int k = left;
-
-      __mergeSort(nums, left, center);
-      __mergeSort(nums, center + 1, right);
-
-      for(i = left; i <= center; i++)
-        buff[p++] = nums[i];
-
-      while (i <= right && j < p) {
-        // swap 횟수 계산 후 처리
-        // 오른쪽 기준
-        if(buff[j] > nums[i]) {
-          swap += (i - k);
-          nums[k++] = nums[i++];
-        }
-        else nums[k++] = buff[j++];
-      }
-
-      while (j < p) {
-        nums[k++] = buff[j++];
-      }
-
-    }
-  }
-
+  private static int[] buffer;
+  private static long count;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st;
 
     int N = Integer.parseInt(br.readLine());
+    buffer = new int[N];
+    int[] array = new int[N];
 
     st = new StringTokenizer(br.readLine());
-    // N = 0 ~ 500,000
-    int[] nums = new int[N];
-    for(int i = 0; i < N; i++) {
-      nums[i] = Integer.parseInt(st.nextToken());
+    for (int i = 0; i < N; i++) {
+      array[i] = Integer.parseInt(st.nextToken());
     }
 
-    mergeSort(nums);
+    System.out.println(query(array, N));
+  }
+  private static long query(int[] array, int N) {
 
-    System.out.println(swap);
+    count = 0;
+    mergeSort(array, 0, N - 1);
+
+/*    for (int i : array) {
+      System.out.print(i + " ");
+    }*/
+    return count;
+  }
+  private static void mergeSort(int[] array, int left, int right) {
+
+    if (left < right) {
+      int ptr0 = left;
+      int mid = (left + right) / 2;
+      int bufferSize = 0;
+
+      mergeSort(array, left, mid);
+      mergeSort(array, mid + 1, right);
+
+      while (ptr0 <= mid) {
+        buffer[bufferSize++] = array[ptr0++];
+      }
+
+      int ptr1 = 0;
+      int ptr2 = left;
+      while (ptr0 <= right && ptr1 < bufferSize) {
+        if (buffer[ptr1] <= array[ptr0]) {
+          array[ptr2] = buffer[ptr1];
+          if (ptr2 - left > ptr1) {
+            count += ((ptr2 - left) - ptr1);
+          }
+          ptr1++;
+        } else {
+          array[ptr2] = array[ptr0];
+          if (ptr2 > ptr0) {
+            count += (ptr2 - ptr0);
+          }
+          ptr0++;
+        }
+        ptr2++;
+      }
+
+      while (ptr1 < bufferSize) {
+        array[ptr2] = buffer[ptr1];
+        if (ptr2 - left > ptr1) {
+          count += ((ptr2 - left) - ptr1);
+        }
+        ptr2++;
+        ptr1++;
+      }
+    }
   }
 }
