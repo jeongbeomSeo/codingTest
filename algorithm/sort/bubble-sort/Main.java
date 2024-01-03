@@ -1,77 +1,79 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class Main {
-  private static int[] buffer;
-  private static long count;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st;
 
     int N = Integer.parseInt(br.readLine());
-    buffer = new int[N];
-    int[] array = new int[N];
+    Number[] array = new Number[N];
 
     st = new StringTokenizer(br.readLine());
     for (int i = 0; i < N; i++) {
-      array[i] = Integer.parseInt(st.nextToken());
+      int value = Integer.parseInt(st.nextToken());
+
+      array[i] = new Number(i, value);
     }
 
-    System.out.println(query(array, N));
-  }
-  private static long query(int[] array, int N) {
+    Arrays.sort(array);
 
-    count = 0;
-    mergeSort(array, 0, N - 1);
+    int h = getHeight(N);
+    int size = (int)Math.pow(2, h + 1);
 
-/*    for (int i : array) {
-      System.out.print(i + " ");
-    }*/
-    return count;
-  }
-  private static void mergeSort(int[] array, int left, int right) {
+    int[] tree = new int[size];
 
-    if (left < right) {
-      int ptr0 = left;
-      int mid = (left + right) / 2;
-      int bufferSize = 0;
-
-      mergeSort(array, left, mid);
-      mergeSort(array, mid + 1, right);
-
-      while (ptr0 <= mid) {
-        buffer[bufferSize++] = array[ptr0++];
-      }
-
-      int ptr1 = 0;
-      int ptr2 = left;
-      while (ptr0 <= right && ptr1 < bufferSize) {
-        if (buffer[ptr1] <= array[ptr0]) {
-          array[ptr2] = buffer[ptr1];
-          if (ptr2 - left > ptr1) {
-            count += ((ptr2 - left) - ptr1);
-          }
-          ptr1++;
-        } else {
-          array[ptr2] = array[ptr0];
-          if (ptr2 > ptr0) {
-            count += (ptr2 - ptr0);
-          }
-          ptr0++;
-        }
-        ptr2++;
-      }
-
-      while (ptr1 < bufferSize) {
-        array[ptr2] = buffer[ptr1];
-        if (ptr2 - left > ptr1) {
-          count += ((ptr2 - left) - ptr1);
-        }
-        ptr2++;
-        ptr1++;
-      }
+    long result = 0L;
+    for (int i = 0; i < N; i++) {
+      int idx = array[i].idx;
+      result += query(tree, 1, 0, N - 1, idx + 1, N - 1);
+      update(tree, 1, 0, N - 1, idx);
     }
+
+    System.out.println(result);
+  }
+  private static int query(int[] tree, int node, int left, int right, int start, int end) {
+    if (end < left || right < start) return 0;
+
+    else if (start <= left && right <= end) {
+      return tree[node];
+    }
+
+    int mid = (left + right) / 2;
+    int leftQuery = query(tree, 2 * node, left, mid, start, end);
+    int rightQuery = query(tree, 2 * node + 1, mid + 1, right, start, end);
+
+    return leftQuery + rightQuery;
+  }
+  private static void update(int[] tree, int node, int left, int right, int idx) {
+    if (idx < left || right < idx) return;
+    else if (left == right) {
+      tree[node] = 1;
+      return;
+    }
+    int mid = (left + right) / 2;
+    update(tree, 2 * node, left, mid, idx);
+    update(tree, 2 * node + 1, mid + 1, right, idx);
+    tree[node] = tree[2 * node] + tree[node * 2 + 1];
+  }
+  private static int getHeight(int argSize) {
+    return (int)Math.ceil(Math.log(argSize) / Math.log(2));
+  }
+}
+class Number implements Comparable<Number>{
+  int idx;
+  int value;
+
+  Number(int idx, int value) {
+    this.idx = idx;
+    this.value = value;
+  }
+
+  @Override
+  public int compareTo(Number o) {
+    return this.value - o.value;
   }
 }
