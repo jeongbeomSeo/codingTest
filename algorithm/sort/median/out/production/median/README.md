@@ -139,7 +139,7 @@
 > 
 > 뒤로 이동하다가 나올 경우에는 더 큰 값을 마주칠 때 까지 계속 이동시킨다.
 
-## 잘못된 풀이
+## 나의 코드 
 
 ```java
 import java.io.BufferedReader;
@@ -185,7 +185,7 @@ public class Main {
         // 중앙 값 표시 시작
         if(i == K - 1) {
           Arrays.sort(sortTemp);
-          sum += sortTemp[(K - 1)/ 2];
+          sum += sortTemp[(K -1)/ 2];
         }
       }
 
@@ -206,38 +206,16 @@ public class Main {
 
         else frontSort(temp, sortTemp, idx, K);
         // 새로운 중앙 값 합 처리
-        sum += sortTemp[K / 2];
+        sum += sortTemp[(K - 1)/ 2];
       }
 
     }
-
     System.out.println(sum);
   }
 }
 
 ```
 
-**반례**
-
-```
-4 2
-4
-3
-2
-1
-```
-
-**출력**
-
-```
-8
-```
-
-**정답**
-
-```
-9
-```
 ## 참고한 사이트
 
 - [글자 수 byte제한이 65536인 이유 : 네이버 블로그](https://m.blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=kmh03214&logNo=221481511037)
