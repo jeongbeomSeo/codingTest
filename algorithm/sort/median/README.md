@@ -219,3 +219,143 @@ public class Main {
 ## 참고한 사이트
 
 - [글자 수 byte제한이 65536인 이유 : 네이버 블로그](https://m.blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=kmh03214&logNo=221481511037)
+
+**이진 탐색을 적용한 리스트 풀이**
+
+해당 풀이가 3배 더 빠른 속도를 보여줬다. (1536ms -> 504ms)
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    int N = Integer.parseInt(st.nextToken());
+    int K = Integer.parseInt(st.nextToken());
+
+    int[] array = new int[N];
+    for (int i = 0; i < N; i++) {
+      array[i] = Integer.parseInt(br.readLine());
+    }
+
+    List<Integer> buffer = new ArrayList<>();
+    for (int i = 0; i < K; i++) {
+      int idx = upperBound(buffer, 0, i, array[i]);
+      buffer.add(idx, array[i]);
+    }
+
+    long result = 0L;
+    int getResultIdx = (K + 1) / 2 - 1;
+    result += buffer.get(getResultIdx);
+
+    for (int i = K; i < N; i++) {
+      int removeIdx = lowerBound(buffer, 0, K, array[i - K]);
+      buffer.remove(removeIdx);
+
+      int addIdx = upperBound(buffer, 0, K - 1, array[i]);
+      buffer.add(addIdx, array[i]);
+      result += buffer.get(getResultIdx);
+    }
+
+    System.out.println(result);
+  }
+  private static int lowerBound(List<Integer> buffer, int left, int right, int value) {
+    while (left < right) {
+      int mid = (left + right) / 2;
+
+      if (buffer.get(mid) < value) {
+        left = mid + 1;
+      } else {
+        right = mid;
+      }
+    }
+    return left;
+  }
+  private static int upperBound(List<Integer> buffer, int left, int right, int value) {
+    while (left < right) {
+      int mid = (left + right) / 2;
+
+      if (buffer.get(mid) <= value) {
+        left = mid + 1;
+      } else {
+        right = mid;
+      }
+    }
+    return left;
+  }
+}
+```
+
+**세그먼트 트리를 이용한 풀이**
+
+가장 빠른 풀이(420ms)
+
+```java
+import java.io.*;
+import java.util.StringTokenizer;
+
+public class Main {
+  private static final int MAX_SIZE = 65536 + 1;
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st = new StringTokenizer(br.readLine());
+
+    int N = Integer.parseInt(st.nextToken());
+    int K = Integer.parseInt(st.nextToken());
+
+    int[] array = new int[N];
+    for (int i = 0; i < N; i++) {
+      array[i] = Integer.parseInt(br.readLine());
+    }
+
+    int h = (int)Math.ceil(Math.log(MAX_SIZE) / Math.log(2));
+    int treeSize = 1 << (h + 1);
+
+    int[] segTree = new int[treeSize];
+
+    for (int i = 0; i < K; i++) {
+      updateTree(segTree, 1, 0, MAX_SIZE, array[i], true);
+    }
+
+    long result = 0L;
+    final int COUNT = (K + 1) / 2;
+    result += queryTree(segTree, 1, 0, MAX_SIZE, COUNT);
+    for (int i = K; i < N; i++) {
+      updateTree(segTree, 1, 0, MAX_SIZE, array[i - K], false);
+      updateTree(segTree, 1, 0, MAX_SIZE, array[i], true);
+
+      result += queryTree(segTree, 1, 0, MAX_SIZE, COUNT);
+    }
+
+    System.out.println(result);
+  }
+  private static void updateTree(int[] segTree, int node, int left, int right, int value, boolean isAdd) {
+    if (value < left || right < value) return;
+    else if (left == right) {
+      if (isAdd) segTree[node]++;
+      else segTree[node]--;
+      return;
+    }
+
+    int mid = (left + right) / 2;
+    updateTree(segTree, 2 * node, left, mid, value, isAdd);
+    updateTree(segTree, 2 * node + 1,mid + 1, right, value, isAdd);
+
+    segTree[node] = segTree[2 * node] + segTree[2 * node + 1];
+  }
+  private static int queryTree(int[] segTree, int node, int left, int right, int count) {
+    if (left == right) {
+      return left;
+    } else if (segTree[2 * node] < count) {
+      return queryTree(segTree, 2 * node + 1, (left + right) / 2 + 1, right, count - segTree[2 * node]);
+    }
+    return queryTree(segTree, 2 * node, left, (left + right) / 2, count);
+  }
+}
+```
