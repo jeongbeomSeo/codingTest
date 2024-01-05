@@ -58,3 +58,65 @@ N개의 숫자 카드 묶음의 각각의 크기가 주어질 때, 최소한 몇
 11, 7, 8중에서 작은 두 값은 7과 8이다. 7 + 8 = 15이다.
 
 최종적으로 11 + 15 = 26으로 마무리된다. 즉 최종 비교 횟수는 11 + 15 + 26 = 52이다. 
+
+우선순위 큐나 트리를 사용해도 될 것 같았지만 도수 정렬 과 삽입 정렬을 응용해서 구현해 보았다.
+
+## 나의 코드
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+public class Main {
+  static long[] b;
+  static int[] f;
+
+  static long cardSort(int[] nums) {
+    // Counting Sort
+    int n = nums.length;
+    long[] sum = new long[n - 1];
+    long min = 0;
+
+    if(n == 1) return 0;
+
+    f = new int[1001];
+    b = new long[n];
+
+
+    for(int i = 0; i < n; i++) f[nums[i]]++;
+    for(int i = 1; i < f.length; i++) f[i] += f[i - 1];
+    for(int i = n - 1; i >= 0; i--) b[--f[nums[i]]] = nums[i];
+    for(int i = 0; i < n - 1; i++) {
+      sum[i] = b[i] + b[i + 1];
+
+      int j = i + 1;
+      // 삽입 정렬
+      for(; j < n - 1 && b[j + 1] < sum[i]; j++) {
+        b[j] = b[j + 1];
+      }
+      b[j] = sum[i];
+    }
+
+    // 비교 횟수 전부 더하기
+    for(int i = 0; i < sum.length; i++)
+      min += sum[i];
+
+    return min;
+  }
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+    int N = Integer.parseInt(br.readLine());
+
+    int[] cards = new int[N];
+
+    for(int i = 0; i < cards.length; i++) {
+      cards[i] = Integer.parseInt(br.readLine());
+    }
+
+    System.out.println(cardSort(cards));
+
+  }
+}
+```
