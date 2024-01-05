@@ -1,74 +1,88 @@
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class Main {
-
-  static void shellSort(int[] nums) {
-    int n = nums.length;
-    int h;
-    for(h = 1; h < n / 9; h = h * 3 + 1)
-      ;
-
-    for( ; h >= 1; h /= 3) {
-      for(int i = h; i < n; i++) {
-        int temp = nums[i];
-        int j;
-        for(j = i - h; j >= 0 && nums[j] > temp; j -= h)
-          nums[j + h] = nums[j];
-        nums[j + h] = temp;
-      }
-    }
-
-  }
-
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
     int N = Integer.parseInt(br.readLine());
 
-    int[] nums = new int[N];
-
-    double sum = 0;
-    for(int i = 0 ; i < N; i++) {
-      nums[i] = Integer.parseInt(br.readLine());
-      sum += nums[i];
+    int[] array = new int[N];
+    for (int i = 0; i < N; i++) {
+      array[i] = Integer.parseInt(br.readLine());
     }
 
-    // 정렬 하기 (오름 차순)
-    shellSort(nums);
+    Arrays.sort(array);
 
+    int[] result = query(array, N);
 
-    // 도수분포표
-    // -4000 ~ 4000 까지라서 4000더해서 index 전부 0이상 만들기
-    int[] f = new int[8001];
-    for(int i = 0; i < nums.length; i++) f[nums[i] + 4000]++;
+    for (int i = 0; i < 4; i++) {
+      System.out.println(result[i]);
+    }
+  }
+  private static int[] query(int[] array, int N) {
 
-    int mode = 4000;
-    int second = 4000;
-    int count = 0;
-    for(int i = 0; i < f.length; i++) {
-      if(f[i] > count)  {
-        mode = i - 4000;
-        count = f[i];
-        second = 4000;
+    int sum = array[0];
+    int min = array[0];
+    int max = array[N - 1];
+    int rangeMinMax = max - min;
+    int centerValue = array[N / 2];
+
+    List<Number> numList = new ArrayList<>();
+    int value = array[0];
+    int count = 1;
+    for (int i = 1; i < N; i++) {
+      sum += array[i];
+
+      if (value == array[i]) {
+        count++;
+      } else {
+        numList.add(new Number(value, count));
+        value = array[i];
+        count = 1;
       }
-      else if(f[i] == count) {
-        if(mode > i - 4000) {
-          second = mode;
-          mode = i - 4000;
-        }
-        else if(i - 4000 < second) second = i - 4000;
+    }
+    numList.add(new Number(value, count));
+
+    Collections.sort(numList);
+
+    int valueWhenMaxCount = 0;
+    if (numList.isEmpty()) valueWhenMaxCount = array[0];
+    else valueWhenMaxCount = numList.get(0).value;
+    if (numList.size() > 1) {
+      if (numList.get(0).count == numList.get(1).count) {
+        valueWhenMaxCount = numList.get(1).value;
       }
     }
 
+    return new int[]{getMean(sum, N), centerValue, valueWhenMaxCount, rangeMinMax};
+  }
+  private static int getMean(int sum, int N) {
+    if (sum == 0) return 0;
+    else {
+      return (int)Math.round((double)sum / N);
+    }
+  }
+}
+class Number implements Comparable<Number>{
+  int value;
+  int count;
 
-    int avg = (int)Math.round((sum / N));           // 산술 평균
-    mode = (second != 4000) ? second : mode;        // 최빈 값
-    int median = nums[nums.length / 2];             // 중앙 값
-    int range = nums[nums.length -1] - nums[0];     // 범위
+  Number (int value, int count) {
+    this.value = value;
+    this.count = count;
+  }
 
-    System.out.println(avg);
-    System.out.println(median);
-    System.out.println(mode);
-    System.out.println(range);
+  @Override
+  public int compareTo(Number o) {
+    if (this.count != o.count) return o.count - this.count;
+    else {
+      return this.value - o.value;
+    }
   }
 }
