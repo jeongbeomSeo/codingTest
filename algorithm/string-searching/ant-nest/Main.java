@@ -1,76 +1,65 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Map;
-import java.util.Stack;
-import java.util.StringTokenizer;
-import java.util.TreeMap;
+import java.util.*;
 
-class Node {
-  Node root;
-  int layer;
-  boolean visitied;
-  String val;
-  Map<String, Node> childNode;
-
-  Node() {
-    if(root == null) root = this;
-    childNode = new TreeMap<>();
-    layer = 0;
-    visitied = false;
-    val = "";
-  }
-
-  void insert(String[] txts) {
-    Node curNode = this.root;
-    int layer = 0;
-    for(int i = 0; i < txts.length; i++) {
-      curNode = curNode.childNode.computeIfAbsent(txts[i], key -> new Node());
-      curNode.layer = ++layer;
-      curNode.val = txts[i];
-    }
-  }
-
-  void printDfs(Node curNode) {
-
-    curNode.visitied = true;
-
-    if(curNode != root) {
-      for(int i = 1 ; i < curNode.layer; i++)
-        System.out.print("--");
-      System.out.println(curNode.val);
-    }
-
-    curNode.childNode.forEach((key, node) -> {
-      if(!node.visitied) {
-        printDfs(node);
-      }
-    });
-  }
-
-}
 public class Main {
-
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
     int N = Integer.parseInt(br.readLine());
 
-    StringTokenizer st;
+    final Tree tree = new Tree();
+    for (int i = 0; i < N; i++) {
 
-    Node node = new Node();
+      String str = br.readLine();
 
-    for(int i = 0; i < N; i++) {
-      st = new StringTokenizer(br.readLine());
-      int n = Integer.parseInt(st.nextToken());
-      String[] txts = new String[n];
-      for(int j = 0; j < n; j++) {
-        txts[j] = st.nextToken();
-      }
-      node.insert(txts);
+      int count = Integer.parseInt(str.split(" ", 2)[0]);
+      String keyList = str.split(" ", 2)[1];
+
+      tree.update(keyList, count);
     }
 
-    node.printDfs(node.root);
+    tree.allPrint();
+  }
+}
+class Tree {
+  private final Node root = new Node();
 
+  public void update(String key, int count) {
+    Node curNode = root;
+
+    String[] strings = key.split(" ");
+    for (int i = 0; i < count; i++) {
+      String curStr = strings[i];
+
+      curNode = curNode.map.computeIfAbsent(curStr, k -> new Node());
+    }
+  }
+
+  public void allPrint() {
+    allPrint(root, 0);
+  }
+  private void allPrint(Node node, int layer) {
+
+    List<String> keyListCurLayer = new ArrayList<>(node.map.keySet());
+
+    for (int i = 0; i < keyListCurLayer.size(); i++) {
+      String key = keyListCurLayer.get(i);
+      for (int j = 0; j < layer; j++) {
+        System.out.print("--");
+      }
+
+      System.out.println(key);
+      allPrint(node.map.get(key), layer + 1);
+    }
+
+  }
+}
+class Node {
+  Map<String, Node> map;
+
+  Node () {
+    map = new TreeMap<>();
   }
 }
