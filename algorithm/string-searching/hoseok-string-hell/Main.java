@@ -1,109 +1,81 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-class Node {
-  static Node root;
-  static Node current;
-
-  Map<Character, Node> childNode = new HashMap<>();
-  boolean isTerminal;
-  int caseCount;
-
-  Node() {
-    if(root == null) root = this;
-    isTerminal = false;
-    caseCount = 0;
-  }
-
-  int insert(String txt) {
-    Node curNode = root;
-    for(int i = 0; i < txt.length(); i++) {
-      curNode = curNode.childNode.computeIfAbsent(txt.charAt(i), key -> new Node());
-    }
-    if(curNode.isTerminal) return curNode.caseCount;
-    else {
-      current = curNode;
-      curNode.isTerminal = true;
-      return 0;
-    }
-  }
-}
-
 public class Main {
-  static int N;
-  static int M;
+  private static final int[] DR = {-1, -1, 0, 1, 1, 1, 0, -1};
+  private static final int[] DC = {0, 1, 1, 1, 0, -1, -1, -1};
+  private static int count = 0;
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
+    StringTokenizer st = new StringTokenizer(br.readLine());
 
-  static int count;
-  static char[][] grid;
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
+    int K = Integer.parseInt(st.nextToken());
 
-  /*
-  static int modifyIdx(int idx, int length) {
-    if(idx == length) return 0;
-    else if(idx < 0) return length - 1;
-    else return idx;
+    char[][] grid = new char[N + 1][M + 1];
+    Map<String, Integer> history = new HashMap<>();
+
+    for (int i = 1; i <= N; i++) {
+      String str = br.readLine();
+
+      for (int j = 1; j <= M; j++) {
+        grid[i][j] = str.charAt(j - 1);
+      }
+    }
+
+    for (int k = 0; k < K; k++) {
+      count = 0;
+      String curStr = br.readLine();
+
+      if (history.containsKey(curStr)) {
+        if (k != K - 1) bw.write(history.get(curStr) + "\n");
+        else bw.write(String.valueOf(history.get(curStr)));
+        continue;
+      }
+      char startChar = curStr.charAt(0);
+      for (int i = 1; i <= N; i++) {
+        for (int j = 1; j <= M; j++) {
+          if (grid[i][j] == startChar) {
+            dfs(grid, 1, curStr.length(), i, j, curStr, N, M);
+          }
+        }
+      }
+
+      history.put(curStr, count);
+      if (k != K - 1) bw.write(count + "\n");
+      else bw.write(String.valueOf(count));
+    }
+
+    bw.flush();
+    bw.close();
   }
-  */
-
-  static void check(String txt, int idx, int y, int x, int length) {
-    if(idx == length) {
+  private static void dfs(char[][] grid, int ptr, int size, int row, int col, String target, int N, int M) {
+    if (ptr == size) {
       count++;
       return;
     }
 
-    int[] ax = {(x - 1 < 0 ? M - 1 : x - 1), x, (x + 1 == M ? 0 : x + 1)};
-    int[] ay = {(y - 1 < 0 ? N - 1 : y - 1) , y, (y + 1 == N ? 0 : y + 1)};
+    for (int i = 0; i < 8; i++) {
+      int nxtRow = row + DR[i];
+      int nxtCol = col + DC[i];
 
-    for(int i = 0; i < 3; i++) {
-      for(int j = 0; j < 3; j++) {
-        if(i != 1 || j != 1)
-          if(grid[ay[i]][ax[j]] == txt.charAt(idx)) check(txt, idx + 1, ay[i], ax[j], length);
+      int[] point = checkPoint(nxtRow, nxtCol, N, M);
+      if (grid[point[0]][point[1]] == target.charAt(ptr)) {
+        dfs(grid, ptr + 1, size, point[0], point[1], target, N, M);
       }
     }
   }
+  private static int[] checkPoint(int nxtRow, int nxtCol, int N, int M) {
+    if (nxtRow == 0) nxtRow = N;
+    else if (nxtRow == N + 1) nxtRow = 1;
 
-  public static void main(String[] args) throws IOException {
-    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-    StringTokenizer st = new StringTokenizer(br.readLine());
+    if (nxtCol == 0) nxtCol = M;
+    else if (nxtCol == M + 1) nxtCol = 1;
 
-    // 격자 크기 N, M, K
-    N = Integer.parseInt(st.nextToken());
-    M = Integer.parseInt(st.nextToken());
-    int K = Integer.parseInt(st.nextToken());
-
-    grid = new char[N][M];
-
-    for(int i = 0; i < N; i++) {
-      String rowStr = br.readLine();
-      for(int j = 0; j < M; j++) {
-        grid[i][j] = rowStr.charAt(j);
-      }
-    }
-
-    Node node = new Node();
-
-    for(int god = 0; god < K; god++) {
-      String txt = br.readLine();
-      count = node.insert(txt);
-      if(count != 0) {
-        System.out.println(count);
-        continue;
-      }
-      int txtLen = txt.length();
-      char startChar = txt.charAt(0);
-      for(int i = 0; i < N; i++) {
-        for(int j = 0; j < M; j++) {
-          if(grid[i][j] == startChar) {
-            if(txtLen == 1) count++;
-            else check(txt, 0 + 1, i, j, txtLen);
-          }
-        }
-      }
-      node.current.caseCount = count;
-      System.out.println(count);
-    }
+    return new int[]{nxtRow, nxtCol};
   }
 }
