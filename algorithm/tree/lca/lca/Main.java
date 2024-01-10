@@ -10,69 +10,98 @@ public class Main {
 
     int N = Integer.parseInt(br.readLine());
 
-    int[] parentList = new int[N + 1];
-    int[] level = new int[N + 1];
-
-    ArrayList<ArrayList<Integer>> graph = new ArrayList<>();
-    for (int i = 0; i < N + 1; i++) {
-      graph.add(new ArrayList<>());
-    }
+    ArrayList<Integer>[] graph = initGraph(N);
 
     for (int i = 0; i < N - 1; i++) {
       st = new StringTokenizer(br.readLine());
-      int parNode = Integer.parseInt(st.nextToken());
-      int childNode = Integer.parseInt(st.nextToken());
 
-      graph.get(parNode).add(childNode);
-      graph.get(childNode).add(parNode);
+      int node1 = Integer.parseInt(st.nextToken());
+      int node2 = Integer.parseInt(st.nextToken());
+
+      graph[node1].add(node2);
+      graph[node2].add(node1);
     }
 
+    int size = (int)Math.ceil(Math.log(N + 1) / Math.log(2));
+    int[][] parent = new int[N + 1][size];
+    int[] level = new int[N + 1];
     boolean[] isVisited = new boolean[N + 1];
-
-    DFS(graph, level, parentList, isVisited, 1, 1);
+    isVisited[1] = true;
+    paintParentTableByDfs(graph, parent, level, isVisited, 1, 0);
+    updateParentTable(parent, N, size);
 
     int M = Integer.parseInt(br.readLine());
-
     for (int i = 0; i < M; i++) {
       st = new StringTokenizer(br.readLine());
-      int n1 = Integer.parseInt(st.nextToken());
-      int n2 = Integer.parseInt(st.nextToken());
 
-      if (n1 == n2) {
-        bw.write(n1 + "\n");
-        continue;
+      int node1 = Integer.parseInt(st.nextToken());
+      int node2 = Integer.parseInt(st.nextToken());
+
+      if (i != M - 1) {
+        bw.write(getParentNode(parent, level, node1, node2, size) + "\n");
+      } else {
+        bw.write(String.valueOf(getParentNode(parent, level, node1, node2, size)));
       }
-      bw.write(LCA(parentList, level, n1, n2) + "\n");
     }
+
     bw.flush();
     bw.close();
   }
-  static void DFS(ArrayList<ArrayList<Integer>> graph, int[] level, int[] parentList, boolean[] isVisited, int curLevel, int node) {
-    isVisited[node] = true;
-    level[node] = curLevel;
+  private static void updateParentTable(int[][] parent, int N, int size) {
 
-    for (int childNode : graph.get(node)) {
-      if (!isVisited[childNode]) {
-        DFS(graph, level, parentList, isVisited, curLevel + 1, childNode);
-        parentList[childNode] = node;
+    for (int i = 1; i < size; i++) {
+      for (int node = 1; node < N + 1; node++) {
+        parent[node][i] = parent[parent[node][i - 1]][i - 1];
       }
     }
   }
+  private static int getParentNode(int[][] parent, int[] level, int node1, int node2, int size) {
 
-  static int LCA(int[] parentList, int[] level, int n1, int n2) {
+    if (level[node1] > level[node2]) {
+      int temp = node2;
+      node2 = node1;
+      node1 = temp;
+    }
 
-    if (level[n1] > level[n2]) {
-      int temp = n1;
-      n1 = n2;
-      n2 = temp;
+    for (int i = size - 1; i >= 0; i--) {
+      if (level[node2] - level[node1] >= (1 << i)) {
+        node2 = parent[node2][i];
+      }
     }
-    while (level[n1] != level[n2]) {
-      n2 = parentList[n2];
+
+    if (node1 == node2) return node1;
+
+    for (int i = size - 1; i >= 0; i--) {
+      if (parent[node1][i] != parent[node2][i]) {
+        node1 = parent[node1][i];
+        node2 = parent[node2][i];
+      }
     }
-    while (n1 > 1 && n1 != n2) {
-      n1 = parentList[n1];
-      n2 = parentList[n2];
+
+    return parent[node1][0];
+  }
+  private static void paintParentTableByDfs(ArrayList<Integer>[] graph, int[][] parent, int[] level, boolean[] isVisited, int curNode, int curLevel) {
+
+    level[curNode] = curLevel;
+
+    for (int i = 0; i < graph[curNode].size(); i++) {
+      int childNode = graph[curNode].get(i);
+
+      if (!isVisited[childNode]) {
+        isVisited[childNode] = true;
+        parent[childNode][0] = curNode;
+        paintParentTableByDfs(graph, parent, level, isVisited, childNode, curLevel + 1);
+      }
     }
-    return n1;
+
+  }
+  private static ArrayList<Integer>[] initGraph(int N) {
+    ArrayList<Integer>[] graph = new ArrayList[N + 1];
+
+    for (int i = 0; i < N + 1; i++) {
+      graph[i] = new ArrayList<>();
+    }
+
+    return graph;
   }
 }
