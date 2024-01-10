@@ -207,7 +207,7 @@ public class Main {
 }
 ```
 
-**AC**
+**최종 코드(AC)**
 
 ```java
 import java.io.BufferedReader;
