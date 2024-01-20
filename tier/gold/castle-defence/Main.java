@@ -61,7 +61,7 @@ public class Main {
 
     int killCount = 0;
     while (isAliveEnemy(grid, N, M)) {
-      for (int i = 0; i < 3; i++) {
+      for (int i = 2; i >= 0; i--) {
         int arrowPos = buffer[i];
 
         Status resultStatus = getKilledEnemyPos(grid, N, arrowPos, M, D);
@@ -133,14 +133,9 @@ public class Main {
 class ComparatorStatus implements Comparator<Status> {
   @Override
   public int compare(Status o1, Status o2) {
-    if (o1.col != o2.col) return o1.col - o2.col;
-    else {
-      if (o1.row != o2.row) return o2.row - o1.row;
-
-      return o2.count - o1.count;
-    }
+    if (o1.row != o2.row) return o2.row - o1.row;
+    else return o1.col - o2.col;
   }
-
 }
 class Status{
   int row;
