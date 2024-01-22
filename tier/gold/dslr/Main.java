@@ -11,115 +11,127 @@ public class Main {
 
         int T = Integer.parseInt(br.readLine());
 
-        for (int tc = 0; tc < T; tc++) {
+        while (T-- != 0) {
             st = new StringTokenizer(br.readLine());
-            int a = Integer.parseInt(st.nextToken());
-            int b = Integer.parseInt(st.nextToken());
 
-            String result = queryResult(a, b);
-            bw.write(result + "\n");
+            char[] array = convertToCharArray(Integer.parseInt(st.nextToken()));
+            char[] target = convertToCharArray(Integer.parseInt(st.nextToken()));
+
+            String resultCommand = bfs(target, array);
+
+            bw.write(resultCommand + "\n");
         }
+
         bw.flush();
         bw.close();
     }
-    private static String queryResult(int a, int b) {
-        Queue<Node> q = new ArrayDeque<>();
-
+    private static String bfs(char[] target, char[] initArray) {
+        Queue<Registry> buffer = new ArrayDeque<>();
+        // 핵심적인 요소임 -> 없으면 메모리 초과나옴
         boolean[] isVisited = new boolean[10000];
-
-        q.add(new Node(a, ""));
-        isVisited[a] = true;
-
-        String result = "";
-        while (!q.isEmpty()) {
-            Node curNode = q.poll();
-
-            if (curNode.value == b) {
-                result = curNode.command;
-                break;
-            }
+        buffer.add(new Registry(initArray));
+        isVisited[Integer.parseInt(String.valueOf(initArray))] = true;
+        while (!buffer.isEmpty()) {
+            Registry curRegistry = buffer.poll();
 
             for (int i = 0; i < 4; i++) {
-                int nextValue = getNextValue(curNode.value, i);
-
-                if (!isVisited[nextValue]) {
-                    q.add(new Node(nextValue, getNextCommand(curNode.command, i)));
-                    isVisited[nextValue] = true;
-                }
+                Registry nxtRegistry = modulate(curRegistry, i);
+                if (compareCharArray(nxtRegistry.value, target)) return nxtRegistry.command;
+                if (isVisited[Integer.parseInt(String.valueOf(nxtRegistry.value))]) continue;
+                buffer.add(nxtRegistry);
+                isVisited[Integer.parseInt(String.valueOf(nxtRegistry.value))] = true;
             }
         }
 
-        return result;
+        return null;
     }
-    private static String getNextCommand(String command, int i) {
-        if (i == 0) return command + "D";
-        else if (i == 1) return command + "S";
-        else if (i == 2) return command + "L";
-        else return command + "R";
+    private static Registry modulate(Registry registry, int i) {
+        if (i == 0) return new Registry(registry.command + "D", modulate_D(registry.value));
+        else if (i == 1) return new Registry(registry.command + "S", modulate_S(registry.value));
+        else if (i== 2) return new Registry(registry.command + "L", modulate_L(registry.value));
+        else return new Registry(registry.command + "R", modulate_R(registry.value));
     }
-    private static int getNextValue(int num, int i) {
-        if (i == 0) return calcCase_D(num);
-        else if (i == 1) return calcCase_S(num);
-        else if (i == 2) return calcCase_L(num);
-        else return calcCase_R(num);
-    }
+    private static boolean compareCharArray(char[] arrayA, char[] arrayB) {
 
-    private static int calcCase_D(int num) {
-        return (2 * num) % 10000;
-    }
-
-    private static int calcCase_S(int num) {
-        return num != 0 ? num - 1 : 9999;
-    }
-
-    private static int calcCase_L(int num) {
-        StringBuilder sb = new StringBuilder();
-
-        String strNum = fotmatStr(String.valueOf(num));
-
-        int size = strNum.length();
-        for (int i = 1; i < size; i++) {
-            sb.append(strNum.charAt(i));
+        for (int i = 0; i < 4; i++) {
+            if (arrayA[i] != arrayB[i]) return false;
         }
 
-        sb.append(strNum.charAt(0));
-
-        return Integer.parseInt(sb.toString());
+        return true;
     }
+    private static char[] convertToCharArray(int num) {
+        char[] array = new char[4];
 
-    private static int calcCase_R(int num) {
-        StringBuilder sb = new StringBuilder();
+        for (int i = 3; i >= 0; i--) {
+            // Check: (char)3 is '3'?
+            array[i] = (char)(num % 10 + '0');
 
-        String strNum = fotmatStr(String.valueOf(num));
-
-        int size = strNum.length();
-        sb.append(strNum.charAt(size - 1));
-
-        for (int i = 0; i < size - 1; i++) {
-            sb.append(strNum.charAt(i));
+            num /= 10;
         }
 
-        return Integer.parseInt(sb.toString());
+        return array;
     }
-    private static String fotmatStr(String strNum) {
-        int size = strNum.length();
+    private static char[] modulate_D(char[] array) {
+        int num = Integer.parseInt(String.valueOf(array));
 
-        if (size < 4) {
-            StringBuilder strNumBuilder = new StringBuilder(strNum);
-            while (strNumBuilder.length() != 4) {
-                strNumBuilder.insert(0, "0");
+        num = (num * 2) % 10000;
+
+        return convertToCharArray(num);
+    }
+    private static char[] modulate_S(char[] array) {
+
+        if (String.valueOf(array).equals("0000")) return new char[]{'9', '9', '9', '9'};
+
+        char[] nextArray = new char[4];
+        int i;
+        for (i = 3; i >= 0; i--) {
+            if (array[i] == '0') {
+                nextArray[i] = '9';
+            } else {
+                nextArray[i] = (char)(array[i] - 1);
+                i--;
+                break;
             }
-            strNum = strNumBuilder.toString();
         }
-        return strNum;
+        while (i >= 0) {
+            nextArray[i] = array[i];
+            i--;
+        }
+
+        return nextArray;
+    }
+    private static char[] modulate_R(char[] array) {
+
+        char[] nextArray = new char[4];
+        nextArray[0] = array[3];
+
+        for (int i = 3; i >= 1; i--) {
+            nextArray[i] = array[i - 1];
+        }
+
+        return nextArray;
+    }
+    private static char[] modulate_L(char[] array) {
+
+        char[] nextArray = new char[4];
+        nextArray[3] = array[0];
+        for (int i = 1; i < 4; i++) {
+            nextArray[i - 1] = array[i];
+        }
+
+        return nextArray;
     }
 }
-class Node {
-    int value;
+class Registry {
     String command;
+    char[] value;
 
-    Node (int value, String command) {
+    Registry(char[] value) {
+        command = "";
         this.value = value;
+    }
+    Registry(String command, char[] value) {
         this.command = command;
+        this.value = value;
     }
 }
