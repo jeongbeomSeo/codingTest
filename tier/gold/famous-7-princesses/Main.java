@@ -2,106 +2,88 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Queue;
-import java.util.StringTokenizer;
 
 public class Main {
-  static int[] ax = {-1, 0, 1, 0};
-  static int[] ay = {0, -1, 0, 1};
-  static int ans = 0;
+  private static final int[] DR = {-1, 0, 1, 0};
+  private static final int[] DC = {0, 1, 0, -1};
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-    StringTokenizer st;
 
     char[][] grid = new char[5][5];
     for (int i = 0; i < 5; i++) {
       String str = br.readLine();
+
       for (int j = 0; j < 5; j++) {
         grid[i][j] = str.charAt(j);
       }
     }
 
-    int[] arr = new int[7];
-    combination(grid, 0, arr, 0);
-
-    System.out.println(ans);
-
-
+    System.out.println(simulation(grid));
   }
-  static int[][] convertNumToIdx(int[] arr) {
-    int[][] member = new int[arr.length][2];
-    for (int i = 0; i < arr.length; i++) {
-      member[i][0] = arr[i] / 5;
-      member[i][1] = arr[i] % 5;
-    }
-    return member;
-  }
-  static void combination(char[][] grid, int ptr, int[] arr, int size) {
+  private static int simulation(char[][] grid) {
 
-    if (size == 7) {
-      int[][] member = convertNumToIdx(arr);
-      if (checkSom(member, grid)) {
-        if (bfs(member)) ans++;
+    int result = 0;
+    for (int i = ((1 << 7) - 1); i < (1 << 25); i++) {
+
+      if (Integer.bitCount(i) == 7) {
+        List<Point> pointList = new ArrayList<>();
+        int somCount = 0;
+        for (int j = 0; j < 25; j++) {
+          if ((i & (1 << j)) != 0) {
+            Point point = getPoint(j);
+            if (grid[point.row][point.col] == 'S') somCount++;
+            pointList.add(point);
+          }
+        }
+
+        if (somCount >= 4) {
+          result += (bfs(pointList) ? 1 : 0);
+        }
       }
     }
-
-    else {
-      if (ptr <= 24) {
-        arr[size] = ptr;
-        combination(grid,ptr + 1, arr, size + 1);
-        arr[size] = 0;
-
-        combination(grid, ptr + 1, arr, size);
-      }
-    }
+    return result;
   }
+  private static boolean bfs(List<Point> pointList) {
 
-  static boolean checkSom(int[][] member, char[][] grid) {
-    int som = 0;
-
-    for (int i = 0; i < 7; i++) {
-      if (grid[member[i][0]][member[i][1]] == 'S') som++;
-    }
-
-    if (som >= 4) return true;
-    return false;
-  }
-
-  static boolean bfs(int[][] member) {
+    int count = 1;
+    Point initPoint = pointList.get(0);
     boolean[] isVisited = new boolean[7];
-
-    Queue<Integer> q = new ArrayDeque<>();
-    q.add(0);
+    Queue<Point> q = new ArrayDeque<>();
+    q.add(initPoint);
     isVisited[0] = true;
 
     while (!q.isEmpty()) {
-      int idx = q.poll();
-      int x = member[idx][1];
-      int y = member[idx][0];
+      Point curPoint = q.poll();
 
       for (int i = 0; i < 4; i++) {
-        int nextX = x + ax[i];
-        int nextY = y + ay[i];
+        int nxtRow = curPoint.row + DR[i];
+        int nxtCol = curPoint.col + DC[i];
 
-        if (checkIdx(nextX, nextY)) {
-          for (int j = 0; j < 7; j++) {
-            if (!isVisited[j] && member[j][0] == nextY && member[j][1] == nextX) {
-              isVisited[j] = true;
-              q.add(j);
-            }
+        for (int j = 0; j < 7; j++) {
+          if (!isVisited[j] && (pointList.get(j).row == nxtRow && pointList.get(j).col == nxtCol)) {
+            q.add(pointList.get(j));
+            isVisited[j] = true;
+            count++;
           }
         }
       }
     }
 
-    for (int i = 0; i < 7; i++) {
-      if (isVisited[i] == false) return false;
-    }
-    return true;
-
+    return count == 7;
   }
-  static boolean checkIdx(int x, int y) {
-    if (x < 0 || y < 0 || x > 4 || y > 4) return false;
-    return true;
+  private static Point getPoint(int index) {
+    return new Point(index / 5, index % 5);
+  }
+}
+class Point {
+  int row;
+  int col;
+
+  Point (int row, int col) {
+    this.row = row;
+    this.col = col;
   }
 }
