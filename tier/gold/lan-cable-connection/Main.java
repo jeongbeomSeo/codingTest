@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class Main {
-  private static final int INF = Integer.MAX_VALUE;
+  private static final long INF = Long.MAX_VALUE;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st;
@@ -35,7 +35,11 @@ public class Main {
   private static long[][] queryDP(int[][] switchArray, int computerCount, int N) {
     long[][] dpTable = initDpTable(N, computerCount);
 
-    for (int i = 1; i <= N; i++) {
+    for (int j = 1; j <= switchArray[1][0] && j <= computerCount; j++) {
+      dpTable[1][j] = switchArray[1][1];
+    }
+
+    for (int i = 2; i <= N; i++) {
       int port = switchArray[i][0];
       int cost = switchArray[i][1];
 
@@ -44,7 +48,7 @@ public class Main {
         dpTable[i][j] = Math.min(dpTable[i - 1][j], cost);
       }
       for (; j <= computerCount; j++) {
-        if (dpTable[i - 1][j - port] != INF) {
+        if (dpTable[i - 1][j - port + 1] != INF) {
           dpTable[i][j] = Math.min(dpTable[i - 1][j - port] + cost, dpTable[i - 1][j]);
         }
         else break;
@@ -60,6 +64,8 @@ public class Main {
       Arrays.fill(dpTable[i], INF);
       dpTable[i][0] = 0;
     }
+
+    dpTable[0][1] = 0;
 
     return dpTable;
   }

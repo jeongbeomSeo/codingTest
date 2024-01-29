@@ -63,3 +63,78 @@ N+2번째 줄에는 연결할 컴퓨터의 개수 M(1 ≤ M ≤ 10<sup>5</sup>)�
 ```
 -1
 ```
+
+## 코드
+
+**잘못된 풀이**
+
+아래 코드는 스위치가 추가되었을 때 스위치끼리 연결해야 되는 경우를 제외하고 풀었음.
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.StringTokenizer;
+
+public class Main {
+  private static final int INF = Integer.MAX_VALUE;
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+
+    // SwitchArray Info
+    // element: Number of Available ports, cost
+    int[][] switchArary = new int[N + 1][2];
+    for (int i = 1; i <= N; i++) {
+      st = new StringTokenizer(br.readLine());
+      switchArary[i][0] = Integer.parseInt(st.nextToken()) - 1;
+      switchArary[i][1] = Integer.parseInt(st.nextToken());
+    }
+
+    int computerCount = Integer.parseInt(br.readLine());
+
+    // 직접 연결
+    if (computerCount == 1) System.out.println(0);
+    else {
+      long[][] resultDpTable = queryDP(switchArary, computerCount, N);
+
+      if (resultDpTable[N][computerCount] == INF) System.out.println(-1);
+      else System.out.println(resultDpTable[N][computerCount]);
+    }
+  }
+  private static long[][] queryDP(int[][] switchArray, int computerCount, int N) {
+    long[][] dpTable = initDpTable(N, computerCount);
+
+    for (int i = 1; i <= N; i++) {
+      int port = switchArray[i][0];
+      int cost = switchArray[i][1];
+
+      int j;
+      for (j = 1; j <= port && j <= computerCount; j++) {
+        dpTable[i][j] = Math.min(dpTable[i - 1][j], cost);
+      }
+      for (; j <= computerCount; j++) {
+        if (dpTable[i - 1][j - port] != INF) {
+          dpTable[i][j] = Math.min(dpTable[i - 1][j - port] + cost, dpTable[i - 1][j]);
+        }
+        else break;
+      }
+    }
+
+    return dpTable;
+  }
+  private static long[][] initDpTable(int N, int computerCount) {
+    long[][] dpTable = new long[N + 1][computerCount + 1];
+
+    for (int i = 0; i < N + 1; i++) {
+      Arrays.fill(dpTable[i], INF);
+      dpTable[i][0] = 0;
+    }
+
+    return dpTable;
+  }
+}
+```
