@@ -9,63 +9,70 @@ public class Main {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
 
-    int V = Integer.parseInt(st.nextToken());
-    int E = Integer.parseInt(st.nextToken());
+    final int V = Integer.parseInt(st.nextToken());
+    final int E = Integer.parseInt(st.nextToken());
 
-    Edge[] edges = new Edge[E];
-    for (int i = 0 ; i < E; i++) {
-        st = new StringTokenizer(br.readLine());
-        int n1 = Integer.parseInt(st.nextToken());
-        int n2 = Integer.parseInt(st.nextToken());
-        int cost = Integer.parseInt(st.nextToken());
-
-        edges[i] = new Edge(n1, n2, cost);
-    }
-
-    Arrays.sort(edges);
-    int[] parent = new int[V + 1];
-    for (int i = 1; i <= V; i++) {
-      parent[i] = i;
-    }
-
-    int sum_cost = 0;
-    int connecting_count = 0;
+    Edge[] edgeArray = new Edge[E];
     for (int i = 0; i < E; i++) {
-      Edge edge = edges[i];
+      st = new StringTokenizer(br.readLine());
 
-      if (connecting_count == V - 1) break;
-      if (union_find(parent, edge.n1) == union_find(parent, edge.n2)) continue;
-      union_merge(parent, edge.n1, edge.n2);
-      sum_cost += edge.cost;
-      connecting_count++;
+      int node1 = Integer.parseInt(st.nextToken());
+      int node2 = Integer.parseInt(st.nextToken());
+      int cost = Integer.parseInt(st.nextToken());
+
+      edgeArray[i] = new Edge(node1, node2, cost);
     }
 
-    System.out.println(sum_cost);
+    Arrays.sort(edgeArray);
 
-  }
-  static int union_find(int[] parent, int x) {
-    if (parent[x] == x) return x;
+    int[] parentTable = initParentTable(V);
 
-    return parent[x] = union_find(parent, parent[x]);
-  }
-  static void union_merge(int[] parent, int n1, int n2) {
-    n1 = union_find(parent, n1);
-    n2 = union_find(parent, n2);
-
-    if (n1 != n2) {
-      parent[n1] = n2;
+    int connectionCount = 1;
+    int minCost = 0;
+    for (int i = 0; i < E; i++) {
+      if (getRootParent(parentTable, parentTable[edgeArray[i].node1]) != getRootParent(parentTable, parentTable[edgeArray[i].node2])) {
+        union(parentTable, edgeArray[i].node1, parentTable[edgeArray[i].node2]);
+        minCost += edgeArray[i].cost;
+        if (++connectionCount == E) break;
+      }
     }
+
+    System.out.println(minCost);
+  }
+  private static int getRootParent(int[] parent, int node) {
+    if (parent[node] == node) return node;
+
+    return getRootParent(parent, parent[node]);
+  }
+  private static void union(int[] parent, int node1, int node2) {
+    int node1RootParent = getRootParent(parent, node1);
+    int node2RootParent = getRootParent(parent, node2);
+
+    if (node1RootParent != node2RootParent) {
+      if (node1RootParent > node2RootParent) {
+        parent[node1RootParent] = node2RootParent;
+      }
+      else parent[node2RootParent] = node1RootParent;
+    }
+  }
+  private static int[] initParentTable(int V) {
+    int[] parentTable = new int[V + 1];
+
+    for (int i = 1; i <= V; i++) {
+      parentTable[i] = i;
+    }
+
+    return parentTable;
   }
 }
-
 class Edge implements Comparable<Edge>{
-  int n1;
-  int n2;
+  int node1;
+  int node2;
   int cost;
 
-  Edge(int n1, int n2, int cost) {
-    this.n1 = n1;
-    this.n2 = n2;
+  Edge (int node1, int node2, int cost) {
+    this.node1 = node1;
+    this.node2 = node2;
     this.cost = cost;
   }
 
