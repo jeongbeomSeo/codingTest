@@ -80,3 +80,131 @@
 3
 4
 ```
+
+## 코드
+
+**AC**
+
+```java
+import java.io.*;
+import java.util.StringTokenizer;
+
+public class Main {
+    static int N, M;
+    public static void main(String[] args) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
+        StringTokenizer st;
+
+        N = Integer.parseInt(br.readLine());
+        M = Integer.parseInt(br.readLine());
+
+        int[][] graph = new int[N + 1][N + 1];
+        for (int i = 0; i < M; i++) {
+            st = new StringTokenizer(br.readLine());
+            int n1 = Integer.parseInt(st.nextToken());
+            int n2 = Integer.parseInt(st.nextToken());
+
+            graph[n1][n2] = 1;
+            graph[n2][n1] = -1;
+        }
+
+        int[] result = queryResult(graph);
+
+        for (int i = 1; i <= N; i++) {
+            bw.write(N - 1 - result[i] + "\n");
+        }
+
+        bw.flush();
+        bw.close();
+    }
+    private static int[] queryResult(int[][] graph) {
+
+        for (int k = 1; k <= N; k++) {
+            for (int i = 1; i <= N; i++) {
+                for (int j = 1; j <= N; j++) {
+                    if (graph[i][j] == 0) {
+                        if (graph[i][k] > 0 && graph[k][j] > 0) {
+                            graph[i][j] = 1;
+                        } else if (graph[i][k] < 0 && graph[k][j] < 0) {
+                            graph[i][j] = -1;
+                        }
+                    }
+                }
+            }
+        }
+
+        int[] result = new int[N + 1];
+        for (int i = 1; i <= N; i++) {
+            for (int j = 1; j <= N; j++) {
+                if (i != j && graph[i][j] != 0) {
+                    result[i]++;
+                }
+            }
+        }
+
+        return result;
+    }
+}
+```
+
+아래의 방식은 i -> k 가는 경로와 j -> k 가는 경로의 값이 같은 경우에 안의 조건문을 실행하는 코드로 구성
+
+하지만, 192ms -> 272ms로 늘어남.
+
+```java
+import java.io.*;
+import java.util.StringTokenizer;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
+        StringTokenizer st;
+
+        int N = Integer.parseInt(br.readLine());
+        int M = Integer.parseInt(br.readLine());
+
+        int[][] distTable = new int[N + 1][N + 1];
+        for (int i = 0; i < M; i++) {
+            st = new StringTokenizer(br.readLine());
+
+            int idx1 = Integer.parseInt(st.nextToken());
+            int idx2 = Integer.parseInt(st.nextToken());
+
+            distTable[idx1][idx2] = 1;
+            distTable[idx2][idx1] = -1;
+        }
+
+        floydWarshall(distTable, N);
+
+        for (int i = 1; i <= N; i++) {
+            int count = N - 1;
+            for (int j = 1; j <= N; j++) {
+                if (distTable[i][j] == 1 || distTable[i][j] == -1) {
+                    count--;
+                }
+            }
+            bw.write(count + "\n");
+        }
+        bw.flush();
+        bw.close();
+    }
+    private static void floydWarshall(int[][] distTable, int N) {
+
+        for (int k = 1; k <= N; k++) {
+            for (int i = 1; i <= N; i++) {
+                for (int j = 1; j <= N; j++) {
+                    if (distTable[i][k] == distTable[k][j]) {
+                        if (distTable[i][k] == 1) {
+                            distTable[i][j] = 1;
+                        } else if (distTable[i][k] == -1) {
+                            distTable[i][j] = -1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+```
