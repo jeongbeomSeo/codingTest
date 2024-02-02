@@ -15,27 +15,36 @@ public class Main {
     int S = Integer.parseInt(st.nextToken());
 
     int[] nums = new int[N];
-
     st = new StringTokenizer(br.readLine());
     for (int i = 0; i < N; i++) {
       nums[i] = Integer.parseInt(st.nextToken());
     }
 
-    List<Integer> sumList = new ArrayList<>();
+    List<Integer> sumListA = new ArrayList<>();
+    List<Integer> sumListB = new ArrayList<>();
 
-    querySumList(sumList, nums, N);
+    getSumCombination(sumListA, nums, 0, N / 2, 0);
+    getSumCombination(sumListB, nums, N / 2, N, 0);
 
-    Collections.sort(sumList);
+    Collections.sort(sumListB);
 
-    int size = sumList.size();
-    int upperIdx = upper_bound(sumList, 0, size, S);
-    int lowerIdx = lower_bound(sumList, 0, size, S);
+    int sizeA = sumListA.size();
+    int sizeB = sumListB.size();
 
-    int result = upperIdx - lowerIdx;
+    long result = 0;
+    for (int i = 0; i < sizeA; i++) {
+      int sumA = sumListA.get(i);
 
+      int upperBoundIdx = getUpperBound(sumListB, 0, sizeB, S - sumA);
+      int lowerBoundIdx = getLowerBound(sumListB, 0, sizeB, S - sumA);
+
+      result += (upperBoundIdx - lowerBoundIdx);
+    }
+
+    if (S == 0) result--;
     System.out.println(result);
   }
-  private static int upper_bound(List<Integer> sumList, int left, int right, int target) {
+  private static int getUpperBound(List<Integer> sumList, int left, int right, int target) {
     while (left < right) {
       int mid = (left + right) / 2;
 
@@ -47,7 +56,7 @@ public class Main {
     }
     return left;
   }
-  private static int lower_bound(List<Integer> sumList, int left, int right, int target) {
+  private static int getLowerBound(List<Integer> sumList, int left, int right, int target) {
     while (left < right) {
       int mid = (left + right) / 2;
 
@@ -59,15 +68,14 @@ public class Main {
     }
     return left;
   }
-  private static void querySumList(List<Integer> sumList, int[] nums, int size) {
+  private static void getSumCombination(List<Integer> sumList, int[] nums, int ptr, int end, int sum) {
 
-    for (int i = 0; i < size; i++) {
-      int sum = nums[i];
+    if (ptr == end) {
       sumList.add(sum);
-      for (int j = i + 1; j < size; j++) {
-        sum += nums[j];
-        sumList.add(sum);
-      }
+    } else {
+      getSumCombination(sumList, nums, ptr + 1, end, sum + nums[ptr]);
+
+      getSumCombination(sumList, nums, ptr + 1, end, sum);
     }
   }
 }
