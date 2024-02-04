@@ -107,11 +107,17 @@ public class Main {
 **반례**
 
 A: dababcf
+
 B: ababdef
+
 C: df
 
+---
+
 LCS(A,B): ababf
+
 LCS(LCS(A,B),C):  f
+
 LCS(A,B,C): df
 
 LCS가 주는 해의 경우 유일한 해가 아닐 가능성도 있다.
