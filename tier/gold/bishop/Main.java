@@ -4,8 +4,8 @@ import java.io.InputStreamReader;
 import java.util.StringTokenizer;
 
 public class Main {
-    private static int oddCount = 0;
-    private static int evenCount = 0;
+    private static int RESULT_EVEN = Integer.MIN_VALUE;
+    private static int RESULT_ODD = Integer.MIN_VALUE;
     public static void main(String[] args) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         StringTokenizer st;
@@ -20,62 +20,55 @@ public class Main {
             }
         }
 
-        System.out.println(query(grid, N));
-    }
-    public static int query(int[][] grid, int N) {
-        oddCount = 0;
-        evenCount = 0;
-
         boolean[] flag = new boolean[2 * N - 1];
-        //Even Calc
-        dfs(grid, flag, 0, 0, 0, N);
-        // Odd Calc
-        dfs(grid, flag, 1, 0, 0, N);
 
-        return evenCount + oddCount;
+        query(grid, flag, 0, 0, N, 0);
+        query(grid, flag, 1, 0, N, 0);
+
+        System.out.println(RESULT_EVEN + RESULT_ODD);
     }
-    public static void dfs(int[][] grid, boolean[] flag, int startRow, int startCol, int count, int N) {
+    private static void query(int[][] grid, boolean[] flag, int row, int col, int N, int count) {
 
-        if (startRow + startCol >= 2 * N - 1) {
-            if ((startRow + startCol) % 2 == 0) {
-                evenCount = Math.max(evenCount, count);
+        if (row == N - 1 && col > N - 1) {
+            if ((row + col) % 2 == 0) {
+                RESULT_EVEN = Math.max(RESULT_EVEN, count);
             } else {
-                oddCount = Math.max(oddCount, count);
+                RESULT_ODD = Math.max(RESULT_ODD, count);
             }
             return;
         }
 
-        int curRow = startRow;
-        int curCol = startCol;
+        int curRow = row;
+        int curCol = col;
 
-        boolean checkOk = false;
-        int[] nxtPoint = getNxtPoint(startRow, startCol, N);
-        while (isValidPoint(curRow, curCol, N)) {
-            if (!flag[(N - 1) - curRow + curCol] && grid[curRow][curCol] == 1) {
-                flag[(N - 1) - curRow + curCol] = true;
-                dfs(grid, flag, nxtPoint[0], nxtPoint[1], count + 1, N);
-                flag[(N - 1) - curRow + curCol] = false;
+        int[] nextRowAndCol = getNextRowAndCol(row, col, N);
 
-                checkOk = true;
+        boolean isActive = false;
+        while (curRow >= 0 && curCol < N) {
+            int idx = (N - 1) - curRow + curCol;
+
+            if (!flag[idx] && grid[curRow][curCol] == 1) {
+                isActive = true;
+                flag[idx] = true;
+                query(grid, flag, nextRowAndCol[0], nextRowAndCol[1], N, count + 1);
+                flag[idx] = false;
             }
+
             curRow--;
             curCol++;
         }
-        if (!checkOk) dfs(grid, flag, nxtPoint[0], nxtPoint[1], count, N);
-    }
-    private static int[] getNxtPoint(int row, int col, int N) {
-        if (row + 2 <= N - 1) {
-            return new int[]{row + 2, 0};
-        } else if (row + 2 == N) {
-            return new int[]{N - 1, 1};
-        } else if (row == N - 1) {
-            return new int[]{N - 1, col + 2};
+        if (!isActive) {
+            query(grid, flag, nextRowAndCol[0], nextRowAndCol[1], N, count);
         }
-
-        System.out.println("Logic Error");
-        return new int[]{-1, -1};
     }
-    private static boolean isValidPoint(int row, int col, int N) {
-        return row >= 0 && col >= 0 && row < N && col < N;
+    private static int[] getNextRowAndCol(int row, int col, int N) {
+
+        if (row <= (N - 1 - 2)) {
+            return new int[]{row + 2, col};
+        } else if (row == N - 2) {
+            return new int[]{row + 1, col + 1};
+        } else {
+            return new int[]{row, col + 2};
+        }
     }
 }
