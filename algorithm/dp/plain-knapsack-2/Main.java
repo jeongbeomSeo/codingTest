@@ -13,53 +13,72 @@ public class Main {
     int N = Integer.parseInt(st.nextToken());
     int M = Integer.parseInt(st.nextToken());
 
-    List<Item> itemList = new ArrayList<>();
-    for (int i = 1; i < N + 1; i++) {
+    Item[] initItemArray = new Item[N];
+    for (int i = 0; i < N; i++) {
       st = new StringTokenizer(br.readLine());
+
       int weight = Integer.parseInt(st.nextToken());
       int cost = Integer.parseInt(st.nextToken());
-      int quantity = Integer.parseInt(st.nextToken());
+      int count = Integer.parseInt(st.nextToken());
 
-      addItems(itemList, weight, cost, quantity);
+      initItemArray[i] = new Item(weight, cost, count);
     }
 
-    System.out.println(getMaxCost(itemList, M));
-  }
-  private static int getMaxCost(List<Item> itemList, int M) {
+    List<SeparatedItem> itemList = dividedItemList(initItemArray, N);
 
-    int listSize = itemList.size();
-    int[][] table = new int[listSize + 1][M + 1];
+    int rowLen = itemList.size();
 
-    for (int i = 1; i < listSize + 1; i++) {
-      Item item = itemList.get(i - 1);
+    int[][] dpTable = new int[rowLen + 1][M + 1];
 
-      for (int j = 1; j < M + 1; j++) {
-        if (j < item.weight) {
-          table[i][j] = table[i - 1][j];
+    for (int i = 1; i <= rowLen; i++) {
+      for (int j = 0; j <= M; j++) {
+        if (j >= itemList.get(i - 1).weight) {
+          dpTable[i][j] = Math.max(dpTable[i - 1][j], dpTable[i - 1][j - itemList.get(i - 1).weight] + itemList.get(i - 1).cost);
         } else {
-          table[i][j] = Math.max(table[i - 1][j], table[i - 1][j - item.weight] + item.cost);
+          dpTable[i][j] = dpTable[i - 1][j];
         }
       }
     }
 
-    return table[listSize][M];
+    System.out.println(dpTable[rowLen][M]);
   }
-  private static void addItems(List<Item> itemList, int weight, int cost, int quantity) {
-    for (int i = quantity; i > 0; i = (i >> 1)) {
-      int remain = i - (i >> 1);
+  private static List<SeparatedItem> dividedItemList(Item[] initItemArray, int N) {
 
-      itemList.add(new Item(weight * remain, cost * remain, remain));
+    List<SeparatedItem> itemList = new ArrayList<>();
+
+    for (int i = 0; i < N; i++) {
+      int weight = initItemArray[i].weight;
+      int cost = initItemArray[i].cost;
+      int count = initItemArray[i].count;
+      while (count != 1) {
+        int curCount = count - count / 2;
+        itemList.add(new SeparatedItem(weight * curCount, cost * curCount));
+
+        count -= curCount;
+      }
+      itemList.add(new SeparatedItem(weight, cost));
     }
+
+    return itemList;
+  }
+}
+class SeparatedItem {
+  int weight;
+  int cost;
+
+  SeparatedItem(int weight, int cost) {
+    this.weight = weight;
+    this.cost = cost;
   }
 }
 class Item {
   int weight;
   int cost;
-  int quota;
+  int count;
 
-  Item(int weight, int cost, int quota) {
+  Item (int weight, int cost, int count) {
     this.weight = weight;
     this.cost = cost;
-    this.quota = quota;
+    this.count = count;
   }
 }
