@@ -7,23 +7,22 @@ import java.util.Queue;
 import java.util.StringTokenizer;
 
 public class Main {
-  static int N, K;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
 
-    N = Integer.parseInt(st.nextToken());
-    K = Integer.parseInt(st.nextToken());
+    int N = Integer.parseInt(st.nextToken());
+    int K = Integer.parseInt(st.nextToken());
 
-    Item[] items = new Item[N];
-
+    int[][] jewels = new int[N][2];
     for (int i = 0; i < N; i++) {
       st = new StringTokenizer(br.readLine());
 
-      int weight = Integer.parseInt(st.nextToken());
+      int mess = Integer.parseInt(st.nextToken());
       int cost = Integer.parseInt(st.nextToken());
 
-      items[i] = new Item(weight, cost);
+      jewels[i][0] = mess;
+      jewels[i][1] = cost;
     }
 
     int[] bags = new int[K];
@@ -31,41 +30,32 @@ public class Main {
       bags[i] = Integer.parseInt(br.readLine());
     }
 
-    Arrays.sort(items);
     Arrays.sort(bags);
+    Arrays.sort(jewels, (o1, o2) -> o1[0] - o2[0]);
 
-    System.out.println(queryResult(items, bags));
+    System.out.println(query(jewels, bags, N, K));
   }
-  private static long queryResult(Item[] items, int[] bags) {
-    Queue<Item> pq = new PriorityQueue<>((o1, o2) -> o2.cost - o1.cost);
+  private static long query(int[][] jewels, int[] bags, int N, int K) {
+    Queue<Integer> costPQ = new PriorityQueue<>((o1, o2) -> o2 - o1);
+
+    long result = 0;
 
     int idx = 0;
-    long result = 0;
     for (int i = 0; i < K; i++) {
+      int bagWeight = bags[i];
 
-      while (idx < N && bags[i] >= items[idx].weight) {
-        pq.add(items[idx++]);
+      while (idx < N) {
+        if (jewels[idx][0] <= bagWeight) {
+          costPQ.add(jewels[idx][1]);
+          idx++;
+        } else {
+          break;
+        }
       }
 
-      if (!pq.isEmpty()) {
-        result += pq.poll().cost;
-      }
+      if (!costPQ.isEmpty()) result += costPQ.poll();
     }
 
     return result;
-  }
-}
-class Item implements Comparable<Item>{
-  int weight;
-  int cost;
-
-  Item(int weight, int cost) {
-    this.weight = weight;
-    this.cost = cost;
-  }
-
-  @Override
-  public int compareTo(Item o) {
-    return this.weight - o.weight;
   }
 }
