@@ -10,42 +10,45 @@ public class Main {
         int N = Integer.parseInt(br.readLine());
         int M = Integer.parseInt(br.readLine());
 
-        int[][] distTable = new int[N + 1][N + 1];
+        int[][] table = new int[N + 1][N + 1];
+
         for (int i = 0; i < M; i++) {
             st = new StringTokenizer(br.readLine());
 
-            int idx1 = Integer.parseInt(st.nextToken());
-            int idx2 = Integer.parseInt(st.nextToken());
+            int item1 = Integer.parseInt(st.nextToken());
+            int item2 = Integer.parseInt(st.nextToken());
 
-            distTable[idx1][idx2] = 1;
-            distTable[idx2][idx1] = -1;
+            table[item1][item2] = 1;
+            table[item2][item1] = -1;
         }
 
-        floydWarshall(distTable, N);
+        floydwarhell(table, N);
 
         for (int i = 1; i <= N; i++) {
             int count = N - 1;
+
             for (int j = 1; j <= N; j++) {
-                if (distTable[i][j] == 1 || distTable[i][j] == -1) {
+                if (table[i][j] == 1 || table[i][j] == -1) {
                     count--;
                 }
             }
+
             bw.write(count + "\n");
         }
+
         bw.flush();
         bw.close();
+
     }
-    private static void floydWarshall(int[][] distTable, int N) {
+    private static void floydwarhell(int[][] table, int N) {
 
         for (int k = 1; k <= N; k++) {
             for (int i = 1; i <= N; i++) {
                 for (int j = 1; j <= N; j++) {
-                    if (distTable[i][k] == distTable[k][j]) {
-                        if (distTable[i][k] == 1) {
-                            distTable[i][j] = 1;
-                        } else if (distTable[i][k] == -1) {
-                            distTable[i][j] = -1;
-                        }
+                    if (table[i][k] == 1 && table[k][j] == 1) {
+                        table[i][j] = 1;
+                    } else if (table[i][k] == -1 && table[k][j] == -1) {
+                        table[i][j] = -1;
                     }
                 }
             }
