@@ -4,30 +4,35 @@ import java.io.InputStreamReader;
 import java.util.StringTokenizer;
 
 public class Main {
-  static int N, M;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
 
-    N = Integer.parseInt(st.nextToken());
-    M = Integer.parseInt(st.nextToken());
+    int N = Integer.parseInt(st.nextToken());
+    int M = Integer.parseInt(st.nextToken());
 
-    int[] times = new int[N];
-    long MAX = Integer.MIN_VALUE;
+    int[] nums = new int[N];
+
+    int maxTime = Integer.MIN_VALUE;
     for (int i = 0; i < N; i++) {
-      int time = Integer.parseInt(br.readLine());
+      nums[i] = Integer.parseInt(br.readLine());
 
-      times[i] = time;
-      MAX = Math.max(MAX, time);
+      maxTime = Math.max(maxTime, nums[i]);
     }
 
-    System.out.println(lower_bound(times, 0L, MAX * (M / N + 1), M));
+    long left = 0L;
+    long right = maxTime * ((long)Math.ceil(M / N) + 1);
+
+    System.out.println(getLowerBound(nums, left, right, M, N));
   }
-  private static long lower_bound(int[] times, long left, long right, int target) {
+  private static long getLowerBound(int[] nums, long left, long right, int target, int numsLen) {
     while (left < right) {
       long mid = (left + right) / 2;
 
-      long count = getCount(times, mid);
+      long count = 0;
+      for (int i = 0; i < numsLen; i++) {
+        count += mid / nums[i];
+      }
 
       if (count < target) {
         left = mid + 1;
@@ -35,16 +40,7 @@ public class Main {
         right = mid;
       }
     }
+
     return left;
-  }
-  private static long getCount(int[] times, long mid) {
-
-    long count = 0;
-
-    for (int time : times) {
-      count += mid / time;
-    }
-
-    return count;
   }
 }
