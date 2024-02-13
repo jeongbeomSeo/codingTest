@@ -4,7 +4,8 @@ import java.io.InputStreamReader;
 import java.util.*;
 
 public class Main {
-  private static final int INF = Integer.MIN_VALUE;
+  private static final Long MIN = Long.MIN_VALUE;
+  private static final Long INF = Long.MAX_VALUE;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     StringTokenizer st = new StringTokenizer(br.readLine());
@@ -14,11 +15,7 @@ public class Main {
     int end = Integer.parseInt(st.nextToken());
     int M = Integer.parseInt(st.nextToken());
 
-    ArrayList<ArrayList<Node>> graph = new ArrayList<>();
-    for (int i = 0; i < N; i++) {
-      graph.add(new ArrayList<>());
-    }
-
+    ArrayList<Node>[] graph = initGraph(N);
     for (int i = 0; i < M; i++) {
       st = new StringTokenizer(br.readLine());
 
@@ -26,108 +23,107 @@ public class Main {
       int dst = Integer.parseInt(st.nextToken());
       int cost = Integer.parseInt(st.nextToken());
 
-      graph.get(src).add(new Node(dst, cost));
+      graph[src].add(new Node(dst, cost));
     }
 
-    int[] city = new int[N];
+    int[] cityCost = new int[N];
     st = new StringTokenizer(br.readLine());
     for (int i = 0; i < N; i++) {
-      city[i] = Integer.parseInt(st.nextToken());
+      cityCost[i] = Integer.parseInt(st.nextToken());
     }
 
-    long[] dist = initDistTable(city, N, start);
+    long result = bellmanFord(graph, cityCost, N, start, end);
 
-    spfa(graph, city, dist, start, end, N);
-
+    if (result == INF) System.out.println("Gee");
+    else if (result == MIN) System.out.println("gg");
+    else System.out.println(result);
   }
-  private static void spfa(ArrayList<ArrayList<Node>> graph, int[] city, long[] dist, int start, int end, int N) {
-
+  private static long bellmanFord(ArrayList<Node>[] graph, int[] cityCost, int N, int start, int end) {
     int[] visitCount = new int[N];
-    boolean[] isInQueue = new boolean[N];
+    boolean[] isINFLoop = new boolean[N];
+    long[] distTable = initDistTable(cityCost, N, start);
+
+    Queue<Integer> q = new ArrayDeque<>();
+    q.add(start);
+
+    while (!q.isEmpty()) {
+      int curIdx = q.poll();
+
+      if (isINFLoop[curIdx]) continue;
+
+      for (int i = 0; i < graph[curIdx].size(); i++) {
+        Node nextNode = graph[curIdx].get(i);
+
+        long nextCost = calcCost(distTable, cityCost, curIdx, nextNode);
+        if (distTable[nextNode.dst] < nextCost) {
+          if (visitCount[nextNode.dst] == N && !isINFLoop[nextNode.dst]) {
+            // nextNode.dst 기점으로 dfs 진행하면서 isINFLoop true 로 변경해주기
+            // dst에 도달 가능하면 함수 종료 후 "GEE" 출력하도록 return 값 설정
+            if (bfs(graph, nextNode.dst, end, isINFLoop, N)) {
+              return INF;
+            }
+            continue;
+          }
+          distTable[nextNode.dst] = nextCost;
+          q.add(nextNode.dst);
+          visitCount[nextNode.dst]++;
+        }
+      }
+    }
+
+    return distTable[end];
+  }
+  private static long calcCost(long[] distTable, int[] cityCost, int curIdx, Node nextNode) {
+    return distTable[curIdx] - nextNode.cost + cityCost[nextNode.dst];
+  }
+  private static boolean bfs(ArrayList<Node>[] graph, int start, int end, boolean[] isINFLoop, int N) {
+
     boolean[] isVisited = new boolean[N];
 
     Queue<Integer> q = new ArrayDeque<>();
     q.add(start);
-    visitCount[start]++;
-    isInQueue[start] = true;
+    isVisited[start] = isINFLoop[start] = true;
 
     while (!q.isEmpty()) {
-      Integer curIdx = q.poll();
+      int curIdx = q.poll();
 
-      isInQueue[curIdx] = false;
+      for (int i = 0; i < graph[curIdx].size(); i++) {
+        int nextIdx = graph[curIdx].get(i).dst;
 
-      for (int i = 0; i < graph.get(curIdx).size(); i++) {
-        Node nxtNode = graph.get(curIdx).get(i);
-
-        if (dist[nxtNode.idx] < dist[curIdx] + getMoneyWhenVisitCity(city, nxtNode)) {
-          dist[nxtNode.idx] = dist[curIdx] + getMoneyWhenVisitCity(city, nxtNode);
-
-          if (!isInQueue[nxtNode.idx]) {
-            if (++visitCount[nxtNode.idx] == N) {
-              if (dist[end] == INF) {
-                break;
-              }
-              if (!isVisited[nxtNode.idx] && dfs(graph, isVisited, nxtNode.idx, end)) {
-                System.out.println("Gee");
-                return;
-              }
-            } else {
-              q.add(nxtNode.idx);
-              isInQueue[nxtNode.idx] = true;
-            }
-          }
+        if (nextIdx == end) return true;
+        if (!isVisited[nextIdx]) {
+          q.add(nextIdx);
+          isVisited[nextIdx] = isINFLoop[nextIdx] = true;
         }
       }
-    }
-
-    System.out.println(dist[end]);
-  }
-  private static int getMoneyWhenVisitCity(int[] city, Node node) {
-    return city[node.idx] - node.cost;
-  }
-  private static boolean dfs(ArrayList<ArrayList<Node>> graph, boolean[] isVisited, int src, int end) {
-
-    Deque<Integer> stack = new ArrayDeque<>();
-    stack.push(src);
-    isVisited[src] = true;
-
-    while (!stack.isEmpty()) {
-      int curIdx = stack.peek();
-
-      if (curIdx == end) return true;
-
-      boolean hasNearNode = false;
-      for (int i = 0; i < graph.get(curIdx).size(); i++) {
-        Node nxtNode = graph.get(curIdx).get(i);
-
-        if (!isVisited[nxtNode.idx]) {
-          stack.push(nxtNode.idx);
-          hasNearNode = true;
-          isVisited[nxtNode.idx] = true;
-          break;
-        }
-      }
-      if (!hasNearNode) stack.pop();
     }
 
     return false;
   }
-  private static long[] initDistTable(int[] city, int N, int start) {
+  private static long[] initDistTable(int[] cityCost, int N, int start) {
+    long[] distTable = new long[N];
 
-    long[] dist = new long[N];
-    Arrays.fill(dist, INF);
+    Arrays.fill(distTable, MIN);
+    distTable[start] = cityCost[start];
 
-    dist[start] = city[start];
+    return distTable;
+  }
+  private static ArrayList<Node>[] initGraph(int N) {
+    ArrayList<Node>[] graph = new ArrayList[N];
 
-    return dist;
+    for (int i = 0; i < N; i++) {
+      graph[i] = new ArrayList<>();
+    }
+
+    return graph;
   }
 }
 class Node {
-  int idx;
+  int dst;
   int cost;
 
-  Node (int idx, int cost) {
-    this.idx = idx;
+  Node(int dst, int cost) {
+    this.dst = dst;
     this.cost = cost;
   }
 }
