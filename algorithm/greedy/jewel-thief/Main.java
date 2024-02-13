@@ -17,43 +17,40 @@ public class Main {
     int[][] jewels = new int[N][2];
     for (int i = 0; i < N; i++) {
       st = new StringTokenizer(br.readLine());
-
-      int mess = Integer.parseInt(st.nextToken());
-      int cost = Integer.parseInt(st.nextToken());
-
-      jewels[i][0] = mess;
-      jewels[i][1] = cost;
+      jewels[i][0] = Integer.parseInt(st.nextToken());  // 보석의 무게
+      jewels[i][1] = Integer.parseInt(st.nextToken());  // 보석의 가격
     }
 
     int[] bags = new int[K];
     for (int i = 0; i < K; i++) {
-      bags[i] = Integer.parseInt(br.readLine());
+      bags[i] = Integer.parseInt(br.readLine());  // 가방의 가용치 무게
     }
 
-    Arrays.sort(bags);
     Arrays.sort(jewels, (o1, o2) -> o1[0] - o2[0]);
+    Arrays.sort(bags);
 
     System.out.println(query(jewels, bags, N, K));
   }
   private static long query(int[][] jewels, int[] bags, int N, int K) {
-    Queue<Integer> costPQ = new PriorityQueue<>((o1, o2) -> o2 - o1);
 
     long result = 0;
+    Queue<Integer> costPQ = new PriorityQueue<>((o1, o2) -> o2 - o1);
 
-    int idx = 0;
+    int jewelIdx = 0;
     for (int i = 0; i < K; i++) {
-      int bagWeight = bags[i];
+      int bagAvailableWeight = bags[i];
 
-      while (idx < N) {
-        if (jewels[idx][0] <= bagWeight) {
-          costPQ.add(jewels[idx][1]);
-          idx++;
-        } else {
-          break;
+      while (jewelIdx < N) {
+        if (jewels[jewelIdx][0] <= bagAvailableWeight) {
+          costPQ.add(jewels[jewelIdx][1]);
+          jewelIdx++;
         }
+        else break;
       }
 
-      if (!costPQ.isEmpty()) result += costPQ.poll();
+      if (!costPQ.isEmpty()) {
+        result += costPQ.poll();
+      }
     }
 
     return result;
