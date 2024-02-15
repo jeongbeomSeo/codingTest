@@ -10,43 +10,58 @@ public class Main {
 
     String str = br.readLine();
 
-    System.out.println(getPostPrefix(str));
-  }
-  private static String getPostPrefix(String str) {
-
-    StringBuilder sb = new StringBuilder();
-    Deque<Character> stack = new ArrayDeque<>();
+    StringBuffer sb = new StringBuffer();
+    Deque<Character> stackOper = new ArrayDeque<>();
     for (int i = 0; i < str.length(); i++) {
       char c = str.charAt(i);
 
-      if (isOpr(c)) {
-        if (c == '*' || c == '/') {
-          while (!stack.isEmpty() && (stack.peekFirst() == '*' || stack.peekFirst() == '/')) {
-            sb.append(stack.pollFirst());
-          }
-          stack.addFirst(c);
+      if (isOper(c)) {
+        if (stackOper.isEmpty()) {
+          stackOper.addFirst(c);
         } else {
-          while (!stack.isEmpty() && stack.peekFirst() != '(') {
-            sb.append(stack.pollFirst());
+          if (lowPriorityOper(c)) {
+            // 현재 연산자: + || -
+            while (!stackOper.isEmpty() && !isOpenBracket(stackOper.peekFirst())) {
+              sb.append(stackOper.pollFirst());
+            }
+            stackOper.addFirst(c);
+          } else {
+            // 현재 연산자: * 또는 /
+            if (lowPriorityOper(stackOper.peekFirst()) || isOpenBracket(stackOper.peekFirst())) {
+              stackOper.addFirst(c);
+            } else {
+              sb.append(stackOper.pollFirst());
+              stackOper.addFirst(c);
+            }
           }
-          stack.addFirst(c);
         }
-      } else if (c == '(') {
-        stack.addFirst(c);
-      } else if (c == ')') {
-        while (!stack.isEmpty() && stack.peekFirst() != '(') {
-          sb.append(stack.pollFirst());
+      } else if (isBracket(c)) {
+        if (isOpenBracket(c)) {
+          stackOper.addFirst(c);
+        } else {
+          while (!isOpenBracket(stackOper.peekFirst())) {
+            sb.append(stackOper.pollFirst());
+          }
+          stackOper.pollFirst();
         }
-        stack.pollFirst();
       } else {
         sb.append(c);
       }
     }
-    while (!stack.isEmpty()) sb.append(stack.pollFirst());
 
-    return sb.toString();
+    while (!stackOper.isEmpty()) sb.append(stackOper.pollFirst());
+    System.out.println(sb);
   }
-  private static boolean isOpr(char c) {
+  private static boolean lowPriorityOper(char c) {
+    return c == '+' || c == '-';
+  }
+  private static boolean isOper(char c) {
     return c == '+' || c == '-' || c == '*' || c == '/';
+  }
+  private static boolean isBracket(char c) {
+    return c == '(' || c == ')';
+  }
+  private static boolean isOpenBracket(char c) {
+    return c == '(';
   }
 }
