@@ -25,46 +25,74 @@ public class Main {
     }
 
     System.out.println(simulation(grid, N));
+
   }
   private static int simulation(int[][] grid, int N) {
+    int result = 0;
 
-    int score = 0;
+    int turn = 1;
     while (true) {
 
-      boolean[][] isVisitedOnlyColor = new boolean[N][N];
-      Group resultGroup = null;
+      boolean[][] isColorVisited = new boolean[N][N];
+
+      Status curStatus = null;
       for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
-          if (grid[i][j] != BLACK && grid[i][j] != RAINBOW && grid[i][j] != DELETE && !isVisitedOnlyColor[i][j]) {
-            Group result = search(grid, N, isVisitedOnlyColor, i, j);
-
-            if (result.colorBlockCount >= 2) {
-              if (resultGroup == null) resultGroup = result;
-              else {
-                resultGroup = priorityCheckGroup(resultGroup, result);
+          if (grid[i][j] != DELETE && grid[i][j] != BLACK && grid[i][j] != RAINBOW && !isColorVisited[i][j]) {
+            Status resultStatus = search(grid, N, isColorVisited, i, j);
+            if (resultStatus.totoalCount >= 2) {
+              if (curStatus == null) {
+                curStatus = resultStatus;
+              } else {
+                if (curStatus.totoalCount < resultStatus.totoalCount) curStatus = resultStatus;
+                else if (curStatus.totoalCount == resultStatus.totoalCount) {
+                  if (curStatus.rainbowCount < resultStatus.rainbowCount) {
+                    curStatus = resultStatus;
+                  } else if (curStatus.rainbowCount == resultStatus.rainbowCount) {
+                    if (curStatus.mainBlock.row < resultStatus.mainBlock.row) curStatus = resultStatus;
+                    else if (curStatus.mainBlock.row == resultStatus.mainBlock.row)  {
+                      if (curStatus.mainBlock.col < resultStatus.mainBlock.col) curStatus = resultStatus;
+                    }
+                  }
+                }
               }
             }
           }
         }
       }
 
-      if (resultGroup == null) break;
-      score += resultGroup.totalBlockCount * resultGroup.totalBlockCount;
-      grid = processPostAction(grid, N, resultGroup.history);
+      if (curStatus == null) break;
+
+      result += curStatus.totoalCount * curStatus.totoalCount;
+      grid = breakingBlock(grid, curStatus.history, N);
+      grid = processPostAction(grid, N);
+
+      turn++;
     }
 
-    return score;
+    return result;
   }
-  private static int[][] processPostAction(int[][] grid, int N, List<Block> history) {
+  private static int[][] processPostAction(int[][] grid, int N) {
 
-    int[][] nextGrid = deleteBlock(grid, N, history);
-    nextGrid = activeGravity(nextGrid, N);
-    nextGrid = rotateGrid(nextGrid, N);
-    nextGrid = activeGravity(nextGrid, N);
+    int[][] firstGrid = activeGravity(grid, N);
+    int[][] secondGrid = activeRotate(firstGrid, N);
+    int[][] finalGrid = activeGravity(secondGrid, N);
+
+    return finalGrid;
+  }
+  private static int[][] breakingBlock(int[][] grid, List<Block> history, int N) {
+
+    int[][] nextGrid = copyGrid(grid, N);
+
+    for (int i = 0; i < history.size(); i++) {
+      Block breakBlock = history.get(i);
+
+      nextGrid[breakBlock.row][breakBlock.col] = DELETE;
+    }
 
     return nextGrid;
   }
-  private static int[][] rotateGrid(int[][] grid, int N) {
+  private static int[][] activeRotate(int[][] grid, int N) {
     int[][] nextGrid = new int[N][N];
 
     for (int i = 0; i < N; i++) {
@@ -76,145 +104,100 @@ public class Main {
     return nextGrid;
   }
   private static int[][] activeGravity(int[][] grid, int N) {
-
-    int[][] nextGrid = new int[N][N];
+    int[][] nextGrid = copyGrid(grid, N);
 
     for (int j = 0; j < N; j++) {
-      for (int i = N - 1; i >= 0; i--) {
-        if (grid[i][j] != BLACK) {
-          if (grid[i][j] == DELETE) {
-            int nextRow = i - 1;
-            while (nextRow >= 0 && grid[nextRow][j] == DELETE) nextRow--;
+      for (int i = N - 1; i > 0; i--) {
+        if (nextGrid[i][j] == DELETE) {
+          int nextRow = i - 1;
+          while(nextRow >= 0 && nextGrid[nextRow][j] == DELETE) nextRow--;
 
-            if (nextRow >= 0) {
-              if (grid[nextRow][j] != BLACK) {
-                nextGrid[i][j] = grid[nextRow][j];
-                grid[nextRow][j] = DELETE;
-              } else {
-                nextGrid[i][j] = DELETE;
-              }
-            } else {
-              nextGrid[i][j] = DELETE;
-            }
-          } else {
-            nextGrid[i][j] = grid[i][j];
+          if (nextRow >= 0 && nextGrid[nextRow][j] != BLACK) {
+            nextGrid[i][j] = nextGrid[nextRow][j];
+            nextGrid[nextRow][j] = DELETE;
           }
-        } else {
-          nextGrid[i][j] = BLACK;
         }
       }
     }
-    return nextGrid;
-  }
-  private static int[][] deleteBlock(int[][] grid, int N, List<Block> history) {
-    int[][] copyGrid = copyGrid(grid, N);
- 
-    for (int i = 0; i < history.size(); i++) {
-      Block deleteblock = history.get(i);
 
-      copyGrid[deleteblock.row][deleteblock.col] = DELETE;
-    }
-    
-    return copyGrid;
+    return nextGrid;
   }
   private static int[][] copyGrid(int[][] grid, int N) {
     int[][] copy = new int[N][N];
-    
+
     for (int i = 0; i < N; i++) {
       copy[i] = Arrays.copyOf(grid[i], N);
     }
-    
+
     return copy;
   }
-  
-  private static Group search(int[][] grid, int N, boolean[][] isVisitedOnlyColor, int initRow, int initCol) {
+  private static Status search(int[][] grid, int N, boolean[][] isColorVisited, int initRow, int initCol) {
 
     boolean[][] isVisited = new boolean[N][N];
-
     Queue<Block> q = new ArrayDeque<>();
     int mainColor = grid[initRow][initCol];
     Block initBlock = new Block(initRow, initCol, mainColor);
-    q.add(new Block(initRow, initCol, mainColor));
-    isVisitedOnlyColor[initRow][initCol] = isVisited[initRow][initCol] = true;
+    q.add(initBlock);
+    isVisited[initRow][initCol] = isColorVisited[initRow][initCol] = true;
+    Status status = new Status();
 
-    Group finalGroup = new Group();
     while (!q.isEmpty()) {
       Block curBlock = q.poll();
 
-      finalGroup.addBlock(curBlock);
+      status.add(curBlock);
 
       for (int i = 0; i < 4; i++) {
-        int nxtRow = curBlock.row + DR[i];
-        int nxtCol = curBlock.col + DC[i];
+        int nextRow = curBlock.row + DR[i];
+        int nextCol = curBlock.col + DC[i];
 
-        if (isValidPoint(nxtRow, nxtCol, N) && !isVisited[nxtRow][nxtCol]
-                && isValidBlock(grid, nxtRow, nxtCol, mainColor)) {
-          q.add(new Block(nxtRow, nxtCol, grid[nxtRow][nxtCol]));
-          if (grid[nxtRow][nxtCol] == mainColor) {
-            isVisitedOnlyColor[nxtRow][nxtCol] = true;
-          }
-          isVisited[nxtRow][nxtCol] = true;
+        if (isValidPoint(nextRow, nextCol, N)
+                && isValidBlock(grid, nextRow, nextCol, mainColor)
+                && !isVisited[nextRow][nextCol]) {
+          q.add(new Block(nextRow, nextCol, grid[nextRow][nextCol]));
+          isVisited[nextRow][nextCol] = true;
+          if (grid[nextRow][nextCol] == mainColor) isColorVisited[nextRow][nextCol] = true;
         }
       }
     }
 
-    return finalGroup;
+    return status;
   }
   private static boolean isValidBlock(int[][] grid, int row, int col, int mainColor) {
-    return grid[row][col] == RAINBOW || grid[row][col] == mainColor;
+    return grid[row][col] == mainColor || grid[row][col] == RAINBOW;
   }
   private static boolean isValidPoint(int row, int col, int N) {
     return row >= 0 && col >= 0 && row < N && col < N;
   }
-  private static Group priorityCheckGroup(Group group, Group comp) {
-    int groupRainbowBlockCount = group.totalBlockCount - group.colorBlockCount;
-    int compRainBowBlockCount = comp.totalBlockCount - comp.colorBlockCount;
-
-    if (groupRainbowBlockCount > compRainBowBlockCount) return group;
-    else if (groupRainbowBlockCount < compRainBowBlockCount) return comp;
-    else {
-      if (group.mainBlock.row < comp.mainBlock.row) return group;
-      else if (group.mainBlock.col > comp.mainBlock.col) return comp;
-      else {
-        if (group.mainBlock.col < comp.mainBlock.col) return group;
-        else return comp;
-      }
-    }
-  }
 }
-class Group {
-  private static final int RAINBOW = 0;
+class Status {
+  List<Block> history;
   Block mainBlock;
-  int totalBlockCount;
-  int colorBlockCount;
-  List<Block> history = new ArrayList<>();
+  int totoalCount;
+  int colorCount;
+  int rainbowCount;
 
-  Group() {
-    this.totalBlockCount = 0;
-    this.colorBlockCount = 0;
+  Status() {
+    this.history = new ArrayList<>();
+    this.mainBlock = null;
+    this.totoalCount = 0;
+    this.colorCount = 0;
+    this.rainbowCount = 0;
   }
 
-  public void addBlock(Block block) {
-    if (this.mainBlock == null) {
-      this.mainBlock = block;
-      this.colorBlockCount++;
-    } else if (block.color != RAINBOW) {
-      this.mainBlock = priorityCheckBlock(this.mainBlock, block);
-      this.colorBlockCount++;
-    }
+  public void add(Block block) {
     this.history.add(block);
-    totalBlockCount++;
+    if (this.mainBlock == null) this.mainBlock = block;
+    else if (this.mainBlock.color == block.color && !priorityCheck(block)) this.mainBlock = block;
+    totoalCount++;
+    if (this.mainBlock.color == block.color) colorCount++;
+    else this.rainbowCount++;
   }
 
-  private static Block priorityCheckBlock(Block prevMainBlcok, Block newBlock) {
-    if (newBlock.color == 0) return prevMainBlcok;
+  public boolean priorityCheck(Block block) {
+    if (this.mainBlock.row < block.row) return true;
+    else if (this.mainBlock.row > block.row) return false;
     else {
-      if (prevMainBlcok.row < newBlock.row)  return prevMainBlcok;
-      else if (prevMainBlcok.row > newBlock.row) return newBlock;
-      else {
-        if (prevMainBlcok.col < newBlock.col) return prevMainBlcok;
-        else return newBlock;
-      }
+      return this.mainBlock.col < block.col;
     }
   }
 }
@@ -223,7 +206,7 @@ class Block {
   int col;
   int color;
 
-  Block (int row, int col, int color) {
+  Block(int row, int col, int color) {
     this.row = row;
     this.col = col;
     this.color = color;
