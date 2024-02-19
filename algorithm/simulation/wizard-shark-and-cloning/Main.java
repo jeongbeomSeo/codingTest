@@ -1,11 +1,13 @@
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.*;
 
 public class Main {
     private static final int[] DR = {0, 0, -1, -1, -1, 0, 1, 1, 1};
     private static final int[] DC = {0, -1, -1, 0, 1, 1, 1, 0, -1};
-    private static final int[] SHARK_DR = {0, -1, 0, 1, 0};
-    private static final int[] SHARK_DC = {0, 0, -1, 0, 1};
+    private static final int[] MOVE_SHARK_DR = {0, -1, 0, 1, 0};
+    private static final int[] MOVE_SHARK_DC = {0, 0, -1, 0, 1};
     public static void main(String[] args) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         StringTokenizer st = new StringTokenizer(br.readLine());
@@ -13,327 +15,265 @@ public class Main {
         int M = Integer.parseInt(st.nextToken());
         int S = Integer.parseInt(st.nextToken());
 
-        List<Fish>[][] fishListGrid = initFishListGrid();
+        List<Fish>[][] fishGrid = initFishGrid();
         for (int i = 0; i < M; i++) {
             st = new StringTokenizer(br.readLine());
             int row = Integer.parseInt(st.nextToken());
             int col = Integer.parseInt(st.nextToken());
             int direction = Integer.parseInt(st.nextToken());
 
-            fishListGrid[row][col].add(new Fish(row, col, direction));
+            fishGrid[row][col].add(new Fish(new Point(row, col), direction));
         }
 
         st = new StringTokenizer(br.readLine());
-        int sharkRow = Integer.parseInt(st.nextToken());
-        int sharkCol = Integer.parseInt(st.nextToken());
+        int sharkPointRow = Integer.parseInt(st.nextToken());
+        int sharkPointCol = Integer.parseInt(st.nextToken());
+        Point sharkPoint = new Point(sharkPointRow, sharkPointCol);
 
-        Point sharkPoint = new Point(sharkRow, sharkCol);
-
-        System.out.println(simulation(fishListGrid, sharkPoint, S));
+        System.out.println(simulation(fishGrid, sharkPoint, S));
     }
-    private static int simulation(List<Fish>[][] fishListGrid, Point sharkPoint, int S) {
+    private static long simulation(List<Fish>[][] fishGrid, Point sharkPoint, int S) {
 
-        Map<Integer, Integer> smellCountMap = initSmellCountMap();
-        while (S != 0) {
+        int[][] smellCountGrid = new int[5][5];
+        while (S-- != 0) {
+            List<Fish>[][] copyFishGrid = copyFishList(fishGrid);
 
-            long startTime = System.currentTimeMillis();
+            fishGrid = MoveFishGrid(fishGrid, smellCountGrid, sharkPoint);
 
-            List<Fish>[][] copy = copyFishListGrid(fishListGrid);
-
-            long endTime = System.currentTimeMillis();
-            System.out.println("Execution time: " + (endTime - startTime) + " milliseconds");
-
-            fishListGrid = moveFishList(fishListGrid, sharkPoint, smellCountMap);
-
-            // System.out.println("S is " + S);
-            //printFishCountGrid(fishListGrid);
-
-
-            sharkPoint = moveShark(fishListGrid, sharkPoint, smellCountMap);
-
-
-            downSmellCount(smellCountMap);
-
-            integrateFishListGrid(fishListGrid, copy);
-
-            S--;
+            List<Point> moveSharkResult = moveShark(fishGrid, sharkPoint);
+            activeEatFish(fishGrid, moveSharkResult, smellCountGrid);
+            smellCountGrid = getNextSmellCountGrid(smellCountGrid);
+            mergeGrid(fishGrid, copyFishGrid);
         }
 
-        return getFishCount(fishListGrid);
+        return getResult(fishGrid);
     }
-    private static void printFishCountGrid(List<Fish>[][] fishListGrid) {
+    private static long getResult(List<Fish>[][] fishGrid) {
+        long result = 0L;
 
-        for (int i = 1; i < 5; i++) {
-            for (int j = 1; j < 5; j++) {
-                System.out.print(fishListGrid[i][j].size() + " ");
+        for (int i = 1; i <= 4; i++) {
+            for (int j = 1; j <= 4; j++) {
+                result += fishGrid[i][j].size();
             }
-            System.out.println();
         }
-        System.out.println();
+
+        return result;
     }
-    private static Point moveShark(List<Fish>[][] fishListGrid, Point sharkPoint, Map<Integer, Integer> smellCountMap) {
+    private static void mergeGrid(List<Fish>[][] fishGrid, List<Fish>[][] copyFishGrid) {
 
-        Queue<MovingShark> bufferMovingShark = new ArrayDeque<>();
-        bufferMovingShark.add(new MovingShark(sharkPoint.row, sharkPoint.col));
+        for (int i = 1; i <= 4; i++) {
+            for (int j = 1; j <= 4; j++) {
+                fishGrid[i][j].addAll(copyFishGrid[i][j]);
+            }
+        }
+    }
+    private static int[][] getNextSmellCountGrid(int[][] smellCountGrid) {
 
-        MovingShark result = null;
-        while (!bufferMovingShark.isEmpty()) {
-            MovingShark curMovingShark = bufferMovingShark.poll();
+        int[][] nextSmellCountGrid = new int[5][5];
 
-            if (curMovingShark.moveCount == 3) {
+        for (int i = 1; i <= 4; i++) {
+            for (int j = 1; j <= 4; j++) {
+                if (smellCountGrid[i][j] != 0) {
+                    nextSmellCountGrid[i][j] = smellCountGrid[i][j] - 1;
+                }
+            }
+        }
+
+        return nextSmellCountGrid;
+    }
+    private static void activeEatFish(List<Fish>[][] fishGrid, List<Point> pointList, int[][] smellCountGrid) {
+        for (Point point : pointList) {
+            if (!fishGrid[point.row][point.col].isEmpty()) {
+                smellCountGrid[point.row][point.col] = 3;
+            }
+            fishGrid[point.row][point.col].clear();
+        }
+    }
+    private static List<Point> moveShark(List<Fish>[][] fishGrid, Point sharkPoint) {
+
+        Queue<MoveShark> q = new ArrayDeque<>();
+        q.add(new MoveShark(sharkPoint));
+
+        MoveShark result = null;
+        while (!q.isEmpty()) {
+            MoveShark curMoveShark = q.poll();
+
+            if (curMoveShark.moveCount == 3) {
                 if (result == null) {
-                    result = curMovingShark;
+                    result = curMoveShark;
                 } else {
-                    if (result.compareTo(curMovingShark) > 0) {
-                        result = curMovingShark;
-                    }
+                    result = priorityCheck(result, curMoveShark);
                 }
                 continue;
             }
 
             for (int i = 1; i <= 4; i++) {
-                int nextRow = curMovingShark.row + SHARK_DR[i];
-                int nextCol = curMovingShark.col + SHARK_DC[i];
+                int nextRow = curMoveShark.point.row + MOVE_SHARK_DR[i];
+                int nextCol = curMoveShark.point.col + MOVE_SHARK_DC[i];
+                Point nextPoint = new Point(nextRow, nextCol);
 
-                if (isValidPoint(nextRow, nextCol)) {
-                    bufferMovingShark.add(new MovingShark(
-                            nextRow, nextCol, i, curMovingShark.moveCount + 1,
-                            getEatingCount(nextRow, nextCol, curMovingShark.eatingCount, fishListGrid[nextRow][nextCol].size(), curMovingShark.pointHistory),
-                            curMovingShark.pointHistory, curMovingShark.directionHistory
-                    ));
+                if (isValidPoint(nextPoint) /*&& !curMoveShark.isVisited[nextPoint.row][nextPoint.col]*/) {
+                    int nextEatCount = curMoveShark.eatCount;
+                    if (!curMoveShark.isVisited[nextPoint.row][nextPoint.col]) nextEatCount += fishGrid[nextPoint.row][nextPoint.col].size();
+                    MoveShark nextMoveShark =
+                            new MoveShark(nextPoint, nextEatCount,
+                                    curMoveShark.moveCount + 1, curMoveShark.directionHistory, i,
+                                    curMoveShark.pointHistory, curMoveShark.isVisited);
+
+                    q.add(nextMoveShark);
                 }
             }
         }
 
         if (result == null) {
-            System.out.println("Logic Error: Result Is Empty");
+            System.out.println("Shark Move Logic Error");
+            return null;
         }
 
-        eatingFish(fishListGrid, result.pointHistory, smellCountMap);
+        sharkPoint.row = result.point.row;
+        sharkPoint.col = result.point.col;
 
-        return new Point(result.row, result.col);
+        // System.out.println(sharkPoint.row + " " + sharkPoint.col);
+        return result.pointHistory;
     }
+    private static MoveShark priorityCheck(MoveShark moveShark, MoveShark comp) {
 
-    private static void eatingFish(List<Fish>[][] fishListGrid, List<Point> pointHistory, Map<Integer, Integer> smellCountMap) {
-
-        for (Point point : pointHistory) {
-            if (!fishListGrid[point.row][point.col].isEmpty()) {
-                updateSmellCount(smellCountMap, point.row, point.col);
+        if (moveShark.eatCount > comp.eatCount) return moveShark;
+        else if (moveShark.eatCount < comp.eatCount) return comp;
+        else {
+            for (int i = 0; i < 3; i++) {
+                if (moveShark.directionHistory.get(i) < comp.directionHistory.get(i)) return moveShark;
+                else if (moveShark.directionHistory.get(i) > comp.directionHistory.get(i)) return comp;
             }
-            fishListGrid[point.row][point.col].clear();
-        }
-    }
-/*  Poing History가 전부 Smell Count로 처리되는 것이 아닌 먹이감이 있는 경우에만 Smell이 생성되는 것임.
-  private static void eatingFish(List<Fish>[][] fishListGrid, List<Point> pointHistory, Map<Integer, Integer> smellCountMap) {
-
-        for (Point point : pointHistory) {
-            fishListGrid[point.row][point.col].clear();
-            updateSmellCount(smellCountMap, point.row, point.col);
-        }
-    }*/
-    private static int getEatingCount(int row, int col, int eatingCount, int fishCount, List<Point> pointHistory) {
-
-        if (isVisitedPoint(row, col, pointHistory)) return eatingCount;
-
-        return eatingCount + fishCount;
-    }
-    private static boolean isVisitedPoint(int row, int col, List<Point> pointHistory) {
-
-        for (Point point : pointHistory) {
-            if (point.row == row && point.col == col) return true;
         }
 
-        return false;
+        // Logic Error
+        System.out.println("Logic Error");
+        return moveShark;
     }
-    private static List<Fish>[][] moveFishList(List<Fish>[][] fishListGrid, Point sharkPoint, Map<Integer, Integer> smellCountMap) {
+    private static List<Fish>[][] MoveFishGrid(List<Fish>[][] fishGrid, int[][] smellCountGrid, Point sharkPoint) {
 
-        List<Fish>[][] newFishListGrid = initFishListGrid();
-        for (int i = 1; i < 5; i++) {
-            for (int j = 1; j < 5; j++) {
-                for (Fish curFish : fishListGrid[i][j]) {
+        List<Fish>[][] nextFishGrid = initFishGrid();
+        for (int i = 1; i <= 4; i++) {
+            for (int j = 1; j <= 4; j++) {
+                for (Fish curFish : fishGrid[i][j]) {
 
-                    Fish movedFish = moveFish(curFish, sharkPoint, smellCountMap);
+                    boolean isSuccessMove = false;
+                    int direction = curFish.direction;
 
-                    newFishListGrid[movedFish.row][movedFish.col].add(
-                            new Fish(movedFish.row, movedFish.col, movedFish.direction));
+                    do {
+                        Point nextPoint = new Point(curFish.point.row + DR[direction], curFish.point.col + DC[direction]);
+                        if (canMovePoint(nextPoint, sharkPoint, smellCountGrid)) {
+                            curFish.point = nextPoint;
+                            curFish.direction = direction;
+                            nextFishGrid[curFish.point.row][curFish.point.col].add(curFish);
+                            isSuccessMove = true;
+                            break;
+                        }
+
+                        direction = getNextDirection(direction);
+                    } while (curFish.direction != direction);
+
+                    if (!isSuccessMove) nextFishGrid[curFish.point.row][curFish.point.col].add(curFish);
                 }
             }
         }
 
-        return newFishListGrid;
-    }
-    private static Fish moveFish(Fish fish, Point sharkPoint, Map<Integer, Integer> smellCountMap) {
-
-        int curDirection = fish.direction;
-
-        do {
-            int nextRow = fish.row + DR[curDirection];
-            int nextCol = fish.col + DC[curDirection];
-
-            if (canGoNextPoint(nextRow, nextCol, sharkPoint, smellCountMap)) {
-                return new Fish(nextRow, nextCol, curDirection);
+/*        for (int i = 1; i <= 4; i++) {
+            for (int j = 1; j <= 4; j++) {
+                System.out.print(nextFishGrid[i][j].size() + " ");
             }
+            System.out.println();
+        }*/
 
-            curDirection = getNextDirection(curDirection);
-        } while (curDirection != fish.direction);
-
-        return new Fish(fish.row, fish.col, fish.direction);
+        return nextFishGrid;
     }
-    private static boolean canGoNextPoint(int nextRow, int nextCol, Point sharkPoint, Map<Integer, Integer> smellCountMap) {
-        return isValidPoint(nextRow, nextCol) && !isSharkPoint(nextRow, nextCol, sharkPoint) && !isSmellInPoint(nextRow, nextCol, smellCountMap);
+    private static boolean canMovePoint(Point point, Point sharkPoint, int[][] smellCountGrid) {
+        return isValidPoint(point) && !isSharkPoint(point, sharkPoint) && smellCountGrid[point.row][point.col] == 0;
     }
-    private static boolean isSmellInPoint(int row, int col, Map<Integer, Integer> smellCountMap) {
-        int idx = getMapIdx(row, col);
-
-        return smellCountMap.get(idx) != 0;
+    private static boolean isSharkPoint(Point point, Point sharkPoint) {
+        return (point.row == sharkPoint.row) && (point.col == sharkPoint.col);
     }
-    private static boolean isSharkPoint(int row, int col, Point sharkPoint) {
-        return row == sharkPoint.row && col == sharkPoint.col;
-    }
-    private static boolean isValidPoint(int row, int col) {
-        return row >= 1 && col >= 1 && row <= 4 && col <= 4;
+    private static boolean isValidPoint(Point point) {
+        return point.row >= 1 && point.col >= 1 && point.row <= 4 && point.col <= 4;
     }
     private static int getNextDirection(int direction) {
         return direction - 1 != 0 ? direction - 1 : 8;
     }
+    private static List<Fish>[][] copyFishList(List<Fish>[][] fishGrid) {
+        List<Fish>[][] copy = initFishGrid();
 
-    private static int getFishCount(List<Fish>[][] fishListGrid) {
+        for (int i = 1; i <= 4; i++) {
+            for (int j = 1; j <= 4; j++) {
+                for (Fish fish : fishGrid[i][j]) {
+                    Point fishPoint = new Point(fish.point.row, fish.point.col);
+                    Fish copyFish = new Fish(fishPoint, fish.direction);
 
-        int count = 0;
-        for (int i = 1; i < 5; i++) {
-            for (int j = 1; j < 5; j++) {
-                count += fishListGrid[i][j].size();
-            }
-        }
-
-        return count;
-    }
-    private static void integrateFishListGrid(List<Fish>[][] fishListGrid, List<Fish>[][] copy) {
-
-        for (int i = 1; i < 5; i++) {
-            for (int j = 1; j < 5; j++) {
-                fishListGrid[i][j].addAll(copy[i][j]);
-            }
-        }
-    }
-    private static List<Fish>[][] copyFishListGrid(List<Fish>[][] fishListGrid) {
-
-        List<Fish>[][] copy = initFishListGrid();
-        for (int i = 1; i < 5; i++) {
-            for (int j = 1; j < 5; j++) {
-                for (int k = 0; k < fishListGrid[i][j].size(); k++) {
-                    Fish fish = fishListGrid[i][j].get(k);
-                    copy[i][j].add(new Fish(fish.row, fish.col, fish.direction));
+                    copy[copyFish.point.row][copyFish.point.col].add(copyFish);
                 }
             }
         }
 
         return copy;
     }
-    private static void downSmellCount(Map<Integer, Integer> smellCountMap) {
+    private static List<Fish>[][] initFishGrid() {
+        List<Fish>[][] fishGrid = new List[5][5];
 
-        int MAX_IDX = 4 * 4;
-        for (int i = 1; i < MAX_IDX + 1; i++) {
-            if (smellCountMap.get(i) != 0) {
-                smellCountMap.put(i, smellCountMap.get(i) - 1);
-            }
-        }
-    }
-    private static void updateSmellCount(Map<Integer, Integer> smellCountMap, int row, int col) {
-        smellCountMap.put(getMapIdx(row, col), 3);
-    }
-    private static Map<Integer, Integer> initSmellCountMap() {
-        Map<Integer, Integer> smellCountMap = new HashMap<>();
-
-        for (int i = 1; i < 5; i++) {
-            for (int j = 1; j < 5; j++) {
-                int idx = getMapIdx(i, j);
-                smellCountMap.put(idx, 0);
+        for (int i = 1; i <= 4; i++) {
+            for (int j = 1; j <= 4; j++) {
+                fishGrid[i][j] = new ArrayList<>();
             }
         }
 
-        return smellCountMap;
-    }
-    private static int getMapIdx(int row, int col) {
-        return 4 * (row - 1) + col;
-    }
-    private static List<Fish>[][] initFishListGrid() {
-
-        List<Fish>[][] fishListGrid = new List[5][5];
-
-        for (int i = 0; i < 5; i++) {
-            for (int j = 0; j < 5; j++) {
-                fishListGrid[i][j] = new ArrayList<>();
-            }
-        }
-        return fishListGrid;
+        return fishGrid;
     }
 }
-class MovingShark implements Comparable<MovingShark>{
-    int row;
-    int col;
+class MoveShark{
+    Point point;
+    int eatCount;
     int moveCount;
-    int eatingCount;
-    List<Point> pointHistory;
     List<Integer> directionHistory;
-    MovingShark(int row, int col) {
-        this.row = row;
-        this.col = col;
+    List<Point> pointHistory;
+    boolean[][] isVisited;
+
+    MoveShark(Point point) {
+        this.point = point;
+        this.eatCount = 0;
         this.moveCount = 0;
-        this.eatingCount = 0;
-        pointHistory = new ArrayList<>();
-        directionHistory = new ArrayList<>();
+        this.directionHistory = new ArrayList<>();
+        this.pointHistory = new ArrayList<>();
+        isVisited = new boolean[5][5];
     }
-
-    MovingShark(int row, int col, int direction, int moveCount, int eatingCount, List<Point> pointHistory, List<Integer> directionHistory) {
-        this.row = row;
-        this.col = col;
+    MoveShark(Point point, int eatCount, int moveCount, List<Integer> directionHistory, int direction, List<Point> prevPointHistory, boolean[][] prevIsVisited) {
+        this.point = point;
+        this.eatCount = eatCount;
         this.moveCount = moveCount;
-        this.eatingCount = eatingCount;
-        this.pointHistory = initPointHistory(row, col, pointHistory);
-        this.directionHistory = initDirectionHistory(direction, directionHistory);
-    }
-    private List<Point> initPointHistory(int row, int col, List<Point> pointHistory) {
-
-        List<Point> newPointHistory = new ArrayList<>(pointHistory);
-        newPointHistory.add(new Point(row, col));
-
-        return newPointHistory;
-    }
-    private List<Integer> initDirectionHistory(int direction, List<Integer> directionHistory) {
-        List<Integer> newDirectionHistory = new ArrayList<>(directionHistory);
-        newDirectionHistory.add(direction);
-
-        return newDirectionHistory;
+        this.directionHistory = new ArrayList<>(directionHistory);
+        this.directionHistory.add(direction);
+        this.pointHistory = new ArrayList<>(prevPointHistory);
+        this.pointHistory.add(point);
+        this.isVisited = initIsVisitedTable(prevIsVisited);
+        this.isVisited[point.row][point.col] = true;
     }
 
-    @Override
-    public int compareTo(MovingShark o) {
-        if (this.eatingCount != o.eatingCount) return o.eatingCount - this.eatingCount;
-        else {
-            int size = this.directionHistory.size();
-            if (size != o.directionHistory.size()) {
-                System.out.println("Can't compare");
-                return 0;
-            } else {
-                for (int i = 0; i < size; i++) {
-                    int directionIdx = this.directionHistory.get(i);
-                    int comp = o.directionHistory.get(i);
-                    if (directionIdx != comp) return directionIdx - comp;
-                }
+    private static boolean[][] initIsVisitedTable(boolean[][] prevIsVisited) {
+        boolean[][] newIsVisited = new boolean[5][5];
+
+        for (int i = 1; i <= 4; i++) {
+            for (int j = 1; j <= 4; j++) {
+                newIsVisited[i][j] = prevIsVisited[i][j];
             }
         }
-        return 0;
+
+        return newIsVisited;
     }
 }
 class Fish {
-    int row;
-    int col;
+    Point point;
     int direction;
 
-    Fish(int row, int col, int direction) {
-        this.row = row;
-        this.col = col;
+    Fish(Point point, int direction) {
+        this.point = point;
         this.direction = direction;
     }
 }
@@ -341,7 +281,7 @@ class Point {
     int row;
     int col;
 
-    Point (int row, int col) {
+    Point(int row, int col) {
         this.row = row;
         this.col = col;
     }
