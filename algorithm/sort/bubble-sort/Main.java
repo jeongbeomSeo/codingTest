@@ -10,70 +10,76 @@ public class Main {
     StringTokenizer st;
 
     int N = Integer.parseInt(br.readLine());
-    Number[] array = new Number[N];
+    Number[] nums = new Number[N];
 
     st = new StringTokenizer(br.readLine());
     for (int i = 0; i < N; i++) {
-      int value = Integer.parseInt(st.nextToken());
+      int num = Integer.parseInt(st.nextToken());
 
-      array[i] = new Number(i, value);
+      nums[i] = new Number(i, num);
     }
 
-    Arrays.sort(array);
+    Arrays.sort(nums);
 
-    int h = getHeight(N);
-    int size = (int)Math.pow(2, h + 1);
-
-    int[] tree = new int[size];
-
-    long result = 0L;
-    for (int i = 0; i < N; i++) {
-      int idx = array[i].idx;
-      result += query(tree, 1, 0, N - 1, idx + 1, N - 1);
-      update(tree, 1, 0, N - 1, idx);
-    }
-
-    System.out.println(result);
+    System.out.println(query(nums, N));
   }
-  private static int query(int[] tree, int node, int left, int right, int start, int end) {
-    if (end < left || right < start) return 0;
+  private static long query(Number[] nums, int N) {
 
-    else if (start <= left && right <= end) {
-      return tree[node];
+    int size = getSize(N);
+    int[] segTable = new int[size];
+
+    inputSegTable(segTable, 1, 0, N, nums[0].idx);
+
+    long count = 0L;
+    for (int i = 1; i < N; i++) {
+      count += querySegTable(segTable, 1, 0, N, nums[i].idx, N);
+      inputSegTable(segTable, 1, 0, N, nums[i].idx);
     }
 
-    int mid = (left + right) / 2;
-    int leftQuery = query(tree, 2 * node, left, mid, start, end);
-    int rightQuery = query(tree, 2 * node + 1, mid + 1, right, start, end);
-
-    return leftQuery + rightQuery;
+    return count;
   }
-  private static void update(int[] tree, int node, int left, int right, int idx) {
-    if (idx < left || right < idx) return;
-    else if (left == right) {
-      tree[node] = 1;
+  private static void inputSegTable(int[] segTable, int node, int start, int end, int idx) {
+    if (idx < start || end < idx) return;
+    else if (start == end) {
+      segTable[node]++;
       return;
     }
-    int mid = (left + right) / 2;
-    update(tree, 2 * node, left, mid, idx);
-    update(tree, 2 * node + 1, mid + 1, right, idx);
-    tree[node] = tree[2 * node] + tree[node * 2 + 1];
+
+    inputSegTable(segTable, 2 * node, start, (start + end) / 2, idx);
+    inputSegTable(segTable, 2 * node + 1, (start + end) / 2 + 1, end, idx);
+
+    segTable[node] = segTable[2 * node] + segTable[2 * node + 1];
   }
-  private static int getHeight(int argSize) {
-    return (int)Math.ceil(Math.log(argSize) / Math.log(2));
+  private static int querySegTable(int[] segTable, int node, int start, int end, int left, int right) {
+    if (right < start || end < left) return 0;
+    else if (start <= left && right <= end) return segTable[node];
+
+    int leftResult = querySegTable(segTable, 2 * node, start, (start + end) / 2, left, right);
+    int rightResult = querySegTable(segTable, 2 * node + 1, (start + end) / 2 + 1, end, left, right);
+
+    return leftResult + rightResult;
+  }
+  private static int getSize(int max) {
+
+    int height = (int)Math.ceil(Math.log(max) / Math.log(2));
+
+    return 1 << (height + 1);
   }
 }
 class Number implements Comparable<Number>{
   int idx;
-  int value;
+  int num;
 
-  Number(int idx, int value) {
+  Number(int idx, int num) {
     this.idx = idx;
-    this.value = value;
+    this.num = num;
   }
 
   @Override
   public int compareTo(Number o) {
-    return this.value - o.value;
+    if (this.num - o.num != 0) return this.num - o.num;
+    else {
+      return this.idx - o.idx;
+    }
   }
 }
