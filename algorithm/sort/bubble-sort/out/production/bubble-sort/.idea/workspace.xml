@@ -72,11 +72,23 @@
       <workItem from="1673672589534" duration="8408000" />
       <workItem from="1704265391997" duration="3553000" />
       <workItem from="1704284098775" duration="3361000" />
-      <workItem from="1708931244273" duration="2143000" />
+      <workItem from="1708931244273" duration="3796000" />
+      <workItem from="1708944215113" duration="665000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/Main.java</url>
+          <line>33</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
