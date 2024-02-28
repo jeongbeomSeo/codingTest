@@ -3,26 +3,32 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.StringTokenizer;
 
 public class Main {
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
     int N = Integer.parseInt(br.readLine());
-    Queue<Integer> pq = new PriorityQueue<>((o1, o2) -> o1 - o2);
 
+    int[] nums = new int[N];
+    Queue<Integer> pq = new PriorityQueue<>((o1, o2) -> o1 - o2);
     for (int i = 0; i < N; i++) {
-      pq.add(Integer.parseInt(br.readLine()));
+      int num = Integer.parseInt(br.readLine());
+      pq.add(num);
+      nums[i] = num;
     }
 
-    int result = 0;
-    while (pq.size() != 1) {
-      int num1 = pq.poll();
-      int num2 = pq.poll();
+    long result = 0L;
 
-      int sum = num1 + num2;
-      result += sum;
-      pq.add(sum);
+    while (pq.size() >= 2) {
+      int card1 = pq.poll();
+      int card2 = pq.poll();
+
+      int nxtCard = card1 + card2;
+      result += nxtCard;
+
+      pq.add(nxtCard);
     }
 
     System.out.println(result);
