@@ -4,6 +4,7 @@ import java.util.Queue;
 import java.util.StringTokenizer;
 
 public class Main {
+    private static final int MAX = 10000;
     public static void main(String[] args) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
@@ -11,127 +12,138 @@ public class Main {
 
         int T = Integer.parseInt(br.readLine());
 
-        while (T-- != 0) {
+        while(T-- > 0) {
             st = new StringTokenizer(br.readLine());
+            int A = Integer.parseInt(st.nextToken());
+            int B = Integer.parseInt(st.nextToken());
 
-            char[] array = convertToCharArray(Integer.parseInt(st.nextToken()));
-            char[] target = convertToCharArray(Integer.parseInt(st.nextToken()));
+            String commandResult = query(A, B);
 
-            String resultCommand = bfs(target, array);
-
-            bw.write(resultCommand + "\n");
+            bw.write(commandResult + "\n");
         }
-
         bw.flush();
         bw.close();
     }
-    private static String bfs(char[] target, char[] initArray) {
-        Queue<Registry> buffer = new ArrayDeque<>();
-        // 핵심적인 요소임 -> 없으면 메모리 초과나옴
-        boolean[] isVisited = new boolean[10000];
-        buffer.add(new Registry(initArray));
-        isVisited[Integer.parseInt(String.valueOf(initArray))] = true;
-        while (!buffer.isEmpty()) {
-            Registry curRegistry = buffer.poll();
+    private static String query(int initNum, int target) {
+
+        Queue<Registry> q = new ArrayDeque<>();
+        boolean[] isVisited = new boolean[MAX];
+        q.add(new Registry(initNum, ""));
+        isVisited[initNum] = true;
+
+        Registry result = null;
+        while (!q.isEmpty()) {
+            Registry curRegistry = q.poll();
+
+            if (curRegistry.num == target) {
+                result = curRegistry;
+                break;
+            }
 
             for (int i = 0; i < 4; i++) {
-                Registry nxtRegistry = modulate(curRegistry, i);
-                if (compareCharArray(nxtRegistry.value, target)) return nxtRegistry.command;
-                if (isVisited[Integer.parseInt(String.valueOf(nxtRegistry.value))]) continue;
-                buffer.add(nxtRegistry);
-                isVisited[Integer.parseInt(String.valueOf(nxtRegistry.value))] = true;
+                int nextNum = calc(curRegistry.num, i);
+
+                if (!isVisited[nextNum]) {
+                    q.add(new Registry(nextNum, curRegistry.command + convertCalcNum(i)));
+                    isVisited[nextNum] = true;
+                }
             }
         }
 
-        return null;
+        return result.command;
     }
-    private static Registry modulate(Registry registry, int i) {
-        if (i == 0) return new Registry(registry.command + "D", modulate_D(registry.value));
-        else if (i == 1) return new Registry(registry.command + "S", modulate_S(registry.value));
-        else if (i== 2) return new Registry(registry.command + "L", modulate_L(registry.value));
-        else return new Registry(registry.command + "R", modulate_R(registry.value));
+    private static char convertCalcNum(int calcNum) {
+        switch (calcNum) {
+            case 0:
+                return 'D';
+            case 1:
+                return 'S';
+            case 2:
+                return 'L';
+            default:
+                return 'R';
+        }
     }
-    private static boolean compareCharArray(char[] arrayA, char[] arrayB) {
+    private static int calc(int num, int calcNum) {
 
-        for (int i = 0; i < 4; i++) {
-            if (arrayA[i] != arrayB[i]) return false;
+        int nextNum = 0;
+        switch (calcNum) {
+            case 0:
+                nextNum = calc_D(num);
+                break;
+            case 1:
+                nextNum = calc_S(num);
+                break;
+            case 2:
+                nextNum = calc_L(num);
+                break;
+            default:
+                nextNum = calc_R(num);
+                break;
         }
 
-        return true;
+        return nextNum;
     }
-    private static char[] convertToCharArray(int num) {
-        char[] array = new char[4];
+    private static int[] getBuffer(int num) {
 
-        for (int i = 3; i >= 0; i--) {
-            // Check: (char)3 is '3'?
-            array[i] = (char)(num % 10 + '0');
+        int[] buffer = new int[4];
 
+        for (int i = 0; i < 4; i++) {
+            buffer[i] = num % 10;
             num /= 10;
         }
 
-        return array;
+        return buffer;
     }
-    private static char[] modulate_D(char[] array) {
-        int num = Integer.parseInt(String.valueOf(array));
+    private static int calc_L(int num) {
 
-        num = (num * 2) % 10000;
+        int[] buffer = getBuffer(num);
 
-        return convertToCharArray(num);
-    }
-    private static char[] modulate_S(char[] array) {
-
-        if (String.valueOf(array).equals("0000")) return new char[]{'9', '9', '9', '9'};
-
-        char[] nextArray = new char[4];
-        int i;
-        for (i = 3; i >= 0; i--) {
-            if (array[i] == '0') {
-                nextArray[i] = '9';
-            } else {
-                nextArray[i] = (char)(array[i] - 1);
-                i--;
-                break;
-            }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 2; i >= 0; i--) {
+            sb.append(buffer[i]);
         }
-        while (i >= 0) {
-            nextArray[i] = array[i];
-            i--;
-        }
-
-        return nextArray;
+        sb.append(buffer[3]);
+        return Integer.parseInt(sb.toString());
     }
-    private static char[] modulate_R(char[] array) {
+    private static int calc_R(int num) {
 
-        char[] nextArray = new char[4];
-        nextArray[0] = array[3];
+        int[] buffer = getBuffer(num);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(buffer[0]);
 
         for (int i = 3; i >= 1; i--) {
-            nextArray[i] = array[i - 1];
+            sb.append(buffer[i]);
         }
-
-        return nextArray;
+        return Integer.parseInt(sb.toString());
     }
-    private static char[] modulate_L(char[] array) {
+    private static int calc_D(int num) {
 
-        char[] nextArray = new char[4];
-        nextArray[3] = array[0];
-        for (int i = 1; i < 4; i++) {
-            nextArray[i - 1] = array[i];
+        int nextNum = num * 2;
+
+        if (nextNum >= MAX) {
+            nextNum %= MAX;
         }
 
-        return nextArray;
+        return nextNum;
+    }
+    private static int calc_S(int num) {
+
+        int nextNum = num - 1;
+
+        if (nextNum == -1) {
+            nextNum = 9999;
+        }
+
+        return nextNum;
     }
 }
 class Registry {
+    int num;
     String command;
-    char[] value;
-
-    Registry(char[] value) {
-        command = "";
-        this.value = value;
-    }
-    Registry(String command, char[] value) {
+    Registry(int num, String command) {
+        this.num = num;
         this.command = command;
-        this.value = value;
     }
 }
