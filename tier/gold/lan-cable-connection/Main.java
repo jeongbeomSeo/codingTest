@@ -12,61 +12,66 @@ public class Main {
 
     int N = Integer.parseInt(br.readLine());
 
-    // SwitchArray Info
-    // element: Number of Available ports, cost
-    int[][] switchArary = new int[N + 1][2];
-    for (int i = 1; i <= N; i++) {
+    Computer[] computers = new Computer[N];
+    for (int i = 0; i < N; i++) {
       st = new StringTokenizer(br.readLine());
-      switchArary[i][0] = Integer.parseInt(st.nextToken()) - 1;
-      switchArary[i][1] = Integer.parseInt(st.nextToken());
+
+      int port = Integer.parseInt(st.nextToken());
+      int cost = Integer.parseInt(st.nextToken());
+
+      computers[i] = new Computer(port, cost);
     }
 
-    int computerCount = Integer.parseInt(br.readLine());
+    int M = Integer.parseInt(br.readLine());
 
-    // 직접 연결
-    if (computerCount == 1) System.out.println(0);
-    else {
-      long[][] resultDpTable = queryDP(switchArary, computerCount, N);
+    if (M == 1) {
+      System.out.println(0);
+    } else {
+      long result = query(computers, N, M);
 
-      if (resultDpTable[N][computerCount] == INF) System.out.println(-1);
-      else System.out.println(resultDpTable[N][computerCount]);
+      if (result == INF) System.out.println("-1");
+      else System.out.println(result);
     }
   }
-  private static long[][] queryDP(int[][] switchArray, int computerCount, int N) {
-    long[][] dpTable = initDpTable(N, computerCount);
+  private static long query(Computer[] computers, int N, int M) {
 
-    for (int j = 1; j <= switchArray[1][0] && j <= computerCount; j++) {
-      dpTable[1][j] = switchArray[1][1];
+    long[][] dpTable = initDpTable(N, M);
+
+    for (int i = computers[0].port - 1; i >= 1; i--) {
+      dpTable[i][0] = computers[0].cost;
     }
 
-    for (int i = 2; i <= N; i++) {
-      int port = switchArray[i][0];
-      int cost = switchArray[i][1];
+    for (int i = 1; i < N; i++) {
 
-      int j;
-      for (j = 1; j <= port && j <= computerCount; j++) {
-        dpTable[i][j] = Math.min(dpTable[i - 1][j], cost);
+      if (computers[i].port - 1 >= M) {
+        dpTable[i][M] = Math.min(dpTable[i - 1][M], computers[i].cost);
       }
-      for (; j <= computerCount; j++) {
-        if (dpTable[i - 1][j - port + 1] != INF) {
-          dpTable[i][j] = Math.min(dpTable[i - 1][j - port] + cost, dpTable[i - 1][j]);
-        }
-        else break;
+
+      for (int j = M; j >= 1; j--) {
+        dpTable[i][j] = Math.min(dpTable[i - 1][j], dpTable[i - 1][j - computers[i].port + 2] + computers[i].cost);
       }
     }
 
-    return dpTable;
+    return dpTable[N][M];
   }
-  private static long[][] initDpTable(int N, int computerCount) {
-    long[][] dpTable = new long[N + 1][computerCount + 1];
+  private static long[][] initDpTable(int N, int M) {
 
-    for (int i = 0; i < N + 1; i++) {
+    long[][] dpTable = new long[N][M + 1];
+
+    for (int i = 0; i < N; i++) {
       Arrays.fill(dpTable[i], INF);
       dpTable[i][0] = 0;
     }
 
-    dpTable[0][1] = 0;
-
     return dpTable;
+  }
+}
+class Computer{
+  int port;
+  int cost;
+
+  Computer(int port, int cost) {
+    this.port = port;
+    this.cost = cost;
   }
 }
