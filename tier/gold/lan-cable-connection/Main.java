@@ -12,65 +12,55 @@ public class Main {
 
     int N = Integer.parseInt(br.readLine());
 
-    Computer[] computers = new Computer[N];
+    Switch[] switches = new Switch[N];
     for (int i = 0; i < N; i++) {
       st = new StringTokenizer(br.readLine());
 
       int port = Integer.parseInt(st.nextToken());
       int cost = Integer.parseInt(st.nextToken());
-
-      computers[i] = new Computer(port, cost);
+      switches[i] = new Switch(port, cost);
     }
 
-    int M = Integer.parseInt(br.readLine());
+    int targetCount = Integer.parseInt(br.readLine());
 
-    if (M == 1) {
-      System.out.println(0);
-    } else {
-      long result = query(computers, N, M);
+    long[][] dpTable = initDpTable(switches, targetCount, N);
 
-      if (result == INF) System.out.println("-1");
-      else System.out.println(result);
-    }
+    queryDp(switches, dpTable, targetCount, N);
+
+    if (targetCount == 1) System.out.println(1);
+    else if (dpTable[N - 1][targetCount] == INF) System.out.println(-1);
+    else System.out.println(dpTable[N - 1][targetCount]);
   }
-  private static long query(Computer[] computers, int N, int M) {
-
-    long[][] dpTable = initDpTable(N, M);
-
-    for (int i = computers[0].port - 1; i >= 1; i--) {
-      dpTable[i][0] = computers[0].cost;
-    }
+  private static void queryDp(Switch[] switches, long[][] dpTable, int targetCount, int N) {
 
     for (int i = 1; i < N; i++) {
+      int port = switches[i].port;
+      int cost = switches[i].cost;
 
-      if (computers[i].port - 1 >= M) {
-        dpTable[i][M] = Math.min(dpTable[i - 1][M], computers[i].cost);
-      }
-
-      for (int j = M; j >= 1; j--) {
-        dpTable[i][j] = Math.min(dpTable[i - 1][j], dpTable[i - 1][j - computers[i].port + 2] + computers[i].cost);
+      for (int j = targetCount - (port - 2); j >= 1; j--) {
+        if (dpTable[j] == INF) continue;
       }
     }
-
-    return dpTable[N][M];
   }
-  private static long[][] initDpTable(int N, int M) {
+  private static long[][] initDpTable(Switch[] switches, int targetCount, int N) {
 
-    long[][] dpTable = new long[N][M + 1];
-
+    long[][] dpTable = new long[N][targetCount + 1];
     for (int i = 0; i < N; i++) {
       Arrays.fill(dpTable[i], INF);
       dpTable[i][0] = 0;
+      for (int j = 1; j < switches[i].port && j <= targetCount; j++) {
+        dpTable[i][j] = Math.min(dpTable[i][j], switches[i].cost);
+      }
     }
 
     return dpTable;
   }
 }
-class Computer{
+class Switch {
   int port;
   int cost;
 
-  Computer(int port, int cost) {
+  Switch(int port, int cost) {
     this.port = port;
     this.cost = cost;
   }

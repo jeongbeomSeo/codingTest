@@ -138,3 +138,7 @@ public class Main {
   }
 }
 ```
+
+도저히 풀지 못해서 다음 페이지를 참고하고 있는 중이다.
+
+- [[BOJ 25048] 백준 25048번 - 랜선 연결 - LogLife](https://burningfalls.github.io/algorithm/boj-25048/)
