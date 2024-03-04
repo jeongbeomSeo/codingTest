@@ -21,37 +21,42 @@ public class Main {
       switches[i] = new Switch(port, cost);
     }
 
-    int targetCount = Integer.parseInt(br.readLine());
+    int computerCount = Integer.parseInt(br.readLine());
 
-    long[][] dpTable = initDpTable(switches, targetCount, N);
-
-    queryDp(switches, dpTable, targetCount, N);
-
-    if (targetCount == 1) System.out.println(1);
-    else if (dpTable[N - 1][targetCount] == INF) System.out.println(-1);
-    else System.out.println(dpTable[N - 1][targetCount]);
+    if (computerCount == 1) System.out.println(0);
+    else {
+      System.out.println(query(switches, computerCount, N));
+    }
   }
-  private static void queryDp(Switch[] switches, long[][] dpTable, int targetCount, int N) {
+  private static long query(Switch[] switches, int computerCount, int N) {
 
-    for (int i = 1; i < N; i++) {
+    long[] dpTable = initDpTable(computerCount);
+
+    for (int i = 0; i < N; i++) {
       int port = switches[i].port;
       int cost = switches[i].cost;
 
-      for (int j = targetCount - (port - 2); j >= 1; j--) {
+      for (int j = computerCount - (port - 2); j >= 1; j--) {
         if (dpTable[j] == INF) continue;
-      }
-    }
-  }
-  private static long[][] initDpTable(Switch[] switches, int targetCount, int N) {
 
-    long[][] dpTable = new long[N][targetCount + 1];
-    for (int i = 0; i < N; i++) {
-      Arrays.fill(dpTable[i], INF);
-      dpTable[i][0] = 0;
-      for (int j = 1; j < switches[i].port && j <= targetCount; j++) {
-        dpTable[i][j] = Math.min(dpTable[i][j], switches[i].cost);
+        dpTable[j + (port - 2)] = Math.min(dpTable[j] + cost, dpTable[j + (port - 2)]);
+      }
+
+      if (port - 1 <= computerCount) {
+        dpTable[port - 1] = Math.min(dpTable[port - 1], cost);
       }
     }
+
+    if (dpTable[computerCount] == INF) return -1;
+
+    return dpTable[computerCount];
+  }
+  private static long[] initDpTable(int computerCount) {
+
+    long[] dpTable = new long[computerCount + 1];
+
+    Arrays.fill(dpTable, INF);
+    dpTable[0] = 0;
 
     return dpTable;
   }
