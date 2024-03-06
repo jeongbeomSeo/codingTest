@@ -1,64 +1,48 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.Scanner;
 
 public class Main {
-  private static final int INF = Integer.MAX_VALUE;
-  public static void main(String[] args) throws IOException {
-    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+  public static void main(String[] args) {
+    Scanner sc = new Scanner(System.in);
 
-    String str = br.readLine();
+    String str = sc.nextLine();
     int strLen = str.length();
 
-    boolean[][] isPalindrome = initIsPalindrome(str, strLen);
+    boolean[][] dpTable = new boolean[strLen][strLen];
 
-    updateIsPalindrome(str, strLen, isPalindrome);
+    dpTable[0][0] = true;
+    for (int i = 1; i < strLen; i++) {
+      dpTable[i][i] = true;
 
-    int[] dpTable = queryDp(isPalindrome, strLen);
+      if (str.charAt(i - 1) == str.charAt(i)) dpTable[i - 1][i] = true;
+    }
 
-    System.out.println(dpTable[strLen - 1]);
-  }
-  private static int[] queryDp(boolean[][] isPalindrome, int len) {
+    for (int i = 2; i < strLen; i++) {
+      for (int j = 0; j < i - 1; j++) {
+        if (dpTable[j + 1][i - 1] && str.charAt(j) == str.charAt(i)) dpTable[j][i] = true;
+      }
+    }
 
-    int[] dpTable = new int[len];
-    Arrays.fill(dpTable, INF);
-    dpTable[0] = 1;
+    int[] dp = new int[strLen];
+    dp[0] = 1;
 
-    for (int i = 1; i < len; i++) {
-      dpTable[i] = dpTable[i - 1] + 1;
+    for (int i = 1; i < strLen; i++) {
+      dp[i] = dp[i - 1] + 1;
+
       for (int j = 0; j < i; j++) {
-        if (isPalindrome[j][i]) {
-          if (j == 0) {
-            dpTable[i] = 1;
+        if (dpTable[j][i]) {
+          if(j == 0) {
+            dp[i] = 1;
             break;
+          } else {
+            dp[i] = Math.min(dp[j - 1] + 1, dp[i]);
           }
-          else dpTable[i] = Math.min(dpTable[i], dpTable[j - 1] + 1);
         }
       }
     }
 
-    return dpTable;
-  }
-  private static void updateIsPalindrome(String str, int len, boolean[][] isPalindrome) {
+    System.out.println(dp[strLen - 1]);
 
-    for (int i = 2; i < len; i++) {
-      for (int j = 0; j < i - 1; j++) {
-        if (isPalindrome[j + 1][i - 1] && str.charAt(j) == str.charAt(i)) isPalindrome[j][i] = true;
-      }
-    }
-  }
-  private static boolean[][] initIsPalindrome(String str, int len) {
-
-    boolean[][] isPalindrome = new boolean[len][len];
-
-    isPalindrome[0][0] = true;
-    for (int i = 1; i < len; i++) {
-      isPalindrome[i][i] = true;
-
-      if (str.charAt(i - 1) == str.charAt(i)) isPalindrome[i - 1][i] = true;
-    }
-
-    return isPalindrome;
+    sc.close();
   }
 }
