@@ -1,66 +1,70 @@
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.StringTokenizer;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.*;
 
 public class Main {
-  static int max = 0;
-  static int max_Idx = 0;
   public static void main(String[] args) throws IOException {
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
 
     int N = Integer.parseInt(br.readLine());
 
-    ArrayList<ArrayList<Node>> graph = new ArrayList<>();
-    for (int i = 0; i < N + 1; i++) {
-      graph.add(new ArrayList<>());
+    List<Node>[] graph = new ArrayList[N + 1];
+    for (int i = 1; i < N + 1; i++) {
+      graph[i] = new ArrayList<>();
     }
 
-    StringTokenizer st;
     for (int i = 1; i < N + 1; i++) {
       st = new StringTokenizer(br.readLine());
-      int parNode = Integer.parseInt(st.nextToken());
-      while (true) {
-        int node = Integer.parseInt(st.nextToken());
-        if (node == -1) break;
+
+      int mainIdx = Integer.parseInt(st.nextToken());
+      int idx;
+      while ((idx = Integer.parseInt(st.nextToken())) != -1) {
         int cost = Integer.parseInt(st.nextToken());
 
-        graph.get(parNode).add(new Node(node, cost));
-        graph.get(node).add(new Node(parNode, cost));
+        graph[mainIdx].add(new Node(idx, cost));
+        graph[idx].add(new Node(mainIdx, cost));
       }
     }
 
+    Node startNode = getFarthestNode(graph, 1, N);
+    Node endNode = getFarthestNode(graph, startNode.idx, N);
+
+    System.out.println(endNode.cost);
+  }
+  private static Node getFarthestNode(List<Node>[] graph, int startIdx, int N) {
+
+    Node curFarthestNode = new Node(startIdx, 0);
 
     boolean[] isVisited = new boolean[N + 1];
-    Dfs(graph, 1, 0, isVisited);
+    isVisited[startIdx] = true;
+    Queue<Node> q = new ArrayDeque<>();
+    q.add(new Node(startIdx, 0));
 
-    Arrays.fill(isVisited, false);
-    Dfs(graph, max_Idx, 0, isVisited);
-    System.out.println(max);
-  }
-  static void Dfs(ArrayList<ArrayList<Node>> graph, int node, int cost, boolean[] isVisited ) {
-    isVisited[node] = true;
+    while (!q.isEmpty()) {
+      Node curNode = q.poll();
 
-    if (max < cost) {
-      max = cost;
-      max_Idx = node;
-    }
+      if (curNode.cost > curFarthestNode.cost) curFarthestNode = curNode;
 
-    for (Node childNode: graph.get(node)) {
-      if (!isVisited[childNode.idx]) {
-        Dfs(graph, childNode.idx, cost + childNode.cost, isVisited);
+      for (int i = 0; i < graph[curNode.idx].size(); i++) {
+        Node nxtNode = graph[curNode.idx].get(i);
+        if (!isVisited[nxtNode.idx]) {
+          q.add(new Node(nxtNode.idx, curNode.cost + nxtNode.cost));
+          isVisited[nxtNode.idx] = true;
+        }
       }
     }
+
+    return curFarthestNode;
   }
 }
-
-
 class Node {
   int idx;
   int cost;
 
   Node(int idx, int cost) {
     this.idx = idx;
-    this.cost = cost;
+    this.cost= cost;
   }
 }
