@@ -195,3 +195,119 @@ class Node {
 //해당 코드 출력 
 0
 ```
+
+모든 노드에서 서브 트리가 존재하지 않을 수 있다. 그럴 경우 다음과 같은 반례가 문제가 된다. 
+
+즉, **Skewed Binary Tree 인경우 문제가 발생**
+
+## 나의 코드
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.StringTokenizer;
+
+public class Main {
+  public static void main(String[] args) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer st;
+
+    int N = Integer.parseInt(br.readLine());
+
+    ArrayList<ArrayList<Node>> garph = new ArrayList<>();
+
+    for (int i = 0; i < N + 1; i++) {
+      garph.add(new ArrayList<>());
+    }
+
+    for (int i = 0; i < N -1; i++) {
+      st = new StringTokenizer(br.readLine());
+      int n1 = Integer.parseInt(st.nextToken());
+      int n2 = Integer.parseInt(st.nextToken());
+      int cost = Integer.parseInt(st.nextToken());
+
+      // 무방향이라서 원래는 양쪽에 전부 넣어줘야 하지만, 풀이 방식에는 도움 되지 않기에 안 넣어줌.
+      garph.get(n1).add(new Node(n2, cost));
+    }
+
+    ArrayList<Integer> diameters = new ArrayList<>();
+    for (int i = 1; i < N + 1; i++) {
+      int size = garph.get(i).size();
+      if (i == 1 && garph.get(i).size() == 1 || garph.get(i).size() >= 2) {
+        boolean[] isVisited = new boolean[N + 1];
+        diameters.add(calcDiameter(garph, isVisited, i, 0, i));
+      }
+    }
+    int max = 0;
+    for (int i = 0; i < diameters.size(); i++) {
+      if (max < diameters.get(i)) max = diameters.get(i);
+    }
+
+    System.out.println(max);
+  }
+
+  static int calcDiameter(ArrayList<ArrayList<Node>> graph, boolean[] isVisited, int nodeIdx, int cost, int root) {
+    isVisited[nodeIdx] = true;
+
+    if (graph.get(nodeIdx).size() == 0) {
+      return cost;
+    }
+    if (graph.get(nodeIdx).size() == 1) {
+      if (!isVisited[graph.get(nodeIdx).get(0).idx]) {
+        cost = calcDiameter(graph, isVisited, graph.get(nodeIdx).get(0).idx, cost + graph.get(nodeIdx).get(0).cost, root);
+      }
+    }
+    else {
+      int max = 0;
+      int secondMax = 0;
+      for (Node childNode : graph.get(nodeIdx)) {
+        if (!isVisited[childNode.idx]) {
+          int distance = calcDiameter(graph, isVisited, childNode.idx, cost + childNode.cost, root);
+          if(max <= distance) {
+            secondMax = max;
+            max = distance;
+          }
+          else if (secondMax <= distance) secondMax = distance;
+        }
+      }
+      if (nodeIdx == root) {
+        cost = (max + secondMax);
+      }
+      else {
+        cost = max;
+      }
+    }
+    return cost;
+  }
+}
+
+class Node {
+  int idx;
+  int cost;
+
+  Node(int idx, int cost) {
+    this.idx = idx;
+    this.cost = cost;
+  }
+}
+```
+
+한마디만 하자.
+
+**이왜골4...?** 고민 엄청해서 풀었다.. 
+
+다른 풀이들을 보니깐 그냥 모든 노드에 대해서 DFS 처리를 해도.. 문제가 풀린다....
+
+다른 풀이중에 하나 좋은 방식이 보였긴 했습니다.
+
+1. 부모 노드, 자식 노드 양방향으로 그래프를 형성 해주고, 루트 노드에서 DFS를 진행해 준다.
+2. 루트 노드부터 가장 높은 가중치를 가진 Idx를 찾아서 정적 변수에 저장해 줍니다.
+3. 해당 노드로부터 다시 DFS를 진행하면 가장 큰 지름을 찾을 수 있습니다.
+
+사실 가장 큰 지름을 가진 다는 것은, 결국 서브 트리 내에서도 서브 트리의 루트 부터 리프 노드까지 굉장히 높은 가중치 값을 가지고 있다는 것입니다.
+
+루트 노드에서 탐색하는 것은 결국 모든 서브 트리를 탐색하는 것과 마찬가지이기 때문에, 
+
+루트 노드부터 리프 노드까지 가중치가 가장 높은 한 경로를 찾으면 그것은 가장 큰 지름이 있는 서브 트리의 경로중 한 부분을 부분 집합으로 가지고 있을 수 밖에 없습니다.
