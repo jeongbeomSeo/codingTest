@@ -32,6 +32,10 @@ public class Main {
             graph[src].add(new Node(dst, cost));
         }
 
+        for (int i = 1; i < N + 1; i++) {
+            Collections.sort(graph[i], (o1, o2) -> o1.cost - o2.cost);
+        }
+
         st = new StringTokenizer(br.readLine());
         for (int i = 0; i < K; i++) {
             int meetingPlace = Integer.parseInt(st.nextToken());
