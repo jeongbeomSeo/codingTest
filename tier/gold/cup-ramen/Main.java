@@ -12,30 +12,42 @@ public class Main {
 
         int N = Integer.parseInt(br.readLine());
 
-        Queue<Integer[]> pq = new PriorityQueue<>((o1, o2) -> {
-            if (!o1[0].equals(o2[0])) return o1[0] - o2[0];
-            return o2[1] - o1[1];
-        });
-
+        Queue<Work> pq = new PriorityQueue<>((o1, o2) -> o1.deadLine - o2.deadLine);
         for (int i = 0; i < N; i++) {
             st = new StringTokenizer(br.readLine());
 
             int deadLine = Integer.parseInt(st.nextToken());
             int reward = Integer.parseInt(st.nextToken());
-            pq.add(new Integer[] {deadLine, reward});
+            pq.add(new Work(deadLine, reward));
         }
 
-        int result = 0;
-        for (int i = 0; i <= N; i++) {
-            while (!pq.isEmpty() && pq.peek()[0] <= i) {
-                pq.poll();
+        Queue<Integer> result = new PriorityQueue<>((o1, o2) -> o1 - o2);
+
+        while (!pq.isEmpty()) {
+            Work curWork = pq.poll();
+
+            if (result.size() < curWork.deadLine) {
+                result.add(curWork.reward);
+            } else {
+                if (result.peek() < curWork.reward) {
+                    result.poll();
+                    result.add(curWork.reward);
+                }
             }
-
-            if (pq.isEmpty()) break;
-
-            result += pq.poll()[1];
         }
 
-        System.out.println(result);
+        Long sum = 0L;
+        while (!result.isEmpty()) sum += result.poll();
+
+        System.out.println(sum);
+    }
+}
+class Work {
+    int deadLine;
+    int reward;
+
+    Work(int deadLine, int reward) {
+        this.deadLine = deadLine;
+        this.reward = reward;
     }
 }
