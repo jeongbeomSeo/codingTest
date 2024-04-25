@@ -8,7 +8,7 @@ public class Main {
     private static int W;
     private static int H;
     private static int[][] grid;
-    private static int[][] history;
+    private static int[][][] history;
     private static int result = Integer.MAX_VALUE;
 
     private static final int[] DR = {-1, 0, 1, 0};
@@ -34,35 +34,37 @@ public class Main {
             }
         }
 
-        history = new int[H][W];
+        history = new int[H][W][2];
         for (int i = 0; i < H; i++) {
-            Arrays.fill(history[i], INF);
+            for (int j = 0; j < W; j++) {
+                Arrays.fill(history[i][j], INF);
+            }
         }
 
-        dfs(new boolean[H][W], 0, 0, K, 0);
+        dfs(0, 0, K, 0);
 
         System.out.println(result != INF ? result : -1);
     }
-    private static void dfs(boolean[][] isVisited, int row, int col, int k, int count) {
+    private static void dfs(int row, int col, int k, int count) {
 
         if (row == H - 1 && col == W - 1) {
             result = Math.min(result, count);
             return;
         }
 
-        if (history[row][col] < (1 << k)) {
+        if (history[row][col][1] >= k && history[row][col][0] <= count) {
             return;
         }
 
-        history[row][col] = (1 << k);
-        isVisited[row][col] = true;
+        history[row][col][0] = count;
+        history[row][col][1] = k;
 
         for (int i = 0; i < 4; i++) {
             int nxtRow = row + DR[i];
             int nxtCol = col + DC[i];
 
-            if (isValidPoint(nxtRow, nxtCol) && !isVisited[nxtRow][nxtCol] && grid[nxtRow][nxtCol] != 1) {
-                dfs(isVisited, nxtRow, nxtCol, k, count + 1);
+            if (isValidPoint(nxtRow, nxtCol) && grid[nxtRow][nxtCol] != 1) {
+                dfs(nxtRow, nxtCol, k, count + 1);
             }
         }
 
@@ -71,12 +73,11 @@ public class Main {
                 int nxtRow = row + HORSE_DR[i];
                 int nxtCol = col + HORSE_DC[i];
 
-                if (isValidPoint(nxtRow, nxtCol) && !isVisited[nxtRow][nxtCol] && grid[nxtRow][nxtCol] != 1) {
-                    dfs(isVisited, nxtRow, nxtCol, k - 1, count + 1);
+                if (isValidPoint(nxtRow, nxtCol) && grid[nxtRow][nxtCol] != 1) {
+                    dfs(nxtRow, nxtCol, k - 1, count + 1);
                 }
             }
         }
-        isVisited[row][col] = false;
     }
     private static boolean isValidPoint(int row, int col) {
         return row >= 0 && col >= 0 && row < H && col < W;
