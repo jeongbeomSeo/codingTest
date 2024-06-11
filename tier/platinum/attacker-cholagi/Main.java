@@ -12,77 +12,111 @@ public class Main {
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
         while (T-- != 0) {
             st = new StringTokenizer(br.readLine());
-
             int N = Integer.parseInt(st.nextToken());
             int W = Integer.parseInt(st.nextToken());
 
-            int[][] arr = new int[N][2];
-            for (int j = 0; j < 2; j++) {
+            int[][] arr = new int[2][N + 1];
+            for (int i = 0; i < 2; i++) {
                 st = new StringTokenizer(br.readLine());
-                for (int i = 0; i < N; i++) {
+
+                for (int j = 1; j < N + 1; j++) {
                     arr[i][j] = Integer.parseInt(st.nextToken());
                 }
             }
 
-            if (N == 1) {
-                bw.write(getScore(arr[0][0], arr[0][1], W) + "\n");
-                continue;
-            }
-
-            int[][] copy = new int[2][2];
-            copy[0][0] = arr[0][0];
-            copy[0][1] = arr[0][1];
-            copy[1][0] = arr[N - 1][0];
-            copy[1][1] = arr[N - 1][1];
-            int result = Integer.MAX_VALUE;
-            for (int c = 0; c < 4; c++) {
-                if (c == 1) {
-                    if (arr[0][0] + arr[N - 1][0] > W) continue;
-                    arr[0][0] = W + 1;
-                    arr[N - 1][0] = W + 1;
-                } else if (c == 2) {
-                    if (arr[0][1] + arr[N - 1][1] > W) continue;
-                    arr[0][1] = W + 1;
-                    arr[N - 1][1] = W + 1;
-                } else if (c == 3) {
-                    if (arr[0][0] + arr[N - 1][0] > W || arr[0][1] + arr[N - 1][1] > W) continue;
-                    arr[0][0] = arr[0][1] = W + 1;
-                    arr[N - 1][0] = arr[N - 1][1] = W + 1;
-                }
-
-                int[] dp = new int[N];
-                dp[0] = getScore(arr[0][0], arr[0][1], W);
-                dp[1] = getScore(arr[1][0], arr[1][1], W) + dp[0];
-                dp[1] = Math.min(dp[1], getScore(arr[0][0], arr[1][0], W) + getScore(arr[0][1], arr[1][1], W));
-                for (int i = 2; i < N; i++) {
-                    dp[i] = getScore(arr[i][0], arr[i][1], W) + dp[i - 1];
-                    dp[i] = Math.min(dp[i], getScore(arr[i - 1][0], arr[i][0], W) + getScore(arr[i - 1][1], arr[i][1], W) + dp[i - 2]);
-                }
-
-                arr[0][0] = copy[0][0];
-                arr[0][1] = copy[0][1];
-                arr[N - 1][0] = copy[1][0];
-                arr[N - 1][1] = copy[1][1];
-
-                if (c == 1) {
-                    dp[N - 1] -= 1;
-                } else if (c == 2) {
-                    dp[N - 1] -= 1;
-                } else if (c == 3) {
-                    dp[N - 1] -= 1;
-                    dp[N - 1] -= 1;
-                }
-
-                result = Math.min(result, dp[N - 1]);
-            }
-
-            bw.write(result + "\n");
+            bw.write(query(arr, N, W) + "\n");
         }
         bw.flush();
         bw.close();
     }
-    private static int getScore(int value1, int value2, int boundary) {
-        if (value1 + value2 <= boundary) return 1;
+    private static int query(int[][] arr, int N, int W) {
+
+        /**
+         * 모양 기준으로 구분하기
+         * dp[0]: arr의 0행의 n - 1과 n이 겹치는 경우
+         * dp[1]: arr의 1행의 n - 1과 n이 겹치는 경우
+         * dp[2]: arr의 같은 열이 겹치는 경우
+         */
+
+        int result = Integer.MAX_VALUE;
+
+        for (int k = 0; k < 4; k++) {
+            int[] buffer = preProcess(arr, k, N, W);
+
+            if (k != 0 && buffer == null) continue;
+
+            int[][] dp = new int[3][N + 1];
+            dp[0][1] = 1;
+            dp[1][1] = 1;
+            dp[2][1] = getValue(arr[0][1], arr[1][1], W);
+            for (int j = 2; j <= N; j++) {
+                for (int i = 0; i < 3; i++) {
+                    if (i != 2) {
+                        dp[i][j] = Math.min(dp[2][j - 1] + 1, dp[Math.abs(i - 1)][j - 1] + getValue(arr[i][j - 1], arr[i][j], W));
+                    } else {
+                        dp[i][j] = Math.min(dp[0][j] + 1, dp[1][j] + 1);
+                        dp[i][j] = Math.min(dp[i][j], dp[2][j - 1] + getValue(arr[0][j], arr[1][j], W));
+                        dp[i][j] = Math.min(dp[i][j], dp[2][j - 2] + getValue(arr[0][j - 1], arr[0][j], W) + getValue(arr[1][j - 1], arr[1][j], W));
+                    }
+                }
+            }
+            int curResult = Math.min(dp[0][N] + 1, Math.min(dp[1][N] + 1, dp[2][N]));
+            if (k == 1 || k == 2) curResult -= 1;
+            else if (k == 3) curResult -= 2;
+            result = Math.min(result, curResult);
+
+            postProcess(arr, buffer, k, N);
+        }
+        return result;
+    }
+    private static int[] preProcess(int[][] arr, int k, int N, int W) {
+        if (k == 0) return null;
+        else if (N <= 2) return null;
+        else if (k == 1) {
+            if (arr[0][1] + arr[0][N] <= W) {
+                int[] buffer = new int[] {arr[0][1], arr[0][N]};
+                arr[0][1] = arr[0][N] = W;
+                return buffer;
+            } else {
+                return null;
+            }
+        } else if (k == 2) {
+            if (arr[1][1] + arr[1][N] <= W) {
+                int[] buffer = new int[] {arr[1][1], arr[1][N]};
+                arr[1][1] = arr[1][N] = W;
+                return buffer;
+            } else {
+                return null;
+            }
+        } else {
+            if (arr[0][1] + arr[0][N] <= W && arr[1][1] + arr[1][N] <= W) {
+                int[] buffer = new int[] {arr[0][1], arr[0][N], arr[1][1], arr[1][N]};
+                arr[0][1] = arr[0][N] = arr[1][1] = arr[1][N] = W;
+                return buffer;
+            } else {
+                return null;
+            }
+        }
+    }
+    private static void postProcess(int[][] arr, int[] buffer, int k, int N) {
+        if (k == 0) {
+            return;
+        }
+        else if (k == 1) {
+            arr[0][1] = buffer[0];
+            arr[0][N] = buffer[1];
+        } else if (k == 2) {
+            arr[1][1] = buffer[0];
+            arr[1][N] = buffer[1];
+        } else {
+            arr[0][1] = buffer[0];
+            arr[0][N] = buffer[1];
+            arr[1][1] = buffer[2];
+            arr[1][N] = buffer[3];
+        }
+    }
+    private static int getValue(int v1, int v2, int W) {
+        if (v1 + v2 <= W) return 1;
         else return 2;
     }
 }
