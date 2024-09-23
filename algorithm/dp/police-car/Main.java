@@ -1,78 +1,86 @@
 import java.io.*;
-import java.util.*;
+import java.util.StringTokenizer;
 
 public class Main {
+    private static int[][] dp;
+    private static int[][] arr;
+    private static int N;
     private static int W;
-    private static final int INF = Integer.MAX_VALUE;
-
     public static void main(String[] args) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         StringTokenizer st;
 
-        int N = Integer.parseInt(br.readLine());
+        N = Integer.parseInt(br.readLine());
         W = Integer.parseInt(br.readLine());
-
-        int[][] events = new int[W + 2][2];
-
-        events[0] = new int[] {1, 1};
-        events[1] = new int[] {N, N};
-        for (int i = 2; i < events.length; i++) {
+        arr = new int[W + 1][2];
+        for (int i = 1; i <= W; i++) {
             st = new StringTokenizer(br.readLine());
 
-            events[i][0] = Integer.parseInt(st.nextToken());
-            events[i][1] = Integer.parseInt(st.nextToken());
+            arr[i][0] = Integer.parseInt(st.nextToken());
+            arr[i][1] = Integer.parseInt(st.nextToken());
         }
 
-        int[][] dp = new int[W + 2][W + 2];
-        for (int i = 0; i < dp.length; i++) {
-            Arrays.fill(dp[i], -1);
-        }
+        dp = new int[W + 1][W + 1];
 
-        System.out.println(activeDp(events, dp, 0, 1));
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
-        printRoute(bw, events, dp, 0, 1);
+        bw.write(query(0, 0) + "\n");
+        print(bw, 0, 0);
         bw.flush();
         bw.close();
     }
-    private static void printRoute(BufferedWriter bw, int[][] events, int[][] dp, int pos1, int pos2) throws IOException{
+    private static void print(BufferedWriter bw, int ptr1, int ptr2) throws IOException{
 
-        if (pos1 == W + 1 || pos2 == W + 1) {
+        if (ptr1 == W || ptr2 == W) {
             return;
         }
 
-        int nxtPos = Math.max(pos1 + 1, pos2 + 1);
-        int lDist = calcDistance(events, nxtPos, pos1) + dp[nxtPos][pos2];
-        int rDist = calcDistance(events, nxtPos, pos2) + dp[pos1][nxtPos];
+        int nxtPtr = Math.max(ptr1 + 1, ptr2 + 1);
 
-        if (lDist < rDist) {
+        int[] curPos = new int[]{1, 1};
+        if (ptr1 != 0) curPos = arr[ptr1];
+        if (dp[ptr1][ptr2] - dp[nxtPtr][ptr2] == getDist(curPos, arr[nxtPtr])) {
             bw.write("1\n");
-            printRoute(bw, events, dp, nxtPos, pos2);
+            print(bw, nxtPtr, ptr2);
         } else {
-            bw.write("2\n");
-            printRoute(bw, events, dp, pos1, nxtPos);
+            curPos = new int[]{N, N};
+            if (ptr2 != 0) curPos = arr[ptr2];
+            if (dp[ptr1][ptr2] - dp[ptr1][nxtPtr] == getDist(curPos, arr[nxtPtr])) {
+                bw.write("2\n");
+                print(bw, ptr1, nxtPtr);
+            }
         }
     }
-    private static int activeDp(int[][] events, int[][] dp, int pos1, int pos2) {
 
-        if (pos1 == W + 1 || pos2 == W + 1) {
-            return 0;
+    private static int query(int ptr1, int ptr2) {
+
+        if (ptr1 == W || ptr2 == W) {
+            return dp[ptr1][ptr2] = 0;
         }
 
-        if (dp[pos1][pos2] != -1) {
-            return dp[pos1][pos2];
+        if (dp[ptr1][ptr2] != 0) {
+            return dp[ptr1][ptr2];
         }
 
-        dp[pos1][pos2] = INF;
+        int nxtPtr = Math.max(ptr1 + 1, ptr2 + 1);
 
-        int nxtPos = Math.max(pos1 + 1, pos2 + 1);
-        int lResult = activeDp(events, dp, nxtPos, pos2) + calcDistance(events, nxtPos, pos1);
-        int rResult = activeDp(events, dp, pos1, nxtPos) + calcDistance(events, nxtPos, pos2);
+        int result1;
+        if (ptr1 == 0) {
+            result1 = query(nxtPtr, ptr2) + getDist(new int[] {1, 1}, arr[nxtPtr]);
+        } else {
+            result1 = query(nxtPtr, ptr2) + getDist(arr[ptr1], arr[nxtPtr]);
+        }
 
-        int result = Math.min(lResult, rResult);
+        int result2;
+        if (ptr2 == 0) {
+            result2 = query(ptr1, nxtPtr) + getDist(new int[]{N, N}, arr[nxtPtr]);
+        } else {
+            result2 = query(ptr1, nxtPtr) + getDist(arr[ptr2], arr[nxtPtr]);
+        }
 
-        return dp[pos1][pos2] = result;
+        return dp[ptr1][ptr2] = Math.min(result1, result2);
     }
-    private static int calcDistance(int[][] events, int prevPos, int nxtPos) {
-        return Math.abs(events[nxtPos][0] - events[prevPos][0]) + Math.abs(events[nxtPos][1] - events[prevPos][1]);
+
+    private static int getDist(int[] pos1, int[] pos2) {
+        return Math.abs(pos1[0] - pos2[0]) + Math.abs(pos1[1] - pos2[1]);
     }
 }
