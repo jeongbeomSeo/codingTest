@@ -23,7 +23,7 @@ public class Main {
             maxLength = Math.max(maxLength, bars[i][1]);
         }
 
-        int resultS = 0;
+        long resultS = maxLength + 1;
         long resultE = maxLength + 1;
         int e = 0;
 
@@ -32,7 +32,7 @@ public class Main {
         for (int s = 0; s < maxLength; s++) {
             while (e < maxLength && sum < K) {
                 for (int i = 0; i < N; i++) {
-                    if (bars[i][0] <= e && e <= bars[i][1]) {
+                    if (bars[i][0] < e && e <= bars[i][1]) {
                         sum++;
                     }
                 }
@@ -40,14 +40,14 @@ public class Main {
             }
 
             if (sum == K) {
-                if (resultE - resultS > e - s) {
+                if (resultS > s || resultS == s && resultE > e) {
                     resultE = e - 1;
-                    resultS = s;
+                    resultS = Math.max(s - 1, 0);
                 }
             }
 
             for (int i = 0; i < N; i++) {
-                if (bars[i][0] <= s && s <= bars[i][1]) sum--;
+                if (bars[i][0] < s && s <= bars[i][1]) sum--;
             }
         }
 
