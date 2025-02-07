@@ -9,7 +9,6 @@ public class Main {
         StringTokenizer st;
 
         int N = Integer.parseInt(br.readLine());
-
         Deque<Node> stack = new ArrayDeque<>();
         st = new StringTokenizer(br.readLine());
         for (int i = 1; i <= N; i++) {
