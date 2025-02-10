@@ -2,8 +2,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
-import java.util.Comparator;
-import java.util.PriorityQueue;
 import java.util.StringTokenizer;
 
 public class Main {
@@ -13,89 +11,52 @@ public class Main {
 
         int N = Integer.parseInt(br.readLine());
 
-        PriorityQueue<Node> pq = new PriorityQueue<>(getNodeComparator());
-
-        /**
-         * 1. 사용할 계획을 우선 정렬한 뒤
-         * 2. 기프티콘 정보(Node)를 전부 pq에 넣어주면서
-         * 3. 현재 사용할 계획(idx)와 일치하면서 해당 계획의 time이 넘어갈 때 까지 계획 전부 넘기기 (해당 계획 time만 넘어갈 정도로)
-         * 4. idx 일치시 처리한 후 다음 계획 처리
-         * 5. 계속해서 반복
-         */
-
-        Node[] gifts = new Node[N];
+        Gifticon[] gifticons = new Gifticon[N];
         st = new StringTokenizer(br.readLine());
         for (int i = 0; i < N; i++) {
-            int remainTime = Integer.parseInt(st.nextToken());
-            gifts[i] = new Node(i, remainTime);
-
-            pq.add(gifts[i]);
+            gifticons[i] = new Gifticon(Integer.parseInt(st.nextToken()));
         }
-
-        Node[] schedules = new Node[N];
         st = new StringTokenizer(br.readLine());
         for (int i = 0; i < N; i++) {
-            int scheduleTime = Integer.parseInt(st.nextToken());
-            schedules[i] = new Node(i, scheduleTime);
+            gifticons[i].B = Integer.parseInt(st.nextToken());
         }
 
-        Arrays.sort(schedules, getNodeComparator());
+        Arrays.sort(gifticons, (o1, o2) -> {
+            if (o1.B != o2.B) return o1.B - o2.B;
+            return o1.A - o2.A;
+        });
 
-        int cur = 0;
         long count = 0L;
-        while (!pq.isEmpty()) {
-            Node node = pq.poll();
+        int prevMax = gifticons[0].B;
+        int curMax = -1;
+        for (int i = 0; i < N; i++) {
+            /**
+             * 조건 정리
+             * 1. 현재 기프티콘 기준으로 사용할 계획 날짜보다 남은 기한이 더 높아야 한다.
+             * 2. 기프티콘의 사용할 계획 날짜가 이전 날짜인 기프티콘보다 남은 기한이 더 높아야 한다.
+             */
+            if (gifticons[i].A < prevMax) {
+                if (gifticons[i].B > prevMax) prevMax = gifticons[i].B;
 
-            // 현재 처리 예정 계획이 아닌 경우
-            if (schedules[cur].idx != node.idx) {
-                // 1. 현재 처리 예정인 기프티콘보다 시간이 높아야 하며,
-                if (gifts[schedules[cur].idx].time > node.time) {
-                    long diff = gifts[schedules[cur].idx].time - node.time;
-                    if (diff % 30 != 0) diff += 30;
-                    count += diff / 30;
-                    node.time += 30 * (diff / 30);
-                }
-                // 2. 처리 예정되어 있는 시간보다도 높아야 한다.
-                if (schedules[cur].time > node.time) {
-                    long diff = schedules[cur].time - node.time;
-                    if (diff % 30 != 0) diff += 30;
-                    count += diff / 30;
-                    node.time += 30 * (diff / 30);
-                }
+                int cnt = (prevMax - gifticons[i].A + 29) / 30;
+                gifticons[i].A += (30 * cnt);
+                count += cnt;
+            }
 
-                // 3. 그대로 다시 pq로 넣어준다.
-                pq.add(node);
-            } else {
-                // 1. 기한 연장을 하지 않아도 되는 경우
-                if (schedules[cur].time <= node.time) {
-                    cur++;
-                } else {
-                    // 2. 기간 연장을 해야되는 경우
-                    long diff = schedules[cur].time - node.time;
-                    if (diff % 30 != 0) diff += 30;
-                    count += diff / 30;
-                    node.time += 30 * (diff / 30);
-                    pq.add(node);
-                }
+            curMax = Math.max(curMax, gifticons[i].A);
+            if (i + 1 < N && gifticons[i].B != gifticons[i + 1].B) {
+                prevMax = curMax;
             }
         }
 
         System.out.println(count);
     }
-
-    private static Comparator<Node> getNodeComparator() {
-        return (o1, o2) -> {
-            if (o1.time != o2.time) return Long.compare(o1.time, o2.time);
-            return o1.idx - o2.idx;
-        };
-    }
 }
-class Node {
-    int idx;
-    long time;
+class Gifticon {
+    int A;
+    int B;
 
-    public Node(int idx, long time) {
-        this.idx = idx;
-        this.time = time;
+    public Gifticon(int a) {
+        A = a;
     }
 }
