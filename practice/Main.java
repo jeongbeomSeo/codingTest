@@ -3,53 +3,63 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 
 public class Main {
-    private static int N;
-    private final static int INF = 50000000;
+    private static String minStr;
+    private static String maxStr;
+    private static long minResult = Long.MAX_VALUE;
+    private static long maxResult = Long.MIN_VALUE;
+    private static int size;
+    private static char[] arrows;
     public static void main(String[] args) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         StringTokenizer st;
 
-        N = Integer.parseInt(br.readLine());
+        size = Integer.parseInt(br.readLine());
 
-        int[][] graph = new int[N][N];
-        for (int i = 0; i < N; i++) {
-            st = new StringTokenizer(br.readLine());
-            for (int j = 0; j < N; j++) {
-                graph[i][j] = Integer.parseInt(st.nextToken());
-            }
+        arrows = new char[size];
+        st = new StringTokenizer(br.readLine());
+        for (int i = 0; i < size; i++) {
+            arrows[i] = st.nextToken().charAt(0);
         }
 
-        int[][] dp = new int[N][1 << N];
+        recursive(new boolean[10], new int[size + 1], 0);
 
-        for (int i = 0; i < N; i++) {
-            Arrays.fill(dp[i], -1);
-        }
-
-        System.out.println(query(graph, dp, 0, 1 << 0));
+        System.out.println(maxStr);
+        System.out.println(minStr);
     }
-    private static int query(int[][] graph, int[][] dp, int idx, int visited) {
+    private static void recursive(boolean[] isUsed, int[] buffer, int ptr) {
 
-        if (dp[idx][visited] != -1) {
-            return dp[idx][visited];
+        if (ptr == size + 1) {
+            String str = Arrays.stream(buffer). mapToObj(String::valueOf).collect(Collectors.joining());
+            long num = Long.parseLong(str);
+            if (maxResult < num) {
+                maxResult = num;
+                maxStr = str;
+            }
+            if (minResult > num) {
+                minResult = num;
+                minStr = str;
+            }
+            return;
         }
 
-        if (visited == (1 << N) - 1) {
-            if (graph[idx][0] == 0) return dp[idx][visited] = INF;
+        for (int i = 0; i < 10; i++) {
+            if (isUsed[i]) continue;
 
-            return dp[idx][visited] = graph[idx][0];
+            if (ptr > 0) {
+                if (arrows[ptr - 1] == '<') {
+                    if (buffer[ptr - 1] > i) continue;
+                } else {
+                    if (buffer[ptr - 1] < i) continue;
+                }
+            }
+
+            buffer[ptr] = i;
+            isUsed[i] = true;
+            recursive(isUsed, buffer, ptr + 1);
+            isUsed[i] = false;
         }
-
-        int result = INF;
-
-        for (int i = 0; i < N; i++) {
-            if (((1 << i) & visited) != 0) continue;
-            if (graph[idx][i] == 0) continue;
-
-            result = Math.min(result, query(graph, dp, i, visited | (1 << i)) + graph[idx][i]);
-        }
-
-        return dp[idx][visited] = result;
     }
 }
